@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LogOut, Users, Building2, Ticket, Search, CheckCircle, XCircle, RefreshCw, BarChart3, Download, FileText, Check, DollarSign, MapPin } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, LineChart, Line, CartesianGrid, Legend } from 'recharts';
+import * as XLSX from 'xlsx';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -63,33 +64,27 @@ export default function Dashboard() {
     }
   };
 
-  const exportToCSV = () => {
+  const exportToExcel = () => {
     if (!data.registros || data.registros.length === 0) return;
     
-    // Preparar datos para CSV
-    const headers = ['ID', 'Nombre', 'Correo', 'CURP', 'Telefono', 'Institucion', 'Perfil', 'Taller', 'Pago Aprobado', 'Asistencia'];
-    const rows = filteredRegistros.map(r => [
-      r.id_participante,
-      `"${r.nombre}"`,
-      r.correo,
-      r.curp,
-      r.telefono,
-      `"${r.institucion}"`,
-      r.perfil,
-      `"${r.taller}"`,
-      r.pago_aprobado ? 'Si' : 'No',
-      r.asistio ? 'Si' : 'No'
-    ]);
+    const rows = filteredRegistros.map(r => ({
+      'ID Participante': r.id_participante,
+      'Nombre': r.nombre,
+      'Correo': r.correo,
+      'CURP': r.curp,
+      'Teléfono': r.telefono,
+      'Institución': r.institucion,
+      'Perfil': r.perfil,
+      'Taller': r.taller,
+      'Pago Aprobado': r.pago_aprobado ? 'Sí' : 'No',
+      'Asistencia': r.asistio ? 'Sí' : 'No'
+    }));
     
-    const csvContent = [headers.join(','), ...rows.map(e => e.join(','))].join('\\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `Registros_Encuadre_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Registros");
+    
+    XLSX.writeFile(workbook, `Registros_Encuadre_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
   const handleViewPdf = async (url_comprobante) => {
@@ -262,8 +257,8 @@ export default function Dashboard() {
           <button onClick={handleSetupDB} className="btn btn-outline" style={{ padding: '0.5rem 1rem', borderColor: 'var(--color-border)', fontSize: '0.8rem' }}>
             Setup DB
           </button>
-          <button onClick={exportToCSV} className="btn btn-outline" style={{ padding: '0.5rem 1rem', borderColor: 'var(--color-success)', color: 'var(--color-success)' }}>
-            <Download size={16} /> Exportar CSV
+          <button onClick={exportToExcel} className="btn btn-outline" style={{ padding: '0.5rem 1rem', borderColor: 'var(--color-success)', color: 'var(--color-success)' }}>
+            <Download size={16} /> Exportar Excel
           </button>
           <button onClick={fetchRegistros} className="btn btn-outline" style={{ padding: '0.5rem 1rem' }} disabled={loading}>
             <RefreshCw size={16} className={loading ? 'spin' : ''} /> Actualizar
