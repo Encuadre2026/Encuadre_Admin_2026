@@ -47,8 +47,8 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="card max-w-md w-full">
-        <div className="flex flex-col items-center gap-4 mb-8 text-center">
+      <div className="card max-w-md w-full fade-in-up">
+        <div className="flex flex-col items-center gap-4 mb-8 text-center" style={{ marginBottom: '2rem' }}>
           <div style={{ backgroundColor: 'var(--color-accent-gold-dim)', padding: '1rem', borderRadius: '50%' }}>
             <Lock size={32} color="var(--color-accent-gold)" />
           </div>
