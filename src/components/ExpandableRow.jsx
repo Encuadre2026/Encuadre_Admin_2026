@@ -10,7 +10,15 @@ export default function ExpandableRow({ registro: r, onAprobarPago, onViewPdf })
 
   return (
     <>
-      <tr className={`expandable-row${expanded ? ' expanded' : ''}`} onClick={() => setExpanded(!expanded)}>
+      <tr
+        className={`expandable-row${expanded ? ' expanded' : ''}`}
+        onClick={() => setExpanded(!expanded)}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpanded(!expanded); } }}
+        tabIndex={0}
+        role="row"
+        aria-expanded={expanded}
+        style={{ cursor: 'pointer' }}
+      >
         <td style={{ padding: '0.75rem 0.5rem', width: '30px' }}>
           <ChevronRight size={16} className={`expand-icon${expanded ? ' rotated' : ''}`} />
         </td>
