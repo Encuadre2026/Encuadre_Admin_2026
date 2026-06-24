@@ -26,6 +26,12 @@ export default function Sidebar({ totalRegistros = 0, isOpen, onClose, onSetupDB
 
   const handleSetupDBClick = async () => {
     if (!onSetupDB) return;
+    
+    // Punto 3: Confirmación de seguridad
+    if (!window.confirm('⚠️ PRECAUCIÓN: Esta acción inicializa o reinicia las tablas de la base de datos. ¿Estás seguro de que deseas continuar?')) {
+      return;
+    }
+
     try {
       const msg = await onSetupDB();
       showToast(msg || 'Base de datos configurada', 'success');
