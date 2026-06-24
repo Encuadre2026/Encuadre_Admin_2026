@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { Menu } from 'lucide-react';
 import { ToastProvider } from './context/ToastContext';
@@ -14,12 +14,14 @@ function AuthenticatedLayout() {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Redirect if unauthorized
-  if (registrosHook.error === 'unauthorized') {
-    localStorage.removeItem('ENCUADRE_ADMIN_TOKEN');
-    navigate('/login');
-    return null;
-  }
+  // Redirect if unauthorized (dentro de useEffect para evitar side effects en render)
+  useEffect(() => {
+    if (registrosHook.error === 'unauthorized') {
+      localStorage.removeItem('ENCUADRE_ADMIN_TOKEN');
+      sessionStorage.removeItem('ENCUADRE_ADMIN_SECRET');
+      navigate('/login');
+    }
+  }, [registrosHook.error, navigate]);
 
   const totalRegistros = (registrosHook.data.registros || []).length;
 

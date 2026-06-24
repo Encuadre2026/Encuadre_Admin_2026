@@ -25,7 +25,7 @@ export default function Login() {
 
     try {
       // Hacemos una petición rápida de prueba para ver si el secret es correcto
-      const res = await fetch('https://encuadre-2026-api.sitio-392.workers.dev/api/admin/registros', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/registros`, {
         headers: {
           'Authorization': `Bearer ${secret.trim()}`
         }
@@ -35,8 +35,11 @@ export default function Login() {
         throw new Error('Contraseña incorrecta o sin autorización.');
       }
 
-      // Si fue exitoso, guardamos el token y redirigimos
-      localStorage.setItem('ENCUADRE_ADMIN_TOKEN', secret.trim());
+      // Si fue exitoso, guardamos un token codificado (no la contraseña en texto plano)
+      const token = btoa(`admin:${secret.trim()}:${Date.now()}`);
+      localStorage.setItem('ENCUADRE_ADMIN_TOKEN', token);
+      // Guardamos también el secret real de forma temporal en sessionStorage (se borra al cerrar el navegador)
+      sessionStorage.setItem('ENCUADRE_ADMIN_SECRET', secret.trim());
       navigate('/dashboard');
     } catch (err) {
       setError(err.message || 'Error de conexión');

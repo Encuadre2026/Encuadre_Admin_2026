@@ -1,27 +1,40 @@
-import { useState, useEffect, useCallback } from 'react';
-import * as XLSX from 'xlsx';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
-const API = 'https://encuadre-2026-api.sitio-392.workers.dev';
+const API = import.meta.env.VITE_API_URL;
 
 export default function useRegistros() {
   const [data, setData] = useState({ registros: [], cupos: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const blobUrlRef = useRef(null);
 
-  const getToken = () => localStorage.getItem('ENCUADRE_ADMIN_TOKEN');
+  const getSecret = () => {
+    // Intentar obtener el secret real desde sessionStorage
+    const secret = sessionStorage.getItem('ENCUADRE_ADMIN_SECRET');
+    if (secret) return secret;
+
+    // Fallback: si no hay secret en sessionStorage, el token ya no es válido
+    // (el usuario cerró y reabrió el navegador)
+    return null;
+  };
+
+  const hasSession = () => {
+    return localStorage.getItem('ENCUADRE_ADMIN_TOKEN') && getSecret();
+  };
 
   const fetchRegistros = useCallback(async () => {
-    const token = getToken();
-    if (!token) { setLoading(false); return false; }
+    const secret = getSecret();
+    if (!secret) { setLoading(false); return false; }
 
     setLoading(true);
     setError('');
     try {
       const res = await fetch(`${API}/api/admin/registros`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${secret}` },
       });
       if (res.status === 401) {
         localStorage.removeItem('ENCUADRE_ADMIN_TOKEN');
+        sessionStorage.removeItem('ENCUADRE_ADMIN_SECRET');
         setError('unauthorized');
         return false;
       }
@@ -38,10 +51,11 @@ export default function useRegistros() {
   }, []);
 
   const handleAprobarPago = useCallback(async (id_participante) => {
-    const token = getToken();
+    const secret = getSecret();
+    if (!secret) throw new Error('Sesión expirada. Vuelve a iniciar sesión.');
     const res = await fetch(`${API}/api/admin/aprobar_pago`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      headers: { Authorization: `Bearer ${secret}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ id_participante }),
     });
     if (!res.ok) throw new Error('Error al aprobar pago');
@@ -50,27 +64,48 @@ export default function useRegistros() {
   }, [fetchRegistros]);
 
   const handleViewPdf = useCallback(async (url_comprobante) => {
-    const token = getToken();
+    const secret = getSecret();
+    if (!secret) throw new Error('Sesión expirada. Vuelve a iniciar sesión.');
+
+    // Liberar blob URL anterior para evitar memory leaks
+    if (blobUrlRef.current) {
+      URL.revokeObjectURL(blobUrlRef.current);
+      blobUrlRef.current = null;
+    }
+
     const res = await fetch(`${API}/api/admin/comprobante?file=${encodeURIComponent(url_comprobante)}`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${secret}` },
     });
     if (!res.ok) throw new Error('No se pudo cargar el PDF');
     const blob = await res.blob();
-    return URL.createObjectURL(blob);
+    const blobUrl = URL.createObjectURL(blob);
+    blobUrlRef.current = blobUrl;
+    return blobUrl;
+  }, []);
+
+  const revokePdfUrl = useCallback(() => {
+    if (blobUrlRef.current) {
+      URL.revokeObjectURL(blobUrlRef.current);
+      blobUrlRef.current = null;
+    }
   }, []);
 
   const handleSetupDB = useCallback(async () => {
-    const token = getToken();
+    const secret = getSecret();
+    if (!secret) throw new Error('Sesión expirada. Vuelve a iniciar sesión.');
     const res = await fetch(`${API}/api/admin/setup_db`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${secret}` },
     });
+    if (!res.ok) throw new Error('Error al configurar la base de datos');
     const json = await res.json();
     await fetchRegistros();
     return json.message || 'Base de datos configurada';
   }, [fetchRegistros]);
 
-  const exportToExcel = useCallback((filteredRegistros) => {
+  const exportToExcel = useCallback(async (filteredRegistros) => {
     if (!filteredRegistros?.length) return;
+    // Importación dinámica para no inflar el bundle
+    const XLSX = await import('xlsx');
     const rows = filteredRegistros.map(r => ({
       'ID Participante': r.id_participante,
       Nombre: r.nombre,
@@ -91,5 +126,14 @@ export default function useRegistros() {
 
   useEffect(() => { fetchRegistros(); }, [fetchRegistros]);
 
-  return { data, loading, error, fetchRegistros, handleAprobarPago, handleViewPdf, handleSetupDB, exportToExcel };
+  // Limpiar blob URL al desmontar el componente
+  useEffect(() => {
+    return () => {
+      if (blobUrlRef.current) {
+        URL.revokeObjectURL(blobUrlRef.current);
+      }
+    };
+  }, []);
+
+  return { data, loading, error, fetchRegistros, handleAprobarPago, handleViewPdf, revokePdfUrl, handleSetupDB, exportToExcel };
 }

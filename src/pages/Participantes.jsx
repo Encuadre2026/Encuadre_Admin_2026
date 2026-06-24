@@ -4,7 +4,7 @@ import { useToast } from '../context/ToastContext';
 import ExpandableRow from '../components/ExpandableRow';
 
 export default function Participantes({ registrosHook }) {
-  const { data, loading, fetchRegistros, handleAprobarPago, handleViewPdf, exportToExcel } = registrosHook;
+  const { data, loading, fetchRegistros, handleAprobarPago, handleViewPdf, revokePdfUrl, exportToExcel } = registrosHook;
   const { showToast } = useToast();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -32,10 +32,10 @@ export default function Participantes({ registrosHook }) {
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       list = list.filter(r =>
-        r.nombre.toLowerCase().includes(term) ||
-        r.id_participante.toLowerCase().includes(term) ||
-        r.institucion.toLowerCase().includes(term) ||
-        r.correo.toLowerCase().includes(term)
+        (r.nombre || '').toLowerCase().includes(term) ||
+        (r.id_participante || '').toLowerCase().includes(term) ||
+        (r.institucion || '').toLowerCase().includes(term) ||
+        (r.correo || '').toLowerCase().includes(term)
       );
     }
     return list;
@@ -47,6 +47,7 @@ export default function Participantes({ registrosHook }) {
       await handleAprobarPago(id);
       showToast(`Pago de ${id} aprobado correctamente`, 'success');
       setSelectedPdf(null);
+      revokePdfUrl();
     } catch (e) {
       showToast(e.message, 'error');
     }
@@ -165,7 +166,7 @@ export default function Participantes({ registrosHook }) {
           <div className="card" style={{ width: '100%', maxWidth: '800px', height: '80vh', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexShrink: 0, minHeight: '40px', position: 'relative', zIndex: 10 }}>
               <h3 style={{ margin: 0 }}>Credencial / Comprobante</h3>
-              <button onClick={() => setSelectedPdf(null)} className="btn btn-outline" style={{ padding: '0.5rem', backgroundColor: 'var(--color-bg-surface)' }}>
+              <button onClick={() => { setSelectedPdf(null); revokePdfUrl(); }} className="btn btn-outline" style={{ padding: '0.5rem', backgroundColor: 'var(--color-bg-surface)' }}>
                 <XCircle size={20} />
               </button>
             </div>

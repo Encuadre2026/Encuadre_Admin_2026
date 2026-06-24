@@ -20,15 +20,21 @@ export default function Sidebar({ totalRegistros = 0, isOpen, onClose }) {
 
   const handleLogout = () => {
     localStorage.removeItem('ENCUADRE_ADMIN_TOKEN');
+    sessionStorage.removeItem('ENCUADRE_ADMIN_SECRET');
     navigate('/login');
   };
 
   const handleSetupDB = async () => {
-    const token = localStorage.getItem('ENCUADRE_ADMIN_TOKEN');
+    const secret = sessionStorage.getItem('ENCUADRE_ADMIN_SECRET');
+    if (!secret) {
+      showToast('Sesión expirada. Vuelve a iniciar sesión.', 'error');
+      return;
+    }
     try {
-      const res = await fetch('https://encuadre-2026-api.sitio-392.workers.dev/api/admin/setup_db', {
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/setup_db`, {
+        headers: { Authorization: `Bearer ${secret}` },
       });
+      if (!res.ok) throw new Error('Error en la operación');
       const data = await res.json();
       showToast(data.message || 'Base de datos configurada', 'success');
     } catch (e) {
