@@ -31,6 +31,8 @@ jobs:
         run: npm ci
       - name: Build
         run: npm run build
+        env:
+          VITE_API_URL: https://encuadre-2026-api.sitio-392.workers.dev
       - name: Setup Pages
         uses: actions/configure-pages@v4
       - name: Upload artifact
