@@ -90,17 +90,7 @@ export default function useRegistros() {
     }
   }, []);
 
-  const handleSetupDB = useCallback(async () => {
-    const secret = getSecret();
-    if (!secret) throw new Error('Sesión expirada. Vuelve a iniciar sesión.');
-    const res = await fetch(`${API}/api/admin/setup_db`, {
-      headers: { Authorization: `Bearer ${secret}` },
-    });
-    if (!res.ok) throw new Error('Error al configurar la base de datos');
-    const json = await res.json();
-    await fetchRegistros();
-    return json.message || 'Base de datos configurada';
-  }, [fetchRegistros]);
+
 
   const exportToExcel = useCallback(async (filteredRegistros) => {
     if (!filteredRegistros?.length) return;
@@ -135,5 +125,5 @@ export default function useRegistros() {
     };
   }, []);
 
-  return { data, loading, error, fetchRegistros, handleAprobarPago, handleViewPdf, revokePdfUrl, handleSetupDB, exportToExcel };
+  return { data, loading, error, fetchRegistros, handleAprobarPago, handleViewPdf, revokePdfUrl, exportToExcel };
 }
