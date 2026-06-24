@@ -161,8 +161,8 @@ export default function Participantes({ registrosHook }) {
 
       {/* PDF Modal */}
       {selectedPdf && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-          <div className="card" style={{ width: '100%', maxWidth: '800px', height: 'calc(100vh - 2rem)', maxHeight: '900px', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+          <div className="card" style={{ width: '100%', maxWidth: '800px', height: '80vh', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexShrink: 0, minHeight: '40px', position: 'relative', zIndex: 10 }}>
               <h3 style={{ margin: 0 }}>Credencial / Comprobante</h3>
               <button onClick={() => setSelectedPdf(null)} className="btn btn-outline" style={{ padding: '0.5rem', backgroundColor: 'var(--color-bg-surface)' }}>
