@@ -24,7 +24,11 @@ export default function useRegistros() {
 
   const fetchRegistros = useCallback(async () => {
     const secret = getSecret();
-    if (!secret) { setLoading(false); return false; }
+    if (!secret) { 
+      setLoading(false); 
+      setError('unauthorized');
+      return false; 
+    }
 
     setLoading(true);
     setError('');
