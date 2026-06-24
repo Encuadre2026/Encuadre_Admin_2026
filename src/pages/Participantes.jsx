@@ -10,10 +10,17 @@ export default function Participantes({ registrosHook }) {
   const { showToast } = useToast();
 
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [filterTaller, setFilterTaller] = useState('Todos');
   const [filterPago, setFilterPago] = useState('Todos');
   const [filterInstitucion, setFilterInstitucion] = useState('Todos');
   const [currentPage, setCurrentPage] = useState(1);
+
+  // Punto 14: Debounce del buscador (300ms)
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchTerm), 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   // PDF modal
   const [selectedPdf, setSelectedPdf] = useState(null);
@@ -34,8 +41,8 @@ export default function Participantes({ registrosHook }) {
     if (filterPago === 'Confirmados') list = list.filter(r => r.pago_aprobado);
     if (filterInstitucion === 'UAA') list = list.filter(r => (r.institucion || '').includes('UAA'));
     if (filterInstitucion === 'Foráneos') list = list.filter(r => !(r.institucion || '').includes('UAA'));
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
+    if (debouncedSearch) {
+      const term = debouncedSearch.toLowerCase();
       list = list.filter(r =>
         (r.nombre || '').toLowerCase().includes(term) ||
         (r.id_participante || '').toLowerCase().includes(term) ||
@@ -44,7 +51,7 @@ export default function Participantes({ registrosHook }) {
       );
     }
     return list;
-  }, [data, searchTerm, filterTaller, filterPago, filterInstitucion]);
+  }, [data, debouncedSearch, filterTaller, filterPago, filterInstitucion]);
 
   // Paginación
   const totalPages = Math.max(1, Math.ceil(filteredRegistros.length / ITEMS_PER_PAGE));
@@ -56,7 +63,7 @@ export default function Participantes({ registrosHook }) {
   // Reiniciar página al cambiar filtros
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, filterTaller, filterPago, filterInstitucion]);
+  }, [debouncedSearch, filterTaller, filterPago, filterInstitucion]);
 
   // Asegurar que la página actual no exceda el total
   useEffect(() => {

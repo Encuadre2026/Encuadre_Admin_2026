@@ -2,7 +2,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { BarChart3, Users, Ticket, LogOut, Database } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 
-export default function Sidebar({ totalRegistros = 0, isOpen, onClose }) {
+export default function Sidebar({ totalRegistros = 0, isOpen, onClose, onSetupDB }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { showToast } = useToast();
@@ -24,21 +24,13 @@ export default function Sidebar({ totalRegistros = 0, isOpen, onClose }) {
     navigate('/login');
   };
 
-  const handleSetupDB = async () => {
-    const secret = sessionStorage.getItem('ENCUADRE_ADMIN_SECRET');
-    if (!secret) {
-      showToast('Sesión expirada. Vuelve a iniciar sesión.', 'error');
-      return;
-    }
+  const handleSetupDBClick = async () => {
+    if (!onSetupDB) return;
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/setup_db`, {
-        headers: { Authorization: `Bearer ${secret}` },
-      });
-      if (!res.ok) throw new Error('Error en la operación');
-      const data = await res.json();
-      showToast(data.message || 'Base de datos configurada', 'success');
+      const msg = await onSetupDB();
+      showToast(msg || 'Base de datos configurada', 'success');
     } catch (e) {
-      showToast('Error en setup: ' + e.message, 'error');
+      showToast(e.message, 'error');
     }
   };
 
@@ -72,7 +64,7 @@ export default function Sidebar({ totalRegistros = 0, isOpen, onClose }) {
       </nav>
 
       <div className="sidebar-footer">
-        <button onClick={handleSetupDB} className="btn btn-outline" style={{ borderColor: 'var(--color-border)', fontSize: '0.75rem' }}>
+        <button onClick={handleSetupDBClick} className="btn btn-outline" style={{ borderColor: 'var(--color-border)', fontSize: '0.75rem' }}>
           <Database size={14} /> Setup DB
         </button>
         <button onClick={handleLogout} className="btn btn-outline" style={{ borderColor: 'var(--color-danger)', color: 'var(--color-danger)' }}>

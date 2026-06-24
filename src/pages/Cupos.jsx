@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
+import { LUGARES_RESERVADOS_UAA } from '../constants';
 
 export default function Cupos({ registrosHook }) {
   const { data, loading, fetchRegistros } = registrosHook;
@@ -48,7 +49,7 @@ export default function Cupos({ registrosHook }) {
           {cupos.map((c, i) => {
             const counts = tallerCounts[c.nombre] || { uaa: 0, general: 0 };
             const totalInscritos = counts.uaa + counts.general;
-            const totalCapacidad = c.cupo_maximo + 7;
+            const totalCapacidad = c.cupo_maximo + LUGARES_RESERVADOS_UAA;
             const pctTotal = totalCapacidad ? (totalInscritos / totalCapacidad) * 100 : 0;
 
             let badgeClass = 'disponible';
@@ -57,7 +58,7 @@ export default function Cupos({ registrosHook }) {
             else if (pctTotal >= 80) { badgeClass = 'casi-lleno'; badgeText = 'Casi lleno'; }
 
             const pctGeneral = c.cupo_maximo ? Math.min(100, (counts.general / c.cupo_maximo) * 100) : 0;
-            const pctUAA = Math.min(100, (counts.uaa / 7) * 100);
+            const pctUAA = Math.min(100, (counts.uaa / LUGARES_RESERVADOS_UAA) * 100);
 
             return (
               <div key={c.nombre} className="cupo-card fade-in-up" style={{ animationDelay: `${0.05 * i}s` }}>
@@ -79,7 +80,7 @@ export default function Cupos({ registrosHook }) {
                 <div className="cupo-progress">
                   <div className="cupo-progress-label">
                     <span>UAA</span>
-                    <span>{counts.uaa} / 7</span>
+                    <span>{counts.uaa} / {LUGARES_RESERVADOS_UAA}</span>
                   </div>
                   <div className="cupo-progress-bar">
                     <div className="cupo-progress-fill gold" style={{ width: `${pctUAA}%` }}></div>

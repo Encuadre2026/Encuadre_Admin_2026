@@ -43,6 +43,7 @@ function AuthenticatedLayout() {
         totalRegistros={totalRegistros}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
+        onSetupDB={registrosHook.handleSetupDB}
       />
 
       {/* Mobile overlay */}

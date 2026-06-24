@@ -2,6 +2,14 @@ import { useMemo } from 'react';
 import { Users, Ticket, CheckCircle, DollarSign, RefreshCw } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, LineChart, Line, CartesianGrid, Legend } from 'recharts';
 import { useToast } from '../context/ToastContext';
+import { LUGARES_RESERVADOS_UAA } from '../constants';
+
+const COLORS = ['#F4D03F', '#8E44AD', '#3498DB', '#E74C3C', '#2ECC71'];
+const TOOLTIP_STYLE = { backgroundColor: '#111', borderColor: '#333' };
+const TOOLTIP_ITEM_STYLE = { color: '#fff' };
+const TOOLTIP_LABEL_STYLE = { color: '#F4D03F', fontWeight: 600, marginBottom: '4px' };
+const CURSOR_STYLE = { fill: 'rgba(255,255,255,0.05)' };
+const TOOLTIP_CONTENT_WIDE = { backgroundColor: '#111', borderColor: '#333', maxWidth: '320px', whiteSpace: 'normal' };
 
 export default function Dashboard({ registrosHook }) {
   const { data, loading, fetchRegistros } = registrosHook;
@@ -17,7 +25,7 @@ export default function Dashboard({ registrosHook }) {
     let totalCapacidad = 0;
     let totalOcupados = 0;
     cups.forEach(c => {
-      totalCapacidad += (c.cupo_maximo + 7);
+      totalCapacidad += (c.cupo_maximo + LUGARES_RESERVADOS_UAA);
       totalOcupados += c.inscritos;
     });
     const porcentajeOcupacion = totalCapacidad ? Math.round((totalOcupados / totalCapacidad) * 100) : 0;
@@ -86,8 +94,6 @@ export default function Dashboard({ registrosHook }) {
     };
   }, [data]);
 
-  const COLORS = ['#F4D03F', '#8E44AD', '#3498DB', '#E74C3C', '#2ECC71'];
-
   const onRefresh = async () => {
     const ok = await fetchRegistros();
     if (ok) showToast('Dashboard actualizado', 'info');
@@ -106,62 +112,54 @@ export default function Dashboard({ registrosHook }) {
       </div>
 
       {/* KPIs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem', marginBottom: '1.75rem' }}>
-        <div className="card fade-in-up" style={{ display: 'flex', alignItems: 'center', gap: '1rem', animationDelay: '0.05s' }}>
-          <div style={{ padding: '0.75rem', backgroundColor: 'rgba(244, 208, 63, 0.1)', borderRadius: '8px', color: 'var(--color-accent-gold)' }}>
-            <Users size={28} />
-          </div>
+      <div className="dashboard-kpi-grid">
+        <div className="card fade-in-up kpi-card" style={{ animationDelay: '0.05s' }}>
+          <div className="kpi-icon kpi-icon-gold"><Users size={28} /></div>
           <div>
-            <p className="text-muted" style={{ fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase' }}>Total Registros</p>
-            <h2 style={{ fontSize: '1.75rem', margin: 0 }}>{loading ? '-' : stats.totalRegistros}</h2>
+            <p className="kpi-label">Total Registros</p>
+            <h2 className="kpi-value">{loading ? '-' : stats.totalRegistros}</h2>
           </div>
         </div>
 
-        <div className="card fade-in-up" style={{ display: 'flex', alignItems: 'center', gap: '1rem', animationDelay: '0.1s' }}>
-          <div style={{ padding: '0.75rem', backgroundColor: 'rgba(52, 152, 219, 0.1)', borderRadius: '8px', color: '#3498DB' }}>
-            <Ticket size={28} />
-          </div>
+        <div className="card fade-in-up kpi-card" style={{ animationDelay: '0.1s' }}>
+          <div className="kpi-icon kpi-icon-blue"><Ticket size={28} /></div>
           <div>
-            <p className="text-muted" style={{ fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase' }}>Ocupación Global</p>
-            <h2 style={{ fontSize: '1.75rem', margin: 0 }}>{loading ? '-' : `${stats.porcentajeOcupacion}%`}</h2>
-            <p style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', margin: 0 }}>{stats.totalOcupados} / {stats.totalCapacidad}</p>
+            <p className="kpi-label">Ocupación Global</p>
+            <h2 className="kpi-value">{loading ? '-' : `${stats.porcentajeOcupacion}%`}</h2>
+            <p className="kpi-sub">{stats.totalOcupados} / {stats.totalCapacidad}</p>
           </div>
         </div>
 
-        <div className="card fade-in-up" style={{ display: 'flex', alignItems: 'center', gap: '1rem', animationDelay: '0.15s' }}>
-          <div style={{ padding: '0.75rem', backgroundColor: 'rgba(46, 204, 113, 0.1)', borderRadius: '8px', color: '#2ECC71' }}>
-            <CheckCircle size={28} />
-          </div>
+        <div className="card fade-in-up kpi-card" style={{ animationDelay: '0.15s' }}>
+          <div className="kpi-icon kpi-icon-green"><CheckCircle size={28} /></div>
           <div>
-            <p className="text-muted" style={{ fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase' }}>Asistencias</p>
-            <h2 style={{ fontSize: '1.75rem', margin: 0 }}>{loading ? '-' : stats.asistencia}</h2>
+            <p className="kpi-label">Asistencias</p>
+            <h2 className="kpi-value">{loading ? '-' : stats.asistencia}</h2>
           </div>
         </div>
 
-        <div className="card fade-in-up" style={{ display: 'flex', alignItems: 'center', gap: '1rem', animationDelay: '0.2s' }}>
-          <div style={{ padding: '0.75rem', backgroundColor: 'rgba(155, 89, 182, 0.1)', borderRadius: '8px', color: '#9B59B6' }}>
-            <DollarSign size={28} />
-          </div>
+        <div className="card fade-in-up kpi-card" style={{ animationDelay: '0.2s' }}>
+          <div className="kpi-icon kpi-icon-purple"><DollarSign size={28} /></div>
           <div>
-            <p className="text-muted" style={{ fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase' }}>Pagos Validados</p>
-            <h2 style={{ fontSize: '1.75rem', margin: 0 }}>{loading ? '-' : stats.pagosConfirmados}</h2>
-            <p style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', margin: 0 }}>{stats.pagosPendientes} pendientes</p>
+            <p className="kpi-label">Pagos Validados</p>
+            <h2 className="kpi-value">{loading ? '-' : stats.pagosConfirmados}</h2>
+            <p className="kpi-sub">{stats.pagosPendientes} pendientes</p>
           </div>
         </div>
       </div>
 
       {/* Charts Row 1 */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem', marginBottom: '1.25rem' }}>
+      <div className="dashboard-chart-grid">
         <div className="card fade-in-up" style={{ animationDelay: '0.25s' }}>
-          <h3 style={{ marginBottom: '1rem', fontSize: '1rem', textAlign: 'center' }}>Estatus de Pagos</h3>
-          <div style={{ height: '230px' }}>
+          <h3 className="chart-title">Estatus de Pagos</h3>
+          <div className="chart-container">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie data={stats.pagosData} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={5} dataKey="value">
                   <Cell fill="#2ECC71" />
                   <Cell fill="#E74C3C" />
                 </Pie>
-                <RechartsTooltip contentStyle={{ backgroundColor: '#111', borderColor: '#333' }} itemStyle={{ color: '#fff' }} />
+                <RechartsTooltip contentStyle={TOOLTIP_STYLE} itemStyle={TOOLTIP_ITEM_STYLE} />
                 <Legend />
               </PieChart>
             </ResponsiveContainer>
@@ -169,15 +167,15 @@ export default function Dashboard({ registrosHook }) {
         </div>
 
         <div className="card fade-in-up" style={{ animationDelay: '0.3s' }}>
-          <h3 style={{ marginBottom: '1rem', fontSize: '1rem', textAlign: 'center' }}>Audiencia Local vs Foránea</h3>
-          <div style={{ height: '230px' }}>
+          <h3 className="chart-title">Audiencia Local vs Foránea</h3>
+          <div className="chart-container">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie data={stats.audienciaData} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={5} dataKey="value">
                   <Cell fill="var(--color-accent-gold)" />
                   <Cell fill="#3498DB" />
                 </Pie>
-                <RechartsTooltip contentStyle={{ backgroundColor: '#111', borderColor: '#333' }} itemStyle={{ color: '#fff' }} />
+                <RechartsTooltip contentStyle={TOOLTIP_STYLE} itemStyle={TOOLTIP_ITEM_STYLE} />
                 <Legend />
               </PieChart>
             </ResponsiveContainer>
@@ -185,8 +183,8 @@ export default function Dashboard({ registrosHook }) {
         </div>
 
         <div className="card fade-in-up" style={{ animationDelay: '0.35s' }}>
-          <h3 style={{ marginBottom: '1rem', fontSize: '1rem', textAlign: 'center' }}>Distribución de Perfiles</h3>
-          <div style={{ height: '230px' }}>
+          <h3 className="chart-title">Distribución de Perfiles</h3>
+          <div className="chart-container">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie data={stats.perfilesData} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={5} dataKey="value">
@@ -194,7 +192,7 @@ export default function Dashboard({ registrosHook }) {
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <RechartsTooltip contentStyle={{ backgroundColor: '#111', borderColor: '#333' }} itemStyle={{ color: '#fff' }} />
+                <RechartsTooltip contentStyle={TOOLTIP_STYLE} itemStyle={TOOLTIP_ITEM_STYLE} />
                 <Legend />
               </PieChart>
             </ResponsiveContainer>
@@ -203,16 +201,16 @@ export default function Dashboard({ registrosHook }) {
       </div>
 
       {/* Charts Row 2 */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', marginBottom: '1.75rem' }}>
+      <div className="dashboard-chart-grid-2col">
         <div className="card fade-in-up" style={{ gridColumn: '1 / -1', animationDelay: '0.4s' }}>
-          <h3 style={{ marginBottom: '1rem', fontSize: '1rem' }}>Curva de Inscripciones por Día</h3>
-          <div style={{ height: '280px' }}>
+          <h3 className="chart-title-left">Curva de Inscripciones por Día</h3>
+          <div className="chart-container-lg">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={stats.fechasData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
                 <XAxis dataKey="name" stroke="#666" tick={{ fill: '#aaa', fontSize: 12 }} />
                 <YAxis stroke="#666" tick={{ fill: '#aaa' }} allowDecimals={false} />
-                <RechartsTooltip contentStyle={{ backgroundColor: '#111', borderColor: '#333' }} />
+                <RechartsTooltip contentStyle={TOOLTIP_STYLE} />
                 <Line type="monotone" dataKey="Inscripciones" stroke="var(--color-accent-gold)" strokeWidth={3} dot={{ r: 4, fill: 'var(--color-accent-gold)' }} activeDot={{ r: 6 }} />
               </LineChart>
             </ResponsiveContainer>
@@ -220,14 +218,14 @@ export default function Dashboard({ registrosHook }) {
         </div>
 
         <div className="card fade-in-up" style={{ animationDelay: '0.45s' }}>
-          <h3 style={{ marginBottom: '1rem', fontSize: '1rem' }}>Top 5 Talleres</h3>
-          <div style={{ height: '280px' }}>
+          <h3 className="chart-title-left">Top 5 Talleres</h3>
+          <div className="chart-container-lg">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={stats.top5Talleres} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#333" horizontal vertical={false} />
                 <XAxis type="number" stroke="#666" tick={{ fill: '#aaa' }} allowDecimals={false} />
                 <YAxis dataKey="name" type="category" stroke="#666" tick={{ fill: '#aaa', fontSize: 10 }} width={120} tickFormatter={v => v.length > 22 ? v.substring(0, 22) + '...' : v} />
-                <RechartsTooltip cursor={{ fill: 'rgba(255,255,255,0.05)' }} contentStyle={{ backgroundColor: '#111', borderColor: '#333', maxWidth: '320px', whiteSpace: 'normal' }} labelStyle={{ color: '#F4D03F', fontWeight: 600, marginBottom: '4px' }} />
+                <RechartsTooltip cursor={CURSOR_STYLE} contentStyle={TOOLTIP_CONTENT_WIDE} labelStyle={TOOLTIP_LABEL_STYLE} />
                 <Bar dataKey="inscritos" fill="#E74C3C" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -235,14 +233,14 @@ export default function Dashboard({ registrosHook }) {
         </div>
 
         <div className="card fade-in-up" style={{ animationDelay: '0.5s' }}>
-          <h3 style={{ marginBottom: '1rem', fontSize: '1rem' }}>Top 3 Menos Solicitados</h3>
-          <div style={{ height: '280px' }}>
+          <h3 className="chart-title-left">Top 3 Menos Solicitados</h3>
+          <div className="chart-container-lg">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={stats.bottom3Talleres} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#333" horizontal vertical={false} />
                 <XAxis type="number" stroke="#666" tick={{ fill: '#aaa' }} allowDecimals={false} />
                 <YAxis dataKey="name" type="category" stroke="#666" tick={{ fill: '#aaa', fontSize: 10 }} width={120} tickFormatter={v => v.length > 22 ? v.substring(0, 22) + '...' : v} />
-                <RechartsTooltip cursor={{ fill: 'rgba(255,255,255,0.05)' }} contentStyle={{ backgroundColor: '#111', borderColor: '#333', maxWidth: '320px', whiteSpace: 'normal' }} labelStyle={{ color: '#F4D03F', fontWeight: 600, marginBottom: '4px' }} />
+                <RechartsTooltip cursor={CURSOR_STYLE} contentStyle={TOOLTIP_CONTENT_WIDE} labelStyle={TOOLTIP_LABEL_STYLE} />
                 <Bar dataKey="inscritos" fill="#3498DB" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
