@@ -92,11 +92,11 @@ export default function ExpandableRow({ registro: r, onAprobarPago, onViewPdf })
                 <span>{fechaReg}</span>
               </div>
               <div className="detail-item">
-                <label>Institución Completa</label>
+                <label>Institución</label>
                 <span>{r.institucion}</span>
               </div>
               <div className="detail-item">
-                <label>Taller Completo</label>
+                <label>Taller</label>
                 <span>{r.taller}</span>
               </div>
               <div className="detail-actions">

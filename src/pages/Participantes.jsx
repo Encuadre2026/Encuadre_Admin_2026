@@ -163,13 +163,13 @@ export default function Participantes({ registrosHook }) {
       {selectedPdf && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
           <div className="card" style={{ width: '100%', maxWidth: '800px', height: '90vh', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexShrink: 0 }}>
               <h3 style={{ margin: 0 }}>Credencial / Comprobante</h3>
               <button onClick={() => setSelectedPdf(null)} className="btn btn-outline" style={{ padding: '0.5rem' }}>
                 <XCircle size={20} />
               </button>
             </div>
-            <div style={{ flex: 1, backgroundColor: '#000', borderRadius: '4px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ flex: 1, minHeight: 0, backgroundColor: '#000', borderRadius: '4px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               {pdfLoading ? (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'var(--color-text-muted)' }}>
                   <RefreshCw size={32} className="spin" style={{ marginBottom: '1rem' }} />

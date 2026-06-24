@@ -60,12 +60,12 @@ export default function Login() {
 
         <form onSubmit={handleSubmit}>
           <div className="input-group">
-            <label className="input-label" htmlFor="secret">Contraseña Maestra (Secret)</label>
+            <label className="input-label" htmlFor="secret">Contraseña</label>
             <input
               id="secret"
               type="password"
               className="input-field"
-              placeholder="Ingresa el ADMIN_SECRET"
+              placeholder="Ingresa la contraseña"
               value={secret}
               onChange={(e) => setSecret(e.target.value)}
               disabled={loading}
