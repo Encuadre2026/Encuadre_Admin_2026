@@ -3,4 +3,4 @@
  */
 
 /** Lugares reservados para participantes de la UAA por taller */
-export const LUGARES_RESERVADOS_UAA = 7;
+export const LUGARES_RESERVADOS_UAA = 10;
