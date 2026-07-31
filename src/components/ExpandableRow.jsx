@@ -51,19 +51,31 @@ export default function ExpandableRow({ registro: r, onAprobarPago, onViewPdf })
           </div>
         </td>
         <td style={{ padding: '0.75rem' }}>
-          {r.pago_aprobado ? (
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#2ECC71', fontSize: '0.8rem' }}>
-              <CheckCircle size={14} /> Confirmado
-            </span>
-          ) : (
-            <button
-              onClick={(e) => { e.stopPropagation(); onAprobarPago(r.id_participante); }}
-              className="btn btn-outline"
-              style={{ padding: '0.2rem 0.5rem', fontSize: '0.7rem', borderColor: 'var(--color-success)', color: 'var(--color-success)' }}
-            >
-              Validar Pago
-            </button>
-          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            {r.pago_aprobado ? (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#2ECC71', fontSize: '0.8rem' }}>
+                <CheckCircle size={14} /> Confirmado
+              </span>
+            ) : (
+              <button
+                onClick={(e) => { e.stopPropagation(); onAprobarPago(r.id_participante); }}
+                className="btn btn-outline"
+                style={{ padding: '0.2rem 0.5rem', fontSize: '0.7rem', borderColor: 'var(--color-success)', color: 'var(--color-success)' }}
+              >
+                Validar Pago
+              </button>
+            )}
+            {r.url_comprobante_pago && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onViewPdf(r.url_comprobante_pago); }}
+                className="btn btn-outline"
+                style={{ padding: '0.15rem 0.4rem', fontSize: '0.65rem', borderColor: '#3498DB', color: '#3498DB' }}
+                title="Ver Pago"
+              >
+                <FileText size={11} /> Pago
+              </button>
+            )}
+          </div>
         </td>
         <td style={{ padding: '0.75rem' }}>
           {r.asistio ? (
@@ -110,7 +122,12 @@ export default function ExpandableRow({ registro: r, onAprobarPago, onViewPdf })
               <div className="detail-actions">
                 {r.url_comprobante && (
                   <button onClick={() => onViewPdf(r.url_comprobante)} className="btn btn-outline" style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem', borderColor: 'var(--color-accent-gold)', color: 'var(--color-accent-gold)' }}>
-                    <FileText size={14} /> Ver Comprobante
+                    <FileText size={14} /> Ver Credencial
+                  </button>
+                )}
+                {r.url_comprobante_pago && (
+                  <button onClick={() => onViewPdf(r.url_comprobante_pago)} className="btn btn-outline" style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem', borderColor: '#3498DB', color: '#3498DB' }}>
+                    <FileText size={14} /> Ver Pago
                   </button>
                 )}
                 {!r.pago_aprobado && (
