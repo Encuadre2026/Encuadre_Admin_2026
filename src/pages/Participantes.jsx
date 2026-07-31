@@ -6,7 +6,7 @@ import ExpandableRow from '../components/ExpandableRow';
 const ITEMS_PER_PAGE = 25;
 
 export default function Participantes({ registrosHook }) {
-  const { data, loading, fetchRegistros, handleAprobarPago, handleViewPdf, revokePdfUrl, exportToExcel } = registrosHook;
+  const { data, loading, fetchRegistros, handleAprobarPago, handleEliminarRegistro, handleViewPdf, revokePdfUrl, exportToExcel } = registrosHook;
   const { showToast } = useToast();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -125,6 +125,20 @@ export default function Participantes({ registrosHook }) {
     }
   };
 
+  const onEliminarRegistro = async (id) => {
+    if (!confirm(`¿Estás seguro de que deseas eliminar permanentemente el registro de ${id}?\n\nEsta acción NO se puede deshacer y el participante recibirá un correo automático de cancelación.`)) return;
+    try {
+      await handleEliminarRegistro(id);
+      showToast(`Registro de ${id} eliminado permanentemente`, 'success');
+      if (selectedPdf) {
+        setSelectedPdf(null);
+        revokePdfUrl();
+      }
+    } catch (e) {
+      showToast(e.message, 'error');
+    }
+  };
+
   const onViewPdf = async (url) => {
     setSelectedPdf(url);
     setPdfLoading(true);
@@ -223,7 +237,7 @@ export default function Participantes({ registrosHook }) {
             </thead>
             <tbody>
               {paginatedRegistros.map((r, i) => (
-                <ExpandableRow key={r.id_participante || i} registro={r} onAprobarPago={onAprobarPago} onViewPdf={onViewPdf} />
+                <ExpandableRow key={r.id_participante || i} registro={r} onAprobarPago={onAprobarPago} onEliminarRegistro={onEliminarRegistro} onViewPdf={onViewPdf} />
               ))}
               {filteredRegistros.length === 0 && (
                 <tr>

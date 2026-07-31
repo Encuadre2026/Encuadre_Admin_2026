@@ -67,6 +67,19 @@ export default function useRegistros() {
     return { success: true };
   }, [fetchRegistros]);
 
+  const handleEliminarRegistro = useCallback(async (id_participante) => {
+    const secret = getSecret();
+    if (!secret) throw new Error('Sesión expirada. Vuelve a iniciar sesión.');
+    const res = await fetch(`${API}/api/admin/registro`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${secret}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id_participante }),
+    });
+    if (!res.ok) throw new Error('Error al eliminar registro');
+    await fetchRegistros();
+    return { success: true };
+  }, [fetchRegistros]);
+
   const handleViewPdf = useCallback(async (url_comprobante) => {
     const secret = getSecret();
     if (!secret) throw new Error('Sesión expirada. Vuelve a iniciar sesión.');
@@ -129,5 +142,5 @@ export default function useRegistros() {
     };
   }, []);
 
-  return { data, loading, error, fetchRegistros, handleAprobarPago, handleViewPdf, revokePdfUrl, exportToExcel };
+  return { data, loading, error, fetchRegistros, handleAprobarPago, handleEliminarRegistro, handleViewPdf, revokePdfUrl, exportToExcel };
 }

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ChevronRight, FileText, CheckCircle, XCircle } from 'lucide-react';
 
-export default function ExpandableRow({ registro: r, onAprobarPago, onViewPdf }) {
+export default function ExpandableRow({ registro: r, onAprobarPago, onEliminarRegistro, onViewPdf }) {
   const [expanded, setExpanded] = useState(false);
 
   const fechaReg = r.fecha_registro
@@ -135,6 +135,9 @@ export default function ExpandableRow({ registro: r, onAprobarPago, onViewPdf })
                     <CheckCircle size={14} /> Aprobar Pago
                   </button>
                 )}
+                <button onClick={() => onEliminarRegistro(r.id_participante)} className="btn btn-outline" style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem', borderColor: '#e74c3c', color: '#e74c3c' }}>
+                  <XCircle size={14} /> Eliminar Registro
+                </button>
               </div>
             </div>
           </div>
