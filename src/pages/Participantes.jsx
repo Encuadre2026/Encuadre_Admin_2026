@@ -1,7 +1,9 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { Search, Download, RefreshCw, XCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Download, RefreshCw, XCircle, ChevronLeft, ChevronRight, ArrowUpDown } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import ExpandableRow from '../components/ExpandableRow';
+import ConfirmDialog from '../components/ConfirmDialog';
+import { TableRowSkeleton } from '../components/Skeleton';
 
 const ITEMS_PER_PAGE = 25;
 
@@ -15,6 +17,8 @@ export default function Participantes({ registrosHook }) {
   const [filterPago, setFilterPago] = useState('Todos');
   const [filterInstitucion, setFilterInstitucion] = useState('Todos');
   const [currentPage, setCurrentPage] = useState(1);
+  const [sortField, setSortField] = useState(null);
+  const [sortDir, setSortDir] = useState('asc');
 
   // Punto 14: Debounce del buscador (300ms)
   useEffect(() => {
@@ -26,6 +30,7 @@ export default function Participantes({ registrosHook }) {
   const [selectedPdf, setSelectedPdf] = useState(null);
   const [pdfBlobUrl, setPdfBlobUrl] = useState(null);
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [confirmAction, setConfirmAction] = useState(null);
   const modalRef = useRef(null);
   const closeButtonRef = useRef(null);
 
@@ -53,12 +58,35 @@ export default function Participantes({ registrosHook }) {
     return list;
   }, [data, debouncedSearch, filterTaller, filterPago, filterInstitucion]);
 
+  // Sorting
+  const sortedRegistros = useMemo(() => {
+    if (!sortField) return filteredRegistros;
+    const sorted = [...filteredRegistros].sort((a, b) => {
+      let valA, valB;
+      switch (sortField) {
+        case 'id': valA = a.id_participante || ''; valB = b.id_participante || ''; break;
+        case 'nombre': valA = a.nombre || ''; valB = b.nombre || ''; break;
+        case 'institucion': valA = a.institucion || ''; valB = b.institucion || ''; break;
+        case 'taller': valA = a.taller || ''; valB = b.taller || ''; break;
+        case 'pago': valA = a.pago_aprobado ? 1 : 0; valB = b.pago_aprobado ? 1 : 0; break;
+        case 'asistencia': valA = a.asistio ? 1 : 0; valB = b.asistio ? 1 : 0; break;
+        default: return 0;
+      }
+      if (typeof valA === 'string') {
+        const cmp = valA.localeCompare(valB, 'es', { sensitivity: 'base' });
+        return sortDir === 'asc' ? cmp : -cmp;
+      }
+      return sortDir === 'asc' ? valA - valB : valB - valA;
+    });
+    return sorted;
+  }, [filteredRegistros, sortField, sortDir]);
+
   // Paginación
-  const totalPages = Math.max(1, Math.ceil(filteredRegistros.length / ITEMS_PER_PAGE));
+  const totalPages = Math.max(1, Math.ceil(sortedRegistros.length / ITEMS_PER_PAGE));
   const paginatedRegistros = useMemo(() => {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredRegistros.slice(start, start + ITEMS_PER_PAGE);
-  }, [filteredRegistros, currentPage]);
+    return sortedRegistros.slice(start, start + ITEMS_PER_PAGE);
+  }, [sortedRegistros, currentPage]);
 
   // Reiniciar página al cambiar filtros
   useEffect(() => {
@@ -113,29 +141,49 @@ export default function Participantes({ registrosHook }) {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [selectedPdf, closePdfModal]);
 
-  const onAprobarPago = async (id) => {
-    if (!confirm(`¿Aprobar el pago para ${id}?`)) return;
-    try {
-      await handleAprobarPago(id);
-      showToast(`Pago de ${id} aprobado correctamente`, 'success');
-      setSelectedPdf(null);
-      revokePdfUrl();
-    } catch (e) {
-      showToast(e.message, 'error');
-    }
+  const onAprobarPago = (id) => {
+    setConfirmAction({
+      type: 'aprobar',
+      id,
+      title: 'Aprobar pago',
+      message: `¿Confirmas aprobar el pago del participante ${id}?`,
+      confirmText: 'Aprobar Pago',
+      variant: 'warning',
+    });
   };
 
-  const onEliminarRegistro = async (id) => {
-    if (!confirm(`¿Estás seguro de que deseas eliminar permanentemente el registro de ${id}?\n\nEsta acción NO se puede deshacer y el participante recibirá un correo automático de cancelación.`)) return;
+  const onEliminarRegistro = (id) => {
+    setConfirmAction({
+      type: 'eliminar',
+      id,
+      title: 'Eliminar registro',
+      message: `¿Estás seguro de que deseas eliminar permanentemente el registro de ${id}? Esta acción NO se puede deshacer y el participante recibirá un correo automático de cancelación.`,
+      confirmText: 'Eliminar Registro',
+      variant: 'danger',
+    });
+  };
+
+  const executeConfirmAction = async () => {
+    if (!confirmAction) return;
+    const { type, id } = confirmAction;
     try {
-      await handleEliminarRegistro(id);
-      showToast(`Registro de ${id} eliminado permanentemente`, 'success');
-      if (selectedPdf) {
+      if (type === 'aprobar') {
+        await handleAprobarPago(id);
+        showToast(`Pago de ${id} aprobado correctamente`, 'success');
         setSelectedPdf(null);
         revokePdfUrl();
+      } else if (type === 'eliminar') {
+        await handleEliminarRegistro(id);
+        showToast(`Registro de ${id} eliminado permanentemente`, 'success');
+        if (selectedPdf) {
+          setSelectedPdf(null);
+          revokePdfUrl();
+        }
       }
     } catch (e) {
       showToast(e.message, 'error');
+    } finally {
+      setConfirmAction(null);
     }
   };
 
@@ -159,6 +207,30 @@ export default function Participantes({ registrosHook }) {
     if (ok) showToast('Datos actualizados', 'info');
   };
 
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDir('asc');
+    }
+  };
+
+  const SortHeader = ({ field, children }) => (
+    <th
+      className={`sortable${sortField === field ? ' sorted' : ''}`}
+      onClick={() => handleSort(field)}
+    >
+      {children}
+      <span className={`sort-arrow${sortField === field ? ' active' : ''}${sortField === field && sortDir === 'desc' ? ' desc' : ''}`}>
+        ▲
+      </span>
+    </th>
+  );
+
+  // Skeleton state: first load only
+  const isFirstLoad = loading && (data.registros || []).length === 0;
+
   return (
     <div className="fade-in-up">
       {/* Page header */}
@@ -168,27 +240,26 @@ export default function Participantes({ registrosHook }) {
           <span className="count-badge">{filteredRegistros.length}</span>
         </h1>
         <div className="header-actions">
-          <button onClick={() => exportToExcel(filteredRegistros)} className="btn btn-outline" style={{ padding: '0.5rem 0.75rem', fontSize: '0.8rem', borderColor: 'var(--color-success)', color: 'var(--color-success)' }}>
-            <Download size={15} /> Excel
+          <button onClick={() => exportToExcel(filteredRegistros)} className="btn btn-outline btn-header btn-excel">
+            <Download size={15} /> Excel ({filteredRegistros.length})
           </button>
-          <button onClick={onRefresh} className="btn btn-outline" style={{ padding: '0.5rem 0.75rem', fontSize: '0.8rem' }} disabled={loading} aria-label="Actualizar datos">
+          <button onClick={onRefresh} className="btn btn-outline btn-header" disabled={loading} aria-label="Actualizar datos">
             <RefreshCw size={15} className={loading ? 'spin' : ''} />
           </button>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="card fade-in-up" style={{ marginBottom: '1.25rem', animationDelay: '0.05s', padding: '1rem 1.25rem' }}>
+      <div className="card fade-in-up filter-card" style={{ animationDelay: '0.05s' }}>
         <div className="filter-bar">
-          <div style={{ position: 'relative', flex: '1 1 220px', minWidth: '180px' }}>
+          <div className="search-input-wrapper">
             <label htmlFor="search-participantes" className="sr-only">Buscar participantes</label>
-            <Search size={16} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-muted)' }} />
+            <Search size={16} className="search-input-icon" />
             <input
               id="search-participantes"
               type="text"
               placeholder="Buscar por ID, nombre, correo..."
-              className="input-field"
-              style={{ width: '100%', paddingLeft: '2.25rem', fontSize: '0.85rem', padding: '0.5rem 0.75rem 0.5rem 2.25rem' }}
+              className="input-field search-input-field"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -220,31 +291,37 @@ export default function Participantes({ registrosHook }) {
       </div>
 
       {/* Table */}
-      <div className="card fade-in-up" style={{ padding: 0, overflow: 'hidden', animationDelay: '0.1s' }}>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+      <div className="card fade-in-up card-flush" style={{ animationDelay: '0.1s' }}>
+        <div className="table-scroll">
+          <table className="data-table">
             <thead>
-              <tr style={{ backgroundColor: 'var(--color-bg-hover)', borderBottom: '1px solid var(--color-border)' }}>
-                <th style={{ padding: '0.75rem 0.5rem', width: '30px' }}></th>
-                <th style={{ padding: '0.75rem', color: 'var(--color-text-secondary)', fontWeight: 500, fontSize: '0.8rem' }}>ID</th>
-                <th style={{ padding: '0.75rem', color: 'var(--color-text-secondary)', fontWeight: 500, fontSize: '0.8rem' }}>Participante</th>
-                <th style={{ padding: '0.75rem', color: 'var(--color-text-secondary)', fontWeight: 500, fontSize: '0.8rem' }}>Institución</th>
-                <th style={{ padding: '0.75rem', color: 'var(--color-text-secondary)', fontWeight: 500, fontSize: '0.8rem' }}>Taller</th>
-                <th style={{ padding: '0.75rem', color: 'var(--color-text-secondary)', fontWeight: 500, fontSize: '0.8rem' }}>Perfil</th>
-                <th style={{ padding: '0.75rem', color: 'var(--color-text-secondary)', fontWeight: 500, fontSize: '0.8rem' }}>Pago</th>
-                <th style={{ padding: '0.75rem', color: 'var(--color-text-secondary)', fontWeight: 500, fontSize: '0.8rem' }}>Asistencia</th>
+              <tr>
+                <th></th>
+                <SortHeader field="id">ID</SortHeader>
+                <SortHeader field="nombre">Participante</SortHeader>
+                <SortHeader field="institucion">Institución</SortHeader>
+                <SortHeader field="taller">Taller</SortHeader>
+                <th>Perfil</th>
+                <SortHeader field="pago">Pago</SortHeader>
+                <SortHeader field="asistencia">Asistencia</SortHeader>
               </tr>
             </thead>
             <tbody>
-              {paginatedRegistros.map((r, i) => (
-                <ExpandableRow key={r.id_participante || i} registro={r} onAprobarPago={onAprobarPago} onEliminarRegistro={onEliminarRegistro} onViewPdf={onViewPdf} />
-              ))}
-              {filteredRegistros.length === 0 && (
-                <tr>
-                  <td colSpan="8" style={{ padding: '3rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>
-                    No se encontraron registros.
-                  </td>
-                </tr>
+              {isFirstLoad ? (
+                <TableRowSkeleton />
+              ) : (
+                <>
+                  {paginatedRegistros.map((r, i) => (
+                    <ExpandableRow key={r.id_participante || i} registro={r} onAprobarPago={onAprobarPago} onEliminarRegistro={onEliminarRegistro} onViewPdf={onViewPdf} />
+                  ))}
+                  {sortedRegistros.length === 0 && (
+                    <tr>
+                      <td colSpan="8" className="empty-state">
+                        No se encontraron registros.
+                      </td>
+                    </tr>
+                  )}
+                </>
               )}
             </tbody>
           </table>
@@ -254,7 +331,7 @@ export default function Participantes({ registrosHook }) {
         {totalPages > 1 && (
           <div className="pagination-bar">
             <span className="pagination-info">
-              Mostrando {((currentPage - 1) * ITEMS_PER_PAGE) + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, filteredRegistros.length)} de {filteredRegistros.length}
+              Mostrando {((currentPage - 1) * ITEMS_PER_PAGE) + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, sortedRegistros.length)} de {sortedRegistros.length}
             </span>
             <div className="pagination-controls">
               <button
@@ -301,44 +378,54 @@ export default function Participantes({ registrosHook }) {
         )}
       </div>
 
-      {/* PDF Modal — Punto 11: Accesibilidad */}
+      {/* PDF Modal */}
       {selectedPdf && (
         <div
-          style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}
+          className="pdf-modal-overlay"
           role="dialog"
           aria-modal="true"
           aria-label="Visor de credencial o comprobante"
           ref={modalRef}
           onClick={(e) => { if (e.target === e.currentTarget) closePdfModal(); }}
         >
-          <div className="card" style={{ width: '100%', maxWidth: '800px', height: '80vh', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexShrink: 0, minHeight: '40px', position: 'relative', zIndex: 10 }}>
-              <h3 style={{ margin: 0 }} id="modal-title">Credencial / Comprobante</h3>
+          <div className="card pdf-modal-card">
+            <div className="pdf-modal-header">
+              <h3 id="modal-title">Credencial / Comprobante</h3>
               <button
                 ref={closeButtonRef}
                 onClick={closePdfModal}
-                className="btn btn-outline"
-                style={{ padding: '0.5rem', backgroundColor: 'var(--color-bg-surface)' }}
+                className="btn btn-outline btn-close-modal"
                 aria-label="Cerrar visor"
               >
                 <XCircle size={20} />
               </button>
             </div>
-            <div style={{ height: 'calc(100% - 56px)', backgroundColor: '#000', borderRadius: '4px', overflow: 'hidden', position: 'relative', zIndex: 1 }}>
+            <div className="pdf-modal-body">
               {pdfLoading ? (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--color-text-muted)' }}>
-                  <RefreshCw size={32} className="spin" style={{ marginBottom: '1rem' }} />
+                <div className="pdf-modal-loading">
+                  <RefreshCw size={32} className="spin" />
                   <p>Cargando documento...</p>
                 </div>
               ) : pdfBlobUrl ? (
-                <iframe src={pdfBlobUrl} style={{ width: '100%', height: '100%', border: 'none' }} title="Visor de comprobante PDF" />
+                <iframe src={pdfBlobUrl} title="Visor de comprobante PDF" />
               ) : (
-                <p style={{ color: 'var(--color-danger)', textAlign: 'center', padding: '2rem' }}>Error al cargar el PDF.</p>
+                <p className="pdf-modal-error">Error al cargar el PDF.</p>
               )}
             </div>
           </div>
         </div>
       )}
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog
+        open={!!confirmAction}
+        title={confirmAction?.title}
+        message={confirmAction?.message}
+        confirmText={confirmAction?.confirmText}
+        variant={confirmAction?.variant}
+        onConfirm={executeConfirmAction}
+        onCancel={() => setConfirmAction(null)}
+      />
     </div>
   );
 }

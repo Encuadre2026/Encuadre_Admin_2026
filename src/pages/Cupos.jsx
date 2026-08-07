@@ -34,7 +34,7 @@ export default function Cupos({ registrosHook }) {
       <div className="page-header">
         <h1>Cupos por Taller</h1>
         <div className="header-actions">
-          <button onClick={onRefresh} className="btn btn-outline" style={{ padding: '0.5rem 0.75rem', fontSize: '0.8rem' }} disabled={loading}>
+          <button onClick={onRefresh} className="btn btn-outline btn-header" disabled={loading}>
             <RefreshCw size={15} className={loading ? 'spin' : ''} />
           </button>
         </div>

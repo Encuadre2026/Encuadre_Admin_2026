@@ -11,8 +11,13 @@ export default function Login() {
   // Si ya hay token, mandarlo al dashboard (el dashboard verificará si es válido)
   useEffect(() => {
     const token = localStorage.getItem('ENCUADRE_ADMIN_TOKEN');
-    if (token) {
+    const secret = sessionStorage.getItem('ENCUADRE_ADMIN_SECRET');
+    if (token && secret) {
       navigate('/dashboard');
+    } else if (token && !secret) {
+      // El navegador se cerró y reabrió: el token persiste pero el secret no.
+      // Limpiamos el token stale para evitar un loop de redirección.
+      localStorage.removeItem('ENCUADRE_ADMIN_TOKEN');
     }
   }, [navigate]);
 
@@ -35,8 +40,9 @@ export default function Login() {
         throw new Error('Contraseña incorrecta o sin autorización.');
       }
 
-      // Si fue exitoso, guardamos un token codificado (no la contraseña en texto plano)
-      const token = btoa(`admin:${secret.trim()}:${Date.now()}`);
+      // Si fue exitoso, guardamos un token aleatorio como flag de sesión.
+      // No contiene el secret — solo indica que el usuario se autenticó correctamente.
+      const token = crypto.randomUUID();
       localStorage.setItem('ENCUADRE_ADMIN_TOKEN', token);
       // Guardamos también el secret real de forma temporal en sessionStorage (se borra al cerrar el navegador)
       sessionStorage.setItem('ENCUADRE_ADMIN_SECRET', secret.trim());

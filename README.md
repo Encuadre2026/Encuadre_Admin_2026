@@ -147,8 +147,8 @@ Tarjetas visuales para cada uno de los 21 talleres:
 | Concepto                   | Valor                  |
 | -------------------------- | ---------------------- |
 | Cupo máximo por taller     | 18 (público general)   |
-| Lugares reservados UAA     | 7 por taller           |
-| Capacidad total por taller | 25 (18 + 7)            |
+| Lugares reservados UAA     | 10 por taller          |
+| Capacidad total por taller | 28 (18 + 10)           |
 | Total de talleres          | 21                     |
 
 ## Endpoints consumidos

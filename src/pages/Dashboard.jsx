@@ -3,6 +3,7 @@ import { Users, Ticket, CheckCircle, DollarSign, RefreshCw } from 'lucide-react'
 import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, LineChart, Line, CartesianGrid, Legend } from 'recharts';
 import { useToast } from '../context/ToastContext';
 import { LUGARES_RESERVADOS_UAA } from '../constants';
+import { KpiSkeleton, ChartSkeleton } from '../components/Skeleton';
 
 const COLORS = ['#F4D03F', '#8E44AD', '#3498DB', '#E74C3C', '#2ECC71'];
 const TOOLTIP_STYLE = { backgroundColor: '#111', borderColor: '#333' };
@@ -99,13 +100,16 @@ export default function Dashboard({ registrosHook }) {
     if (ok) showToast('Dashboard actualizado', 'info');
   };
 
+  // Skeleton state: first load only (no data loaded yet)
+  const isFirstLoad = loading && data.registros.length === 0;
+
   return (
     <div className="fade-in-up">
       {/* Page header */}
       <div className="page-header">
         <h1>Dashboard</h1>
         <div className="header-actions">
-          <button onClick={onRefresh} className="btn btn-outline" style={{ padding: '0.5rem 0.75rem', fontSize: '0.8rem' }} disabled={loading}>
+          <button onClick={onRefresh} className="btn btn-outline btn-header" disabled={loading}>
             <RefreshCw size={15} className={loading ? 'spin' : ''} /> Actualizar
           </button>
         </div>
@@ -113,92 +117,104 @@ export default function Dashboard({ registrosHook }) {
 
       {/* KPIs */}
       <div className="dashboard-kpi-grid">
-        <div className="card fade-in-up kpi-card" style={{ animationDelay: '0.05s' }}>
-          <div className="kpi-icon kpi-icon-gold"><Users size={28} /></div>
-          <div>
-            <p className="kpi-label">Total Registros</p>
-            <h2 className="kpi-value">{loading ? '-' : stats.totalRegistros}</h2>
-          </div>
-        </div>
+        {isFirstLoad ? (
+          <><KpiSkeleton /><KpiSkeleton /><KpiSkeleton /><KpiSkeleton /></>
+        ) : (
+          <>
+            <div className="card fade-in-up kpi-card" style={{ animationDelay: '0.05s' }}>
+              <div className="kpi-icon kpi-icon-gold"><Users size={28} /></div>
+              <div>
+                <p className="kpi-label">Total Registros</p>
+                <h2 className="kpi-value">{stats.totalRegistros}</h2>
+              </div>
+            </div>
 
-        <div className="card fade-in-up kpi-card" style={{ animationDelay: '0.1s' }}>
-          <div className="kpi-icon kpi-icon-blue"><Ticket size={28} /></div>
-          <div>
-            <p className="kpi-label">Ocupación Global</p>
-            <h2 className="kpi-value">{loading ? '-' : `${stats.porcentajeOcupacion}%`}</h2>
-            <p className="kpi-sub">{stats.totalOcupados} / {stats.totalCapacidad}</p>
-          </div>
-        </div>
+            <div className="card fade-in-up kpi-card" style={{ animationDelay: '0.1s' }}>
+              <div className="kpi-icon kpi-icon-blue"><Ticket size={28} /></div>
+              <div>
+                <p className="kpi-label">Ocupación Global</p>
+                <h2 className="kpi-value">{stats.porcentajeOcupacion}%</h2>
+                <p className="kpi-sub">{stats.totalOcupados} / {stats.totalCapacidad}</p>
+              </div>
+            </div>
 
-        <div className="card fade-in-up kpi-card" style={{ animationDelay: '0.15s' }}>
-          <div className="kpi-icon kpi-icon-green"><CheckCircle size={28} /></div>
-          <div>
-            <p className="kpi-label">Asistencias</p>
-            <h2 className="kpi-value">{loading ? '-' : stats.asistencia}</h2>
-          </div>
-        </div>
+            <div className="card fade-in-up kpi-card" style={{ animationDelay: '0.15s' }}>
+              <div className="kpi-icon kpi-icon-green"><CheckCircle size={28} /></div>
+              <div>
+                <p className="kpi-label">Asistencias</p>
+                <h2 className="kpi-value">{stats.asistencia}</h2>
+              </div>
+            </div>
 
-        <div className="card fade-in-up kpi-card" style={{ animationDelay: '0.2s' }}>
-          <div className="kpi-icon kpi-icon-purple"><DollarSign size={28} /></div>
-          <div>
-            <p className="kpi-label">Pagos Validados</p>
-            <h2 className="kpi-value">{loading ? '-' : stats.pagosConfirmados}</h2>
-            <p className="kpi-sub">{stats.pagosPendientes} pendientes</p>
-          </div>
-        </div>
+            <div className="card fade-in-up kpi-card" style={{ animationDelay: '0.2s' }}>
+              <div className="kpi-icon kpi-icon-purple"><DollarSign size={28} /></div>
+              <div>
+                <p className="kpi-label">Pagos Validados</p>
+                <h2 className="kpi-value">{stats.pagosConfirmados}</h2>
+                <p className="kpi-sub">{stats.pagosPendientes} pendientes</p>
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Charts Row 1 */}
-      <div className="dashboard-chart-grid">
-        <div className="card fade-in-up" style={{ animationDelay: '0.25s' }}>
-          <h3 className="chart-title">Estatus de Pagos</h3>
-          <div className="chart-container">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={stats.pagosData} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={5} dataKey="value">
-                  <Cell fill="#2ECC71" />
-                  <Cell fill="#E74C3C" />
-                </Pie>
-                <RechartsTooltip contentStyle={TOOLTIP_STYLE} itemStyle={TOOLTIP_ITEM_STYLE} />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
+      {isFirstLoad ? (
+        <div className="dashboard-chart-grid">
+          <ChartSkeleton /><ChartSkeleton /><ChartSkeleton />
         </div>
+      ) : (
+        <div className="dashboard-chart-grid">
+          <div className="card fade-in-up" style={{ animationDelay: '0.25s' }}>
+            <h3 className="chart-title">Estatus de Pagos</h3>
+            <div className="chart-container">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={stats.pagosData} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={5} dataKey="value">
+                    <Cell fill="#2ECC71" />
+                    <Cell fill="#E74C3C" />
+                  </Pie>
+                  <RechartsTooltip contentStyle={TOOLTIP_STYLE} itemStyle={TOOLTIP_ITEM_STYLE} />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
 
-        <div className="card fade-in-up" style={{ animationDelay: '0.3s' }}>
-          <h3 className="chart-title">Audiencia Local vs Foránea</h3>
-          <div className="chart-container">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={stats.audienciaData} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={5} dataKey="value">
-                  <Cell fill="var(--color-accent-gold)" />
-                  <Cell fill="#3498DB" />
-                </Pie>
-                <RechartsTooltip contentStyle={TOOLTIP_STYLE} itemStyle={TOOLTIP_ITEM_STYLE} />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
+          <div className="card fade-in-up" style={{ animationDelay: '0.3s' }}>
+            <h3 className="chart-title">Audiencia Local vs Foránea</h3>
+            <div className="chart-container">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={stats.audienciaData} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={5} dataKey="value">
+                    <Cell fill="var(--color-accent-gold)" />
+                    <Cell fill="#3498DB" />
+                  </Pie>
+                  <RechartsTooltip contentStyle={TOOLTIP_STYLE} itemStyle={TOOLTIP_ITEM_STYLE} />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
           </div>
-        </div>
 
-        <div className="card fade-in-up" style={{ animationDelay: '0.35s' }}>
-          <h3 className="chart-title">Distribución de Perfiles</h3>
-          <div className="chart-container">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={stats.perfilesData} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={5} dataKey="value">
-                  {stats.perfilesData.map((_, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <RechartsTooltip contentStyle={TOOLTIP_STYLE} itemStyle={TOOLTIP_ITEM_STYLE} />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
+          <div className="card fade-in-up" style={{ animationDelay: '0.35s' }}>
+            <h3 className="chart-title">Distribución de Perfiles</h3>
+            <div className="chart-container">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={stats.perfilesData} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={5} dataKey="value">
+                    {stats.perfilesData.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip contentStyle={TOOLTIP_STYLE} itemStyle={TOOLTIP_ITEM_STYLE} />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Charts Row 2 */}
       <div className="dashboard-chart-grid-2col">

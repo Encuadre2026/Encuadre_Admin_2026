@@ -1,11 +1,20 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { BarChart3, Users, Ticket, LogOut } from 'lucide-react';
+import { BarChart3, Users, Ticket, LogOut, Clock } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 
-export default function Sidebar({ totalRegistros = 0, isOpen, onClose }) {
+function formatTimeAgo(date) {
+  if (!date) return null;
+  const seconds = Math.floor((new Date() - date) / 1000);
+  if (seconds < 60) return 'hace unos segundos';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `hace ${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  return `hace ${hours}h`;
+}
+
+export default function Sidebar({ totalRegistros = 0, pagosPendientes = 0, lastUpdated, isOpen, onClose }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { showToast } = useToast();
 
   const links = [
     { path: '/dashboard', label: 'Dashboard', icon: BarChart3 },
@@ -51,10 +60,28 @@ export default function Sidebar({ totalRegistros = 0, isOpen, onClose }) {
             </button>
           );
         })}
+
+        {/* Badge de pagos pendientes */}
+        {pagosPendientes > 0 && (
+          <button
+            className={`sidebar-link${location.pathname === '/participantes' ? ' active' : ''}`}
+            onClick={() => handleNav('/participantes')}
+          >
+            <span className="link-badge-danger">
+              {pagosPendientes} pago{pagosPendientes !== 1 ? 's' : ''} pendiente{pagosPendientes !== 1 ? 's' : ''}
+            </span>
+          </button>
+        )}
       </nav>
 
       <div className="sidebar-footer">
-        <button onClick={handleLogout} className="btn btn-outline" style={{ borderColor: 'var(--color-danger)', color: 'var(--color-danger)' }}>
+        {lastUpdated && (
+          <div className="last-updated">
+            <Clock size={12} />
+            Actualizado {formatTimeAgo(lastUpdated)}
+          </div>
+        )}
+        <button onClick={handleLogout} className="btn btn-outline btn-logout">
           <LogOut size={14} /> Cerrar sesión
         </button>
       </div>

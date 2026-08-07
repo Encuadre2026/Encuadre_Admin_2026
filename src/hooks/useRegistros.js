@@ -6,6 +6,7 @@ export default function useRegistros() {
   const [data, setData] = useState({ registros: [], cupos: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [lastUpdated, setLastUpdated] = useState(null);
   const blobUrlRef = useRef(null);
 
   const getSecret = () => {
@@ -16,10 +17,6 @@ export default function useRegistros() {
     // Fallback: si no hay secret en sessionStorage, el token ya no es válido
     // (el usuario cerró y reabrió el navegador)
     return null;
-  };
-
-  const hasSession = () => {
-    return localStorage.getItem('ENCUADRE_ADMIN_TOKEN') && getSecret();
   };
 
   const fetchRegistros = useCallback(async () => {
@@ -45,6 +42,7 @@ export default function useRegistros() {
       if (!res.ok) throw new Error('Error al cargar los datos');
       const json = await res.json();
       setData(json);
+      setLastUpdated(new Date());
       return true;
     } catch (err) {
       setError(err.message);
@@ -107,8 +105,6 @@ export default function useRegistros() {
     }
   }, []);
 
-
-
   const exportToExcel = useCallback(async (filteredRegistros) => {
     if (!filteredRegistros?.length) return;
     // Importación dinámica para no inflar el bundle
@@ -131,7 +127,19 @@ export default function useRegistros() {
     XLSX.writeFile(wb, `Registros_Encuadre_${new Date().toISOString().split('T')[0]}.xlsx`);
   }, []);
 
+  // Fetch inicial
   useEffect(() => { fetchRegistros(); }, [fetchRegistros]);
+
+  // Auto-refresh cuando la pestaña vuelve a ser visible
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        fetchRegistros();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, [fetchRegistros]);
 
   // Limpiar blob URL al desmontar el componente
   useEffect(() => {
@@ -142,5 +150,5 @@ export default function useRegistros() {
     };
   }, []);
 
-  return { data, loading, error, fetchRegistros, handleAprobarPago, handleEliminarRegistro, handleViewPdf, revokePdfUrl, exportToExcel };
+  return { data, loading, error, lastUpdated, fetchRegistros, handleAprobarPago, handleEliminarRegistro, handleViewPdf, revokePdfUrl, exportToExcel };
 }
