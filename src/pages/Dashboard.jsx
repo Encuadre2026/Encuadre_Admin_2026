@@ -2,7 +2,6 @@ import { useMemo } from 'react';
 import { Users, Ticket, CheckCircle, DollarSign, RefreshCw } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, LineChart, Line, CartesianGrid, Legend } from 'recharts';
 import { useToast } from '../context/toast-contexto';
-import { LUGARES_RESERVADOS_UAA } from '../constants';
 import { KpiSkeleton, ChartSkeleton } from '../components/Skeleton';
 
 const COLORS = ['#F4D03F', '#8E44AD', '#3498DB', '#E74C3C', '#2ECC71'];
@@ -26,7 +25,9 @@ export default function Dashboard({ registrosHook }) {
     let totalCapacidad = 0;
     let totalOcupados = 0;
     cups.forEach(c => {
-      totalCapacidad += (c.cupo_maximo + LUGARES_RESERVADOS_UAA);
+      // Los lugares reservados los declara la API por taller, en vez de darlos
+      // por sabidos aquí.
+      totalCapacidad += c.cupo_maximo + (c.lugares_reservados_uaa ?? 0);
       totalOcupados += c.inscritos;
     });
     const porcentajeOcupacion = totalCapacidad ? Math.round((totalOcupados / totalCapacidad) * 100) : 0;
