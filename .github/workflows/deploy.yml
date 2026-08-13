@@ -39,6 +39,18 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      # El linter no puede ver un desbordamiento horizontal: no es un error de
+      # código, es un ancho. La página entera se desplazaba de lado en todo
+      # monitor por debajo de ~1150 px —incluido cualquier portátil— y nadie lo
+      # notó, porque se trabaja en pantalla grande. Estas pruebas lo miden.
+      - name: Instalar navegador de pruebas
+        run: npx playwright install --with-deps chromium
+
+      - name: Pruebas de disposición
+        run: npm test
+        env:
+          VITE_API_URL: https://api-de-prueba.invalido
+
       - name: Build
         run: npm run build
         env:

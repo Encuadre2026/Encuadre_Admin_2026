@@ -260,6 +260,13 @@ a:hover {
 
 .main-content {
   flex: 1;
+  /* Un ítem flex conserva `min-width: auto`, así que no puede encoger por
+     debajo del ancho de su contenido: la tabla de participantes empujaba el
+     layout y era la página entera la que se desplazaba en horizontal, ya en un
+     portátil de 1024. `.table-scroll` tenía su `overflow-x: auto` desde
+     siempre, pero nunca llegaba a actuar. Con esto la tabla vuelve a
+     desplazarse por dentro, que es lo que se pretendía. */
+  min-width: 0;
   margin-left: 260px;
   min-height: 100vh;
   transition: margin-left 0.3s ease;
@@ -495,6 +502,7 @@ a:hover {
   margin-bottom: 4px;
 }
 
+
 .cupo-progress-bar {
   height: 6px;
   background: var(--color-bg-card);
@@ -547,8 +555,20 @@ a:hover {
   padding: 0.5rem 0.75rem;
 }
 
+/* Sin esto, cada control de la barra reclama su ancho de contenido y ninguno
+   puede encoger, que es la otra mitad del desbordamiento horizontal. */
+.filter-bar > * {
+  min-width: 0;
+}
+
+/* Un `<select>` se dimensiona con su opción más larga, y la más larga es un
+   nombre de taller de cien caracteres: el desplegable medía 621 px dentro de
+   una tarjeta de 496 y sacaba la página entera de la pantalla. El `max-width`
+   lo devuelve a su contenedor; el texto de la opción elegida lo recorta el
+   propio navegador. */
 .filter-bar select.input-field {
   min-width: 160px;
+  max-width: 100%;
 }
 
 .filter-pills {
@@ -636,9 +656,13 @@ a:hover {
   margin-bottom: 1.25rem;
 }
 
+/* Las otras dos rejillas del panel ya colapsaban solas con `auto-fit`; esta
+   estaba clavada a dos columnas, así que en un móvil de 390 px las dos
+   gráficas de talleres se quedaban en 170 px cada una: las barras
+   desaparecían y las etiquetas se partían en «Didácticas p el a». */
 .dashboard-chart-grid-2col {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 1.25rem;
   margin-bottom: 1.75rem;
 }
@@ -1239,6 +1263,20 @@ select:focus-visible {
   .filter-bar {
     flex-direction: column;
     align-items: stretch;
+    /* En columna, `wrap` no aporta nada —los controles ya van uno debajo de
+       otro— pero sí hace daño: con varias líneas posibles, el tamaño de la
+       línea lo fija el elemento más ancho y `stretch` estira a los demás
+       hasta él. El desplegable de talleres arrastraba así a toda la barra
+       hasta 621 px dentro de una tarjeta de 308. */
+    flex-wrap: nowrap;
+  }
+
+  /* `flex: 1 1 220px` se refiere al eje principal, y al pasar la barra a
+     columna ese eje es el vertical: el buscador se quedaba con 220 px de alto
+     y su icono, centrado con `top: 50%`, aparecía suelto a 110 px por debajo
+     del campo, con un hueco vacío enorme en medio de los filtros. */
+  .filter-bar .search-input-wrapper {
+    flex: 0 0 auto;
   }
 }
 
