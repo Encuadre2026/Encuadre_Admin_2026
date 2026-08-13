@@ -1,6 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { BarChart3, Users, Ticket, LogOut, Clock } from 'lucide-react';
-import { useToast } from '../context/ToastContext';
 
 function formatTimeAgo(date) {
   if (!date) return null;

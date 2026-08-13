@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { RefreshCw } from 'lucide-react';
-import { useToast } from '../context/ToastContext';
+import { useToast } from '../context/toast-contexto';
 import { LUGARES_RESERVADOS_UAA } from '../constants';
 
 export default function Cupos({ registrosHook }) {

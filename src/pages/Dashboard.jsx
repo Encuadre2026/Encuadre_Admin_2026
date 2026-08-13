@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Users, Ticket, CheckCircle, DollarSign, RefreshCw } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, LineChart, Line, CartesianGrid, Legend } from 'recharts';
-import { useToast } from '../context/ToastContext';
+import { useToast } from '../context/toast-contexto';
 import { LUGARES_RESERVADOS_UAA } from '../constants';
 import { KpiSkeleton, ChartSkeleton } from '../components/Skeleton';
 

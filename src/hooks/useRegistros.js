@@ -127,7 +127,14 @@ export default function useRegistros() {
     XLSX.writeFile(wb, `Registros_Encuadre_${new Date().toISOString().split('T')[0]}.xlsx`);
   }, []);
 
-  // Fetch inicial
+  // Carga inicial.
+  //
+  // La regla avisa de que fetchRegistros escribe estado de forma síncrona, lo
+  // que en general provoca un render extra. Aquí no: al montar, `loading` ya
+  // vale true y `error` ya vale '', que es exactamente lo que les asigna, y
+  // React descarta un setState con el mismo valor. Si algún día cambian esos
+  // valores iniciales, hay que quitar esta excepción y volver a mirarlo.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { fetchRegistros(); }, [fetchRegistros]);
 
   // Auto-refresh cuando la pestaña vuelve a ser visible

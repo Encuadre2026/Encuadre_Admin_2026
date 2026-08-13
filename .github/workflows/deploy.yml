@@ -29,6 +29,16 @@ jobs:
           cache: 'npm'
       - name: Install dependencies
         run: npm ci
+
+      # Nada verificaba este proyecto antes de publicarlo: el workflow instalaba,
+      # compilaba y desplegaba. El linter llevaba tiempo en rojo —trece errores,
+      # seis de ellos un componente creado dentro del render— sin que nadie se
+      # enterara, porque nada lo ejecutaba.
+      #
+      # Ahora es una puerta: si falla, no se despliega.
+      - name: Lint
+        run: npm run lint
+
       - name: Build
         run: npm run build
         env:
