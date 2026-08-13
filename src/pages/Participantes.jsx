@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Search, Download, RefreshCw, XCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToast } from '../context/toast-contexto';
 import ExpandableRow from '../components/ExpandableRow';
@@ -392,8 +393,18 @@ export default function Participantes({ registrosHook }) {
         )}
       </div>
 
-      {/* PDF Modal */}
-      {selectedPdf && (
+      {/* Visor del documento.
+       *
+       * Va montado en `document.body` a propósito. El contenedor de la página
+       * lleva `.fade-in-up`, cuya animación deja fijo un `transform:
+       * translateY(0)`, y cualquier transform distinto de `none` convierte al
+       * elemento en el bloque contenedor de sus descendientes `position:
+       * fixed`. El overlay se creía pegado a la ventana y en realidad se
+       * centraba respecto a la página entera: con la tabla de participantes
+       * desplegada, la tarjeta arrancaba a media altura del documento y se
+       * salía cientos de píxeles por debajo del borde inferior de la pantalla.
+       * Quien abría un comprobante lo veía a medias, o no lo veía. */}
+      {selectedPdf && createPortal(
         <div
           className="pdf-modal-overlay"
           role="dialog"
@@ -421,13 +432,22 @@ export default function Participantes({ registrosHook }) {
                   <p>Cargando documento...</p>
                 </div>
               ) : pdfBlobUrl ? (
-                <iframe src={pdfBlobUrl} title="Visor de comprobante PDF" />
+                // El visor del navegador ajusta por defecto al ancho, y un
+                // comprobante en vertical dentro de un marco apaisado se
+                // dibujaba tan grande que solo cabía su mitad superior.
+                // `view=Fit` encaja la página completa; la barra de
+                // herramientas se conserva para poder acercar y descargar.
+                <iframe
+                  src={`${pdfBlobUrl}#view=Fit&navpanes=0`}
+                  title="Visor de comprobante PDF"
+                />
               ) : (
                 <p className="pdf-modal-error">Error al cargar el PDF.</p>
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Confirm Dialog */}
