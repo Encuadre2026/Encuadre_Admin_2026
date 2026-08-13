@@ -44,10 +44,29 @@ export default function Cupos({ registrosHook }) {
             const totalCapacidad = c.cupo_maximo + reservadosUaa;
             const pctTotal = totalCapacidad ? (totalInscritos / totalCapacidad) * 100 : 0;
 
+            // Un cupo son dos bolsas independientes: la general y la reservada
+            // a la UAA. La insignia miraba solo el total, así que un taller con
+            // la reserva UAA agotada y hueco general se anunciaba en verde como
+            // «Disponible» — y ningún estudiante de la UAA podía inscribirse en
+            // él. El panel decía que sí donde el alta decía que no.
+            const generalLleno = inscritosGeneral >= c.cupo_maximo;
+            const uaaLleno = reservadosUaa > 0 && inscritosUaa >= reservadosUaa;
+
             let badgeClass = 'disponible';
             let badgeText = 'Disponible';
-            if (totalInscritos >= totalCapacidad) { badgeClass = 'lleno'; badgeText = 'Lleno'; }
-            else if (pctTotal >= 80) { badgeClass = 'casi-lleno'; badgeText = 'Casi lleno'; }
+            if (generalLleno && uaaLleno) {
+              badgeClass = 'lleno';
+              badgeText = 'Lleno';
+            } else if (uaaLleno) {
+              badgeClass = 'casi-lleno';
+              badgeText = 'Solo general';
+            } else if (generalLleno) {
+              badgeClass = 'casi-lleno';
+              badgeText = 'Solo UAA';
+            } else if (pctTotal >= 80) {
+              badgeClass = 'casi-lleno';
+              badgeText = 'Casi lleno';
+            }
 
             const pctGeneral = c.cupo_maximo
               ? Math.min(100, (inscritosGeneral / c.cupo_maximo) * 100)
@@ -62,9 +81,9 @@ export default function Cupos({ registrosHook }) {
                 </div>
 
                 <div className="cupo-progress">
-                  <div className="cupo-progress-label">
+                  <div className={`cupo-progress-label${generalLleno ? ' saturado' : ''}`}>
                     <span>General</span>
-                    <span>{inscritosGeneral} / {c.cupo_maximo}</span>
+                    <span>{inscritosGeneral} / {c.cupo_maximo}{generalLleno ? ' · lleno' : ''}</span>
                   </div>
                   <div className="cupo-progress-bar">
                     <div className="cupo-progress-fill blue" style={{ width: `${pctGeneral}%` }}></div>
@@ -72,9 +91,9 @@ export default function Cupos({ registrosHook }) {
                 </div>
 
                 <div className="cupo-progress">
-                  <div className="cupo-progress-label">
+                  <div className={`cupo-progress-label${uaaLleno ? ' saturado' : ''}`}>
                     <span>UAA</span>
-                    <span>{inscritosUaa} / {reservadosUaa}</span>
+                    <span>{inscritosUaa} / {reservadosUaa}{uaaLleno ? ' · lleno' : ''}</span>
                   </div>
                   <div className="cupo-progress-bar">
                     <div className="cupo-progress-fill gold" style={{ width: `${pctUAA}%` }}></div>

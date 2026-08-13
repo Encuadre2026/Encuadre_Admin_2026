@@ -502,6 +502,12 @@ a:hover {
   margin-bottom: 4px;
 }
 
+/* Una barra al 100 % se pintaba igual que una al 20 %: el único aviso de que
+   esa bolsa está agotada era comparar dos cifras diminutas. */
+.cupo-progress-label.saturado {
+  color: #E74C3C;
+  font-weight: 600;
+}
 
 .cupo-progress-bar {
   height: 6px;
