@@ -6,6 +6,7 @@ import useRegistros from './hooks/useRegistros';
 import ErrorBoundary from './components/ErrorBoundary';
 import Sidebar from './components/Sidebar';
 import Login from './pages/Login';
+import { olvidarSesion } from './api/cliente';
 
 // Code splitting — cargar páginas bajo demanda
 const Dashboard = lazy(() => import('./pages/Dashboard'));
@@ -30,8 +31,7 @@ function AuthenticatedLayout() {
   // Redirect if unauthorized (dentro de useEffect para evitar side effects en render)
   useEffect(() => {
     if (registrosHook.error === 'unauthorized') {
-      localStorage.removeItem('ENCUADRE_ADMIN_TOKEN');
-      sessionStorage.removeItem('ENCUADRE_ADMIN_SECRET');
+      olvidarSesion();
       navigate('/login');
     }
   }, [registrosHook.error, navigate]);

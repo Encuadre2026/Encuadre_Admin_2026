@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { comprobarSecreto, guardarSesion, haySesion, olvidarSesion } from '../api/cliente';
 import { Lock, Loader2, ArrowRight } from 'lucide-react';
 
 export default function Login() {
@@ -10,14 +11,13 @@ export default function Login() {
 
   // Si ya hay token, mandarlo al dashboard (el dashboard verificará si es válido)
   useEffect(() => {
-    const token = localStorage.getItem('ENCUADRE_ADMIN_TOKEN');
-    const secret = sessionStorage.getItem('ENCUADRE_ADMIN_SECRET');
-    if (token && secret) {
+    if (haySesion()) {
       navigate('/dashboard');
-    } else if (token && !secret) {
-      // El navegador se cerró y reabrió: el token persiste pero el secret no.
-      // Limpiamos el token stale para evitar un loop de redirección.
-      localStorage.removeItem('ENCUADRE_ADMIN_TOKEN');
+    } else {
+      // El navegador pudo cerrarse y reabrirse: entonces el token persiste pero
+      // el secreto no. Se limpia el resto para no entrar en un bucle de
+      // redirecciones entre login y dashboard.
+      olvidarSesion();
     }
   }, [navigate]);
 
@@ -28,30 +28,24 @@ export default function Login() {
     setLoading(true);
     setError('');
 
-    try {
-      // Hacemos una petición rápida de prueba para ver si el secret es correcto
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/registros`, {
-        headers: {
-          'Authorization': `Bearer ${secret.trim()}`
-        }
-      });
+    // Se valida contra la API antes de guardar nada. Y se distingue una
+    // contraseña incorrecta de un problema de conexión: antes ambos casos
+    // decían «contraseña incorrecta», lo que mandaba a probar contraseñas
+    // cuando el fallo estaba en otro sitio.
+    const { valido, error: fallo } = await comprobarSecreto(secret.trim());
 
-      if (!res.ok) {
-        throw new Error('Contraseña incorrecta o sin autorización.');
-      }
-
-      // Si fue exitoso, guardamos un token aleatorio como flag de sesión.
-      // No contiene el secret — solo indica que el usuario se autenticó correctamente.
-      const token = crypto.randomUUID();
-      localStorage.setItem('ENCUADRE_ADMIN_TOKEN', token);
-      // Guardamos también el secret real de forma temporal en sessionStorage (se borra al cerrar el navegador)
-      sessionStorage.setItem('ENCUADRE_ADMIN_SECRET', secret.trim());
-      navigate('/dashboard');
-    } catch (err) {
-      setError(err.message || 'Error de conexión');
-    } finally {
+    if (!valido) {
+      setError(fallo.message);
       setLoading(false);
+      return;
     }
+
+    // Un identificador aleatorio como señal de sesión. No contiene el secreto:
+    // solo indica que alguien se autenticó. El secreto real va en
+    // sessionStorage, que se vacía al cerrar el navegador.
+    guardarSesion(secret.trim());
+    setLoading(false);
+    navigate('/dashboard');
   };
 
   return (
