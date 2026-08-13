@@ -1,11 +1,31 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { Search, Download, RefreshCw, XCircle, ChevronLeft, ChevronRight, ArrowUpDown } from 'lucide-react';
-import { useToast } from '../context/ToastContext';
+import { Search, Download, RefreshCw, XCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useToast } from '../context/toast-contexto';
 import ExpandableRow from '../components/ExpandableRow';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { TableRowSkeleton } from '../components/Skeleton';
 
 const ITEMS_PER_PAGE = 25;
+
+/**
+ * Cabecera de columna ordenable.
+ *
+ * Vive fuera del componente de página a propósito. Definida dentro, React la
+ * trataba como un tipo de componente nuevo en cada renderizado y desmontaba y
+ * volvía a montar todas las cabeceras cada vez: se perdía el foco y la tabla
+ * parpadeaba al escribir en el buscador.
+ */
+function SortHeader({ field, sortField, sortDir, onSort, children }) {
+  const activa = sortField === field;
+  return (
+    <th className={`sortable${activa ? ' sorted' : ''}`} onClick={() => onSort(field)}>
+      {children}
+      <span className={`sort-arrow${activa ? ' active' : ''}${activa && sortDir === 'desc' ? ' desc' : ''}`}>
+        ▲
+      </span>
+    </th>
+  );
+}
 
 export default function Participantes({ registrosHook }) {
   const { data, loading, fetchRegistros, handleAprobarPago, handleEliminarRegistro, handleViewPdf, revokePdfUrl, exportToExcel } = registrosHook;
@@ -81,22 +101,28 @@ export default function Participantes({ registrosHook }) {
     return sorted;
   }, [filteredRegistros, sortField, sortDir]);
 
-  // Paginación
+  // ── Paginación ──────────────────────────────────────────
   const totalPages = Math.max(1, Math.ceil(sortedRegistros.length / ITEMS_PER_PAGE));
-  const paginatedRegistros = useMemo(() => {
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    return sortedRegistros.slice(start, start + ITEMS_PER_PAGE);
-  }, [sortedRegistros, currentPage]);
 
-  // Reiniciar página al cambiar filtros
-  useEffect(() => {
+  // Al cambiar los filtros se vuelve a la primera página. Se ajusta DURANTE el
+  // render en vez de con un efecto: un efecto pintaba primero la página vieja
+  // con los resultados nuevos y solo después corregía, provocando un
+  // renderizado en cascada visible como parpadeo.
+  const claveFiltros = `${debouncedSearch}|${filterTaller}|${filterPago}|${filterInstitucion}`;
+  const [filtrosPrevios, setFiltrosPrevios] = useState(claveFiltros);
+  if (claveFiltros !== filtrosPrevios) {
+    setFiltrosPrevios(claveFiltros);
     setCurrentPage(1);
-  }, [debouncedSearch, filterTaller, filterPago, filterInstitucion]);
+  }
 
-  // Asegurar que la página actual no exceda el total
-  useEffect(() => {
-    if (currentPage > totalPages) setCurrentPage(totalPages);
-  }, [totalPages, currentPage]);
+  // La página no puede pasarse del total. Antes esto era otro efecto que
+  // escribía estado; ahora se deriva, así que no puede quedar desfasado.
+  const paginaActual = Math.min(currentPage, totalPages);
+
+  const paginatedRegistros = useMemo(() => {
+    const start = (paginaActual - 1) * ITEMS_PER_PAGE;
+    return sortedRegistros.slice(start, start + ITEMS_PER_PAGE);
+  }, [sortedRegistros, paginaActual]);
 
   const closePdfModal = useCallback(() => {
     setSelectedPdf(null);
@@ -216,18 +242,6 @@ export default function Participantes({ registrosHook }) {
     }
   };
 
-  const SortHeader = ({ field, children }) => (
-    <th
-      className={`sortable${sortField === field ? ' sorted' : ''}`}
-      onClick={() => handleSort(field)}
-    >
-      {children}
-      <span className={`sort-arrow${sortField === field ? ' active' : ''}${sortField === field && sortDir === 'desc' ? ' desc' : ''}`}>
-        ▲
-      </span>
-    </th>
-  );
-
   // Skeleton state: first load only
   const isFirstLoad = loading && (data.registros || []).length === 0;
 
@@ -297,13 +311,13 @@ export default function Participantes({ registrosHook }) {
             <thead>
               <tr>
                 <th></th>
-                <SortHeader field="id">ID</SortHeader>
-                <SortHeader field="nombre">Participante</SortHeader>
-                <SortHeader field="institucion">Institución</SortHeader>
-                <SortHeader field="taller">Taller</SortHeader>
+                <SortHeader sortField={sortField} sortDir={sortDir} onSort={handleSort} field="id">ID</SortHeader>
+                <SortHeader sortField={sortField} sortDir={sortDir} onSort={handleSort} field="nombre">Participante</SortHeader>
+                <SortHeader sortField={sortField} sortDir={sortDir} onSort={handleSort} field="institucion">Institución</SortHeader>
+                <SortHeader sortField={sortField} sortDir={sortDir} onSort={handleSort} field="taller">Taller</SortHeader>
                 <th>Perfil</th>
-                <SortHeader field="pago">Pago</SortHeader>
-                <SortHeader field="asistencia">Asistencia</SortHeader>
+                <SortHeader sortField={sortField} sortDir={sortDir} onSort={handleSort} field="pago">Pago</SortHeader>
+                <SortHeader sortField={sortField} sortDir={sortDir} onSort={handleSort} field="asistencia">Asistencia</SortHeader>
               </tr>
             </thead>
             <tbody>
@@ -331,13 +345,13 @@ export default function Participantes({ registrosHook }) {
         {totalPages > 1 && (
           <div className="pagination-bar">
             <span className="pagination-info">
-              Mostrando {((currentPage - 1) * ITEMS_PER_PAGE) + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, sortedRegistros.length)} de {sortedRegistros.length}
+              Mostrando {((paginaActual - 1) * ITEMS_PER_PAGE) + 1}–{Math.min(paginaActual * ITEMS_PER_PAGE, sortedRegistros.length)} de {sortedRegistros.length}
             </span>
             <div className="pagination-controls">
               <button
                 className="btn btn-outline pagination-btn"
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(Math.max(1, paginaActual - 1))}
+                disabled={paginaActual === 1}
                 aria-label="Página anterior"
               >
                 <ChevronLeft size={16} />
@@ -345,7 +359,7 @@ export default function Participantes({ registrosHook }) {
               {Array.from({ length: totalPages }, (_, i) => i + 1)
                 .filter(page => {
                   // Mostrar: primera, última, y las cercanas a la actual
-                  return page === 1 || page === totalPages || Math.abs(page - currentPage) <= 1;
+                  return page === 1 || page === totalPages || Math.abs(page - paginaActual) <= 1;
                 })
                 .reduce((acc, page, idx, arr) => {
                   // Agregar puntos suspensivos entre páginas no contiguas
@@ -355,10 +369,10 @@ export default function Participantes({ registrosHook }) {
                   acc.push(
                     <button
                       key={page}
-                      className={`btn pagination-btn${currentPage === page ? ' pagination-btn-active' : ' btn-outline'}`}
+                      className={`btn pagination-btn${paginaActual === page ? ' pagination-btn-active' : ' btn-outline'}`}
                       onClick={() => setCurrentPage(page)}
                       aria-label={`Ir a página ${page}`}
-                      aria-current={currentPage === page ? 'page' : undefined}
+                      aria-current={paginaActual === page ? 'page' : undefined}
                     >
                       {page}
                     </button>
@@ -367,8 +381,8 @@ export default function Participantes({ registrosHook }) {
                 }, [])}
               <button
                 className="btn btn-outline pagination-btn"
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(Math.min(totalPages, paginaActual + 1))}
+                disabled={paginaActual === totalPages}
                 aria-label="Página siguiente"
               >
                 <ChevronRight size={16} />
