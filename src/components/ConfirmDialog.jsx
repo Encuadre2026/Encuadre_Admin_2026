@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { AlertTriangle } from 'lucide-react';
 
 /**
@@ -63,7 +64,15 @@ export default function ConfirmDialog({
 
   const confirmColor = variant === 'danger' ? 'var(--color-danger)' : 'var(--color-accent-gold)';
 
-  return (
+  // Montado en `document.body` por la misma razón que el visor de
+  // comprobantes: el contenedor de la página lleva `.fade-in-up`, cuya
+  // animación deja fijo un `transform: translateY(0)`, y eso lo convierte en el
+  // bloque contenedor de sus descendientes `position: fixed`. El overlay se
+  // estiraba a lo alto de todo el documento —2475 px medidos con la tabla
+  // desplegada— y el cuadro se centraba respecto a la página, no a la ventana:
+  // dónde aparecía la confirmación de «Aprobar pago» dependía de por dónde
+  // fuese uno desplazado.
+  return createPortal(
     <div
       className="confirm-overlay"
       ref={overlayRef}
@@ -102,6 +111,7 @@ export default function ConfirmDialog({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

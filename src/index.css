@@ -911,7 +911,10 @@ select:focus-visible {
 .pdf-modal-card {
   width: 100%;
   max-width: 800px;
-  height: 80vh;
+  /* `dvh` descuenta las barras del navegador móvil, que `vh` ignora: con
+     `80vh` el visor se salía por abajo justo en las pantallas donde menos
+     sitio hay. */
+  height: min(85dvh, 900px);
   display: flex;
   flex-direction: column;
   position: relative;
@@ -933,8 +936,14 @@ select:focus-visible {
   margin: 0;
 }
 
+/* Antes era `height: calc(100% - 56px)`: los 40 px de alto mínimo de la
+   cabecera más su margen de 1rem, copiados a mano. Hoy el número es correcto,
+   pero deja de serlo en cuanto alguien toque la cabecera, y el síntoma sería
+   un visor recortado sin nada que lo delate. La tarjeta ya es una columna
+   flex; dejando que reparta ella, no queda nada que mantener en sincronía. */
 .pdf-modal-body {
-  height: calc(100% - 56px);
+  flex: 1;
+  min-height: 0;
   background-color: #000;
   border-radius: 4px;
   overflow: hidden;
