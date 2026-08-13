@@ -1,5 +1,6 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { BarChart3, Users, Ticket, LogOut, Clock } from 'lucide-react';
+import { olvidarSesion } from '../api/cliente';
 
 function formatTimeAgo(date) {
   if (!date) return null;
@@ -27,8 +28,7 @@ export default function Sidebar({ totalRegistros = 0, pagosPendientes = 0, lastU
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('ENCUADRE_ADMIN_TOKEN');
-    sessionStorage.removeItem('ENCUADRE_ADMIN_SECRET');
+    olvidarSesion();
     navigate('/login');
   };
 
