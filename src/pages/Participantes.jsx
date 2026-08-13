@@ -281,7 +281,7 @@ export default function Participantes({ registrosHook }) {
 
           <div>
             <label htmlFor="filter-taller" className="sr-only">Filtrar por taller</label>
-            <select id="filter-taller" className="input-field" value={filterTaller} onChange={e => setFilterTaller(e.target.value)} style={{ minWidth: '160px', fontSize: '0.85rem', padding: '0.5rem 0.75rem' }}>
+            <select id="filter-taller" className="input-field" value={filterTaller} onChange={e => setFilterTaller(e.target.value)}>
               {talleresUnicos.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
           </div>
