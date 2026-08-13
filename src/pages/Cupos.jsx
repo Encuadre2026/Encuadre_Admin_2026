@@ -1,26 +1,16 @@
-import { useMemo } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { useToast } from '../context/toast-contexto';
-import { LUGARES_RESERVADOS_UAA } from '../constants';
 
 export default function Cupos({ registrosHook }) {
   const { data, loading, fetchRegistros } = registrosHook;
   const { showToast } = useToast();
 
-  // Compute per-taller UAA/General counts from registros
-  const tallerCounts = useMemo(() => {
-    const map = {};
-    (data.registros || []).forEach(r => {
-      const key = r.taller;
-      if (!map[key]) map[key] = { uaa: 0, general: 0 };
-      if ((r.institucion || '').includes('UAA')) {
-        map[key].uaa++;
-      } else {
-        map[key].general++;
-      }
-    });
-    return map;
-  }, [data.registros]);
+  // El reparto entre UAA y general lo calcula la API con la misma regla que
+  // aplica el alta. Aquí se recalculaba desde `registros` usando
+  // `institucion.includes('UAA')`, mientras el Worker compara el nombre
+  // completo: dos definiciones distintas de quién ocupa un lugar reservado, que
+  // solo coincidían porque hoy hay una única institución con «UAA» en el
+  // nombre. El panel muestra; no decide.
 
   const onRefresh = async () => {
     const ok = await fetchRegistros();
@@ -47,9 +37,11 @@ export default function Cupos({ registrosHook }) {
       ) : (
         <div className="cupos-grid">
           {cupos.map((c, i) => {
-            const counts = tallerCounts[c.nombre] || { uaa: 0, general: 0 };
-            const totalInscritos = counts.uaa + counts.general;
-            const totalCapacidad = c.cupo_maximo + LUGARES_RESERVADOS_UAA;
+            const reservadosUaa = c.lugares_reservados_uaa ?? 0;
+            const inscritosUaa = c.inscritos_uaa ?? 0;
+            const inscritosGeneral = c.inscritos_general ?? 0;
+            const totalInscritos = c.inscritos ?? inscritosUaa + inscritosGeneral;
+            const totalCapacidad = c.cupo_maximo + reservadosUaa;
             const pctTotal = totalCapacidad ? (totalInscritos / totalCapacidad) * 100 : 0;
 
             let badgeClass = 'disponible';
@@ -57,8 +49,10 @@ export default function Cupos({ registrosHook }) {
             if (totalInscritos >= totalCapacidad) { badgeClass = 'lleno'; badgeText = 'Lleno'; }
             else if (pctTotal >= 80) { badgeClass = 'casi-lleno'; badgeText = 'Casi lleno'; }
 
-            const pctGeneral = c.cupo_maximo ? Math.min(100, (counts.general / c.cupo_maximo) * 100) : 0;
-            const pctUAA = Math.min(100, (counts.uaa / LUGARES_RESERVADOS_UAA) * 100);
+            const pctGeneral = c.cupo_maximo
+              ? Math.min(100, (inscritosGeneral / c.cupo_maximo) * 100)
+              : 0;
+            const pctUAA = reservadosUaa ? Math.min(100, (inscritosUaa / reservadosUaa) * 100) : 0;
 
             return (
               <div key={c.nombre} className="cupo-card fade-in-up" style={{ animationDelay: `${0.05 * i}s` }}>
@@ -70,7 +64,7 @@ export default function Cupos({ registrosHook }) {
                 <div className="cupo-progress">
                   <div className="cupo-progress-label">
                     <span>General</span>
-                    <span>{counts.general} / {c.cupo_maximo}</span>
+                    <span>{inscritosGeneral} / {c.cupo_maximo}</span>
                   </div>
                   <div className="cupo-progress-bar">
                     <div className="cupo-progress-fill blue" style={{ width: `${pctGeneral}%` }}></div>
@@ -80,7 +74,7 @@ export default function Cupos({ registrosHook }) {
                 <div className="cupo-progress">
                   <div className="cupo-progress-label">
                     <span>UAA</span>
-                    <span>{counts.uaa} / {LUGARES_RESERVADOS_UAA}</span>
+                    <span>{inscritosUaa} / {reservadosUaa}</span>
                   </div>
                   <div className="cupo-progress-bar">
                     <div className="cupo-progress-fill gold" style={{ width: `${pctUAA}%` }}></div>
