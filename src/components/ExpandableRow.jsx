@@ -1,6 +1,21 @@
 import { useState } from 'react';
 import { ChevronRight, FileText, CheckCircle, XCircle } from 'lucide-react';
 
+/**
+ * Sigla de la institución.
+ *
+ * Las instituciones vienen como «UAA · Universidad Autónoma de Aguascalientes»,
+ * y el nombre completo ocupaba tres renglones en su celda: cada fila medía 91 px
+ * de alto por un dato que casi nunca se lee entero, mientras el taller —que sí
+ * se consulta en cada validación— quedaba recortado a 180 px. El nombre completo
+ * sigue disponible en el `title` y en la fila desplegada.
+ */
+function siglaDe(institucion) {
+  if (!institucion) return '—';
+  const [sigla] = institucion.split('·');
+  return sigla.trim() || institucion;
+}
+
 export default function ExpandableRow({ registro: r, onAprobarPago, onEliminarRegistro, onViewPdf }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -25,13 +40,13 @@ export default function ExpandableRow({ registro: r, onAprobarPago, onEliminarRe
         <td style={{ padding: '0.75rem', fontWeight: 600, color: 'var(--color-accent-gold)', whiteSpace: 'nowrap' }}>
           {r.id_participante}
         </td>
-        <td style={{ padding: '0.75rem' }}>
-          <div style={{ fontWeight: 500 }}>{r.nombre}</div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>{r.correo}</div>
+        <td className="celda-participante">
+          <div className="participante-nombre">{r.nombre}</div>
+          <div className="participante-correo">{r.correo}</div>
         </td>
-        <td style={{ padding: '0.75rem', fontSize: '0.85rem' }}>{r.institucion}</td>
-        <td style={{ padding: '0.75rem', fontSize: '0.85rem', maxWidth: '180px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={r.taller}>
-          {r.taller}
+        <td className="celda-institucion" title={r.institucion}>{siglaDe(r.institucion)}</td>
+        <td className="celda-taller" title={r.taller}>
+          <span className="recorte-dos-lineas">{r.taller}</span>
         </td>
         <td style={{ padding: '0.75rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
@@ -41,11 +56,10 @@ export default function ExpandableRow({ registro: r, onAprobarPago, onEliminarRe
             {r.url_comprobante && (
               <button
                 onClick={(e) => { e.stopPropagation(); onViewPdf(r.url_comprobante); }}
-                className="btn btn-outline"
-                style={{ padding: '0.15rem 0.4rem', fontSize: '0.65rem', borderColor: 'var(--color-accent-gold)', color: 'var(--color-accent-gold)' }}
-                title="Ver Credencial"
+                className="btn btn-documento credencial"
+                title="Ver la credencial de estudiante"
               >
-                <FileText size={11} />
+                <FileText size={13} /> Credencial
               </button>
             )}
           </div>
@@ -59,20 +73,18 @@ export default function ExpandableRow({ registro: r, onAprobarPago, onEliminarRe
             ) : (
               <button
                 onClick={(e) => { e.stopPropagation(); onAprobarPago(r.id_participante); }}
-                className="btn btn-outline"
-                style={{ padding: '0.2rem 0.5rem', fontSize: '0.7rem', borderColor: 'var(--color-success)', color: 'var(--color-success)' }}
+                className="btn btn-validar-pago"
               >
-                Validar Pago
+                Validar pago
               </button>
             )}
             {r.url_comprobante_pago && (
               <button
                 onClick={(e) => { e.stopPropagation(); onViewPdf(r.url_comprobante_pago); }}
-                className="btn btn-outline"
-                style={{ padding: '0.15rem 0.4rem', fontSize: '0.65rem', borderColor: '#3498DB', color: '#3498DB' }}
-                title="Ver Pago"
+                className="btn btn-documento comprobante"
+                title="Ver el comprobante de pago"
               >
-                <FileText size={11} /> Pago
+                <FileText size={13} /> Comprobante
               </button>
             )}
           </div>

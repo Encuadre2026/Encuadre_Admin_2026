@@ -64,7 +64,7 @@ test('el visor de comprobantes aparece dentro de la ventana', async ({ page }) =
   await page.setViewportSize({ width: 1440, height: 900 });
   await prepararPanel(page);
   await irA(page, 'participantes');
-  await abrirDesdeElFinal(page, 'button[title="Ver Credencial"]');
+  await abrirDesdeElFinal(page, 'button[title^="Ver la credencial"]');
 
   const medida = await cabeEnLaVentana(page, '.pdf-modal-card');
   expect(medida.montadoEnBody, 'el overlay debe colgar de <body>').toBe(true);
@@ -79,7 +79,7 @@ test('el visor cabe también en una ventana baja', async ({ page }) => {
   await page.setViewportSize({ width: 1024, height: 640 });
   await prepararPanel(page);
   await irA(page, 'participantes');
-  await abrirDesdeElFinal(page, 'button[title="Ver Credencial"]');
+  await abrirDesdeElFinal(page, 'button[title^="Ver la credencial"]');
 
   const medida = await cabeEnLaVentana(page, '.pdf-modal-card');
   expect(
@@ -96,7 +96,7 @@ test('el documento se pide encajado a la página, no ajustado al ancho', async (
   await page.setViewportSize({ width: 1440, height: 900 });
   await prepararPanel(page);
   await irA(page, 'participantes');
-  await abrirDesdeElFinal(page, 'button[title="Ver Credencial"]');
+  await abrirDesdeElFinal(page, 'button[title^="Ver la credencial"]');
 
   const src = await page.locator('.pdf-modal-body iframe').getAttribute('src');
   expect(src).toContain('#view=Fit');
@@ -110,7 +110,7 @@ test('el cuerpo del visor ocupa lo que sobra de la tarjeta', async ({ page }) =>
   await page.setViewportSize({ width: 1440, height: 900 });
   await prepararPanel(page, { registros: REGISTROS.slice(0, 3) });
   await irA(page, 'participantes');
-  await abrirDesdeElFinal(page, 'button[title="Ver Credencial"]');
+  await abrirDesdeElFinal(page, 'button[title^="Ver la credencial"]');
 
   const encaje = await page.evaluate(() => {
     const tarjeta = document.querySelector('.pdf-modal-card').getBoundingClientRect();

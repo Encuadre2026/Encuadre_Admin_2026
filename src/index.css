@@ -17,6 +17,9 @@
   
   --color-danger: #e74c3c;
   --color-success: #2ecc71;
+  /* Azul del comprobante de pago. Estaba escrito como #3498DB en dos sitios
+     dentro del JSX; aquí queda una sola vez y con nombre. */
+  --color-info: #3498db;
   
   --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
@@ -1299,4 +1302,145 @@ select:focus-visible {
   .row-details-inner {
     grid-template-columns: 1fr;
   }
+}
+
+/* ============================================================
+   DENSIDAD Y JERARQUÍA DE LA TABLA
+   ------------------------------------------------------------
+   El reparto del ancho estaba invertido respecto al uso: la
+   institución se envolvía en tres renglones —dejando las filas en
+   91 px de alto— mientras el taller, que es lo que se consulta en
+   cada validación, quedaba recortado a 180 px con puntos
+   suspensivos en todos los anchos.
+   ============================================================ */
+
+.celda-institucion {
+  padding: 0.6rem 0.5rem;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  color: var(--color-text-secondary);
+}
+
+.celda-taller {
+  padding: 0.6rem 0.5rem;
+  font-size: 0.85rem;
+  min-width: 200px;
+}
+
+/* Dos renglones en vez de uno: la mayoría de los nombres de taller caben
+   enteros, y los que no, se recortan habiendo enseñado bastante más. */
+.recorte-dos-lineas {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ------------------------------------------------------------
+   Los dos documentos del participante
+   ------------------------------------------------------------
+   Eran dos iconos de 11 px sin texto, distinguibles solo por el
+   color y por el `title`: 26×18 y 59×18 px medidos, por debajo del
+   mínimo de 24 px de WCAG 2.2. Y quien valida un pago necesita
+   saber cuál de los dos está abriendo. */
+.btn-documento {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-height: 26px;
+  padding: 0.25rem 0.5rem;
+  border-radius: 5px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  background-color: transparent;
+  border: 1px solid;
+  white-space: nowrap;
+}
+
+.btn-documento.credencial {
+  border-color: var(--color-accent-gold);
+  color: var(--color-accent-gold);
+}
+
+.btn-documento.comprobante {
+  border-color: var(--color-info);
+  color: var(--color-info);
+}
+
+.btn-documento:hover:not(:disabled) {
+  background-color: var(--color-bg-hover);
+}
+
+/* ------------------------------------------------------------
+   Grupos de filtro con rótulo
+   ------------------------------------------------------------
+   Los dos grupos iban seguidos y ambos empezaban por «Todos»: con
+   las dos pastillas activas en amarillo se leían como un solo
+   grupo con dos selecciones a la vez. */
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.filter-group-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+/* En columna, el rótulo va encima de sus pastillas en vez de al lado. */
+@media (max-width: 768px) {
+  .filter-group {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.3rem;
+  }
+}
+
+/* La acción más frecuente de la tabla, y medía 85×20 px: por debajo del mínimo
+   de 24 px de WCAG 2.2 en un panel que también se usa desde el teléfono. */
+.btn-validar-pago {
+  min-height: 28px;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  border-radius: 5px;
+  background-color: transparent;
+  border: 1px solid var(--color-success);
+  color: var(--color-success);
+  white-space: nowrap;
+}
+
+.btn-validar-pago:hover:not(:disabled) {
+  background-color: rgba(46, 204, 113, 0.12);
+}
+
+/* El nombre se partía en dos renglones y, con el correo debajo, dejaba las filas
+   en 91 px de alto: doce cabían en pantalla de 47. Al reducir la institución a
+   su sigla quedó ancho de sobra para que quepa de una vez. */
+.celda-participante {
+  padding: 0.6rem 0.5rem;
+  white-space: nowrap;
+}
+
+.participante-nombre {
+  font-weight: 500;
+}
+
+.participante-correo {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+/* El relleno horizontal baja de 0.75rem a 0.5rem en las ocho columnas. Con el
+   nombre en un solo renglón y el taller a dos, la tabla se había ensanchado
+   hasta obligar a desplazarla también en un monitor de 1440. */
+.data-table th,
+.data-table td {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
 }

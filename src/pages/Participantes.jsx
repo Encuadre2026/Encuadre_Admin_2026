@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { Search, Download, RefreshCw, XCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToast } from '../context/toast-contexto';
@@ -18,13 +19,46 @@ const ITEMS_PER_PAGE = 25;
  */
 function SortHeader({ field, sortField, sortDir, onSort, children }) {
   const activa = sortField === field;
+  // `aria-sort` es lo que anuncia el orden a un lector de pantalla. La flecha ya
+  // distinguía la columna activa y la dirección, pero solo para quien la ve.
+  const orden = activa ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none';
   return (
-    <th className={`sortable${activa ? ' sorted' : ''}`} onClick={() => onSort(field)}>
+    <th
+      className={`sortable${activa ? ' sorted' : ''}`}
+      onClick={() => onSort(field)}
+      aria-sort={orden}
+    >
       {children}
       <span className={`sort-arrow${activa ? ' active' : ''}${activa && sortDir === 'desc' ? ' desc' : ''}`}>
         ▲
       </span>
     </th>
+  );
+}
+
+/**
+ * Un grupo de filtro con su rótulo visible.
+ *
+ * Vive fuera del componente de página por lo mismo que `SortHeader`: definido
+ * dentro, React lo trataría como un tipo nuevo en cada renderizado.
+ */
+function GrupoDeFiltro({ rotulo, opciones, valor, onCambio }) {
+  return (
+    <div className="filter-group">
+      <span className="filter-group-label" aria-hidden="true">{rotulo}</span>
+      <div className="filter-pills" role="group" aria-label={`Filtrar por ${rotulo.toLowerCase()}`}>
+        {opciones.map(v => (
+          <button
+            key={v}
+            className={`filter-pill${valor === v ? ' active' : ''}`}
+            onClick={() => onCambio(v)}
+            aria-pressed={valor === v}
+          >
+            {v}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -35,7 +69,10 @@ export default function Participantes({ registrosHook }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [filterTaller, setFilterTaller] = useState('Todos');
-  const [filterPago, setFilterPago] = useState('Todos');
+  // El filtro puede venir dado por quien nos trajo aquí: la píldora de «pagos
+  // pendientes» de la barra lateral llega con `Pendientes` puesto.
+  const { state: navegacion } = useLocation();
+  const [filterPago, setFilterPago] = useState(navegacion?.filtroPago || 'Todos');
   const [filterInstitucion, setFilterInstitucion] = useState('Todos');
   const [currentPage, setCurrentPage] = useState(1);
   const [sortField, setSortField] = useState(null);
@@ -287,21 +324,24 @@ export default function Participantes({ registrosHook }) {
             </select>
           </div>
 
-          <div className="filter-pills" role="group" aria-label="Filtrar por estado de pago">
-            {['Todos', 'Pendientes', 'Confirmados'].map(v => (
-              <button key={v} className={`filter-pill${filterPago === v ? ' active' : ''}`} onClick={() => setFilterPago(v)} aria-pressed={filterPago === v}>
-                {v}
-              </button>
-            ))}
-          </div>
+          {/* Los dos grupos iban seguidos, sin rótulo visible y empezando los dos
+              por «Todos». Con las dos pastillas activas en amarillo, se leían
+              como un solo grupo con dos selecciones. Los `aria-label` estaban
+              bien puestos, pero un rótulo que solo existe para el lector de
+              pantalla no ayuda a quien mira. */}
+          <GrupoDeFiltro
+            rotulo="Pago"
+            opciones={['Todos', 'Pendientes', 'Confirmados']}
+            valor={filterPago}
+            onCambio={setFilterPago}
+          />
 
-          <div className="filter-pills" role="group" aria-label="Filtrar por institución">
-            {['Todos', 'UAA', 'Foráneos'].map(v => (
-              <button key={v} className={`filter-pill${filterInstitucion === v ? ' active' : ''}`} onClick={() => setFilterInstitucion(v)} aria-pressed={filterInstitucion === v}>
-                {v}
-              </button>
-            ))}
-          </div>
+          <GrupoDeFiltro
+            rotulo="Institución"
+            opciones={['Todos', 'UAA', 'Foráneos']}
+            valor={filterInstitucion}
+            onCambio={setFilterInstitucion}
+          />
         </div>
       </div>
 
