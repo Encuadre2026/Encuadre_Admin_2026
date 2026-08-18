@@ -22,8 +22,8 @@ export default function Sidebar({ totalRegistros = 0, pagosPendientes = 0, lastU
     { path: '/cupos', label: 'Cupos por Taller', icon: Ticket },
   ];
 
-  const handleNav = (path) => {
-    navigate(path);
+  const handleNav = (path, state) => {
+    navigate(path, state ? { state } : undefined);
     onClose?.();
   };
 
@@ -64,7 +64,10 @@ export default function Sidebar({ totalRegistros = 0, pagosPendientes = 0, lastU
         {pagosPendientes > 0 && (
           <button
             className={`sidebar-link${location.pathname === '/participantes' ? ' active' : ''}`}
-            onClick={() => handleNav('/participantes')}
+            /* Llevaba a Participantes sin filtrar nada, así que había que
+               volver a elegir «Pendientes» a mano justo después de pulsar algo
+               que dice «37 pagos pendientes». Ahora llega ya filtrado. */
+            onClick={() => handleNav('/participantes', { filtroPago: 'Pendientes' })}
           >
             <span className="link-badge-danger">
               {pagosPendientes} pago{pagosPendientes !== 1 ? 's' : ''} pendiente{pagosPendientes !== 1 ? 's' : ''}
