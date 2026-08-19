@@ -179,6 +179,21 @@ El despliegue es **100% automático** mediante GitHub Actions:
 - **ErrorBoundary**: captura errores de React para evitar pantallas en blanco.
 - **CORS**: la API solo acepta peticiones desde dominios autorizados.
 
+## Color
+
+Los colores del panel viven **solo** en los tokens de `:root`, dentro de
+`src/index.css`. El JSX los usa como `var(--color-…)`, incluidas las gráficas:
+recharts pasa el relleno tal cual al SVG y `fill` resuelve `var()`.
+
+`npm run revisar:color` falla si aparece un hex escrito a mano fuera de los
+tokens, y corre en las dos puertas de CI. Un linter no puede atrapar esto:
+`color: '#2ECC71'` es JavaScript perfectamente válido. Llegaron a estar los
+mismos cinco colores escritos treinta y una veces, en mayúsculas en el JSX y en
+minúsculas en los tokens.
+
+Se permiten el negro y el blanco puros: no son colores de marca, se usan como
+contraste sobre una superficie ya coloreada.
+
 ## Enlaces de producción
 
 - **Panel Admin**: https://encuadre2026.github.io/Encuadre_Admin_2026
