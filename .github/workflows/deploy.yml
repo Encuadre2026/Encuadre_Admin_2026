@@ -39,6 +39,12 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      # Un linter tampoco puede atrapar `color: '#2ECC71'`: es JavaScript
+      # perfectamente válido. Los mismos cinco colores llegaron a estar escritos
+      # a mano treinta y una veces.
+      - name: Revisar que el color viva en los tokens
+        run: npm run revisar:color
+
       # El linter no puede ver un desbordamiento horizontal: no es un error de
       # código, es un ancho. La página entera se desplazaba de lado en todo
       # monitor por debajo de ~1150 px —incluido cualquier portátil— y nadie lo

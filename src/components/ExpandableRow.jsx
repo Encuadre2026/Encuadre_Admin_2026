@@ -67,7 +67,7 @@ export default function ExpandableRow({ registro: r, onAprobarPago, onEliminarRe
         <td style={{ padding: '0.75rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
             {r.pago_aprobado ? (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#2ECC71', fontSize: '0.8rem' }}>
+              <span className="estado-celda afirmativo">
                 <CheckCircle size={14} /> Confirmado
               </span>
             ) : (
@@ -91,11 +91,11 @@ export default function ExpandableRow({ registro: r, onAprobarPago, onEliminarRe
         </td>
         <td style={{ padding: '0.75rem' }}>
           {r.asistio ? (
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#2ECC71', fontSize: '0.8rem' }}>
+            <span className="estado-celda afirmativo">
               <CheckCircle size={14} /> Sí
             </span>
           ) : (
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'var(--color-text-muted)', fontSize: '0.8rem' }}>
+            <span className="estado-celda negativo">
               <XCircle size={14} /> No
             </span>
           )}
@@ -133,22 +133,22 @@ export default function ExpandableRow({ registro: r, onAprobarPago, onEliminarRe
               </div>
               <div className="detail-actions">
                 {r.url_comprobante && (
-                  <button onClick={() => onViewPdf(r.url_comprobante)} className="btn btn-outline" style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem', borderColor: 'var(--color-accent-gold)', color: 'var(--color-accent-gold)' }}>
-                    <FileText size={14} /> Ver Credencial
+                  <button onClick={() => onViewPdf(r.url_comprobante)} className="btn btn-detalle credencial">
+                    <FileText size={14} /> Ver credencial
                   </button>
                 )}
                 {r.url_comprobante_pago && (
-                  <button onClick={() => onViewPdf(r.url_comprobante_pago)} className="btn btn-outline" style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem', borderColor: '#3498DB', color: '#3498DB' }}>
-                    <FileText size={14} /> Ver Pago
+                  <button onClick={() => onViewPdf(r.url_comprobante_pago)} className="btn btn-detalle comprobante">
+                    <FileText size={14} /> Ver comprobante
                   </button>
                 )}
                 {!r.pago_aprobado && (
-                  <button onClick={() => onAprobarPago(r.id_participante)} className="btn btn-outline" style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem', borderColor: 'var(--color-success)', color: 'var(--color-success)' }}>
-                    <CheckCircle size={14} /> Aprobar Pago
+                  <button onClick={() => onAprobarPago(r.id_participante)} className="btn btn-detalle aprobar">
+                    <CheckCircle size={14} /> Aprobar pago
                   </button>
                 )}
-                <button onClick={() => onEliminarRegistro(r.id_participante)} className="btn btn-outline" style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem', borderColor: '#e74c3c', color: '#e74c3c' }}>
-                  <XCircle size={14} /> Eliminar Registro
+                <button onClick={() => onEliminarRegistro(r.id_participante)} className="btn btn-detalle eliminar">
+                  <XCircle size={14} /> Eliminar registro
                 </button>
               </div>
             </div>

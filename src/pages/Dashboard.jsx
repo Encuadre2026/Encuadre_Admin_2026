@@ -4,12 +4,63 @@ import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer, B
 import { useToast } from '../context/toast-contexto';
 import { KpiSkeleton, ChartSkeleton } from '../components/Skeleton';
 
-const COLORS = ['#F4D03F', '#8E44AD', '#3498DB', '#E74C3C', '#2ECC71'];
-const TOOLTIP_STYLE = { backgroundColor: '#111', borderColor: '#333' };
-const TOOLTIP_ITEM_STYLE = { color: '#fff' };
-const TOOLTIP_LABEL_STYLE = { color: '#F4D03F', fontWeight: 600, marginBottom: '4px' };
+/**
+ * Los colores del panel, una sola vez.
+ *
+ * Estaban escritos a mano treinta y una veces entre este archivo y los
+ * componentes: los mismos cinco valores, en mayúsculas aquí y en minúsculas en
+ * el CSS, sin nada que los mantuviera juntos. No es que se vieran distintos
+ * —son idénticos—, es que nada impedía que dejaran de serlo.
+ *
+ * Recharts pasa el relleno tal cual al SVG, y `fill` resuelve `var()`, así que
+ * los tokens del CSS valen sin puente ninguno. Una de las porciones ya lo hacía;
+ * ahora lo hacen todas.
+ */
+const COLORS = [
+  'var(--color-accent-gold)',
+  'var(--color-accent-purple)',
+  'var(--color-info)',
+  'var(--color-danger)',
+  'var(--color-success)',
+];
+const TOOLTIP_STYLE = {
+  backgroundColor: 'var(--color-grafica-fondo)',
+  borderColor: 'var(--color-grafica-borde)',
+};
+const TOOLTIP_ITEM_STYLE = { color: 'var(--color-text-primary)' };
+const TOOLTIP_LABEL_STYLE = {
+  color: 'var(--color-accent-gold)',
+  fontWeight: 600,
+  marginBottom: '4px',
+};
 const CURSOR_STYLE = { fill: 'rgba(255,255,255,0.05)' };
-const TOOLTIP_CONTENT_WIDE = { backgroundColor: '#111', borderColor: '#333', maxWidth: '320px', whiteSpace: 'normal' };
+const TOOLTIP_CONTENT_WIDE = {
+  ...TOOLTIP_STYLE,
+  maxWidth: '320px',
+  whiteSpace: 'normal',
+};
+
+/**
+ * Leyenda que además dice cuánto vale cada porción.
+ *
+ * Los tres donuts solo mostraban colores y nombres: para saber que eran 10
+ * confirmados y 37 pendientes había que pasar el ratón por encima, cosa que en
+ * una tableta no ocurre nunca. La cifra estaba en los datos y no se enseñaba.
+ */
+function leyendaConCifra(porciones) {
+  const total = porciones.reduce((suma, p) => suma + p.value, 0);
+  return (valor, entrada) => {
+    const porcion = porciones.find((p) => p.name === valor);
+    if (!porcion) return valor;
+    const porcentaje = total ? Math.round((porcion.value / total) * 100) : 0;
+    return (
+      <span style={{ color: entrada.color }}>
+        {valor} <strong>{porcion.value}</strong>{' '}
+        <span className="leyenda-porcentaje">{porcentaje}%</span>
+      </span>
+    );
+  };
+}
 
 export default function Dashboard({ registrosHook }) {
   const { data, loading, fetchRegistros } = registrosHook;
@@ -172,11 +223,11 @@ export default function Dashboard({ registrosHook }) {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie data={stats.pagosData} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={5} dataKey="value">
-                    <Cell fill="#2ECC71" />
-                    <Cell fill="#E74C3C" />
+                    <Cell fill="var(--color-success)" />
+                    <Cell fill="var(--color-danger)" />
                   </Pie>
                   <RechartsTooltip contentStyle={TOOLTIP_STYLE} itemStyle={TOOLTIP_ITEM_STYLE} />
-                  <Legend />
+                  <Legend formatter={leyendaConCifra(stats.pagosData)} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -189,10 +240,10 @@ export default function Dashboard({ registrosHook }) {
                 <PieChart>
                   <Pie data={stats.audienciaData} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={5} dataKey="value">
                     <Cell fill="var(--color-accent-gold)" />
-                    <Cell fill="#3498DB" />
+                    <Cell fill="var(--color-info)" />
                   </Pie>
                   <RechartsTooltip contentStyle={TOOLTIP_STYLE} itemStyle={TOOLTIP_ITEM_STYLE} />
-                  <Legend />
+                  <Legend formatter={leyendaConCifra(stats.audienciaData)} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -209,7 +260,7 @@ export default function Dashboard({ registrosHook }) {
                     ))}
                   </Pie>
                   <RechartsTooltip contentStyle={TOOLTIP_STYLE} itemStyle={TOOLTIP_ITEM_STYLE} />
-                  <Legend />
+                  <Legend formatter={leyendaConCifra(stats.perfilesData)} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -224,9 +275,9 @@ export default function Dashboard({ registrosHook }) {
           <div className="chart-container-lg">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={stats.fechasData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
-                <XAxis dataKey="name" stroke="#666" tick={{ fill: '#aaa', fontSize: 12 }} />
-                <YAxis stroke="#666" tick={{ fill: '#aaa' }} allowDecimals={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-grafica-borde)" vertical={false} />
+                <XAxis dataKey="name" stroke="var(--color-text-muted)" tick={{ fill: 'var(--color-text-secondary)', fontSize: 12 }} />
+                <YAxis stroke="var(--color-text-muted)" tick={{ fill: 'var(--color-text-secondary)' }} allowDecimals={false} />
                 <RechartsTooltip contentStyle={TOOLTIP_STYLE} />
                 <Line type="monotone" dataKey="Inscripciones" stroke="var(--color-accent-gold)" strokeWidth={3} dot={{ r: 4, fill: 'var(--color-accent-gold)' }} activeDot={{ r: 6 }} />
               </LineChart>
@@ -239,11 +290,11 @@ export default function Dashboard({ registrosHook }) {
           <div className="chart-container-lg">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={stats.top5Talleres} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#333" horizontal vertical={false} />
-                <XAxis type="number" stroke="#666" tick={{ fill: '#aaa' }} allowDecimals={false} />
-                <YAxis dataKey="name" type="category" stroke="#666" tick={{ fill: '#aaa', fontSize: 10 }} width={120} tickFormatter={v => v.length > 22 ? v.substring(0, 22) + '...' : v} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-grafica-borde)" horizontal vertical={false} />
+                <XAxis type="number" stroke="var(--color-text-muted)" tick={{ fill: 'var(--color-text-secondary)' }} allowDecimals={false} />
+                <YAxis dataKey="name" type="category" stroke="var(--color-text-muted)" tick={{ fill: 'var(--color-text-secondary)', fontSize: 10 }} width={120} tickFormatter={v => v.length > 22 ? v.substring(0, 22) + '...' : v} />
                 <RechartsTooltip cursor={CURSOR_STYLE} contentStyle={TOOLTIP_CONTENT_WIDE} labelStyle={TOOLTIP_LABEL_STYLE} />
-                <Bar dataKey="inscritos" fill="#E74C3C" radius={[0, 4, 4, 0]} />
+                <Bar dataKey="inscritos" fill="var(--color-danger)" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -254,11 +305,11 @@ export default function Dashboard({ registrosHook }) {
           <div className="chart-container-lg">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={stats.bottom3Talleres} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#333" horizontal vertical={false} />
-                <XAxis type="number" stroke="#666" tick={{ fill: '#aaa' }} allowDecimals={false} />
-                <YAxis dataKey="name" type="category" stroke="#666" tick={{ fill: '#aaa', fontSize: 10 }} width={120} tickFormatter={v => v.length > 22 ? v.substring(0, 22) + '...' : v} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-grafica-borde)" horizontal vertical={false} />
+                <XAxis type="number" stroke="var(--color-text-muted)" tick={{ fill: 'var(--color-text-secondary)' }} allowDecimals={false} />
+                <YAxis dataKey="name" type="category" stroke="var(--color-text-muted)" tick={{ fill: 'var(--color-text-secondary)', fontSize: 10 }} width={120} tickFormatter={v => v.length > 22 ? v.substring(0, 22) + '...' : v} />
                 <RechartsTooltip cursor={CURSOR_STYLE} contentStyle={TOOLTIP_CONTENT_WIDE} labelStyle={TOOLTIP_LABEL_STYLE} />
-                <Bar dataKey="inscritos" fill="#3498DB" radius={[0, 4, 4, 0]} />
+                <Bar dataKey="inscritos" fill="var(--color-info)" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
