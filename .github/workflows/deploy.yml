@@ -19,6 +19,9 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+    # El límite por defecto de GitHub son seis horas. Un job colgado se quedaría
+    # ahí consumiendo minutos de la cuenta antes de rendirse.
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -43,7 +46,24 @@ jobs:
       # código, es un ancho. La página entera se desplazaba de lado en todo
       # monitor por debajo de ~1150 px —incluido cualquier portátil— y nadie lo
       # notó, porque se trabaja en pantalla grande. Estas pruebas lo miden.
+      - name: Versión de Playwright
+        id: playwright
+        run: |
+          version=$(node -p "require('./package-lock.json').packages['node_modules/@playwright/test'].version")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Caché del navegador
+        id: cache-navegador
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+
+      # `--with-deps` lanza un apt-get e instala unos cuarenta paquetes de
+      # sistema. Solo hace falta cuando la caché falla: la imagen de
+      # ubuntu-latest ya trae las bibliotecas que Chromium necesita.
       - name: Instalar navegador de pruebas
+        if: steps.cache-navegador.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps chromium
 
       - name: Pruebas de disposición
