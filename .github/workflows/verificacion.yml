@@ -9,6 +9,9 @@ on:
 jobs:
   verificar:
     runs-on: ubuntu-latest
+    # El límite por defecto de GitHub son seis horas. Un job colgado se quedaría
+    # ahí consumiendo minutos de la cuenta antes de rendirse.
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -29,8 +32,28 @@ jobs:
       - name: Revisar que el color viva en los tokens
         run: npm run revisar:color
 
+      - name: Versión de Playwright
+        id: playwright
+        run: |
+          version=$(node -p "require('./package-lock.json').packages['node_modules/@playwright/test'].version")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Caché del navegador
+        id: cache-navegador
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+
+      # No se instalan dependencias del sistema. `--with-deps` lanzaba un
+      # apt-get contra los espejos de Ubuntu para instalar bibliotecas que la
+      # imagen de ubuntu-latest ya trae, y el 19 ago 2026 uno de esos espejos
+      # dejó de responder y el paso se quedó reintentando media hora. Si algún
+      # día faltara alguna, el navegador no arranca y la prueba falla en
+      # segundos; la vuelta atrás es volver a poner `--with-deps`.
       - name: Instalar navegador de pruebas
-        run: npx playwright install --with-deps chromium
+        if: steps.cache-navegador.outputs.cache-hit != 'true'
+        run: npx playwright install chromium
 
       - name: Pruebas de disposición
         run: npm test

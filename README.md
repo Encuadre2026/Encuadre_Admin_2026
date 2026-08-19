@@ -58,7 +58,6 @@ Encuadre_Admin_2026/
 │   │   ├── Dashboard.jsx      # KPIs y gráficas analíticas
 │   │   ├── Participantes.jsx  # Tabla de registros con filtros y paginación
 │   │   └── Cupos.jsx          # Vista de disponibilidad por taller
-│   ├── constants.js           # Constantes del proyecto (ej. cupos UAA)
 │   ├── App.jsx                # Componente raíz y enrutamiento
 │   ├── App.css                # Estilos específicos del App
 │   ├── index.css              # Sistema de diseño global (dark theme)
@@ -138,9 +137,17 @@ Tabla completa de registros con:
 
 Tarjetas visuales para cada uno de los 21 talleres:
 
-- Barras de progreso separadas para cupos **General** (18 lugares) y **UAA** (7 reservados).
-- Badges de estado: `Disponible`, `Casi lleno` (≥80%), `Lleno`.
-- Estadísticas de inscritos vs capacidad total.
+- Barras de progreso separadas para cupos **General** (18 lugares) y **UAA**
+  (10 reservados), con la bolsa agotada marcada en rojo.
+- Insignias de estado: `Disponible`, `Solo general` (se agotó la reserva UAA),
+  `Solo UAA` (se agotó la general), `Casi lleno` (≥80 % sin agotar ninguna) y
+  `Lleno`.
+- Estadísticas de inscritos frente a capacidad total.
+
+Un cupo son **dos bolsas independientes**, y la insignia lo refleja: antes solo
+miraba el total, así que un taller con la reserva UAA agotada y hueco general se
+anunciaba en verde como «Disponible» y ningún estudiante de la UAA podía
+inscribirse en él.
 
 ## Reglas de negocio
 
@@ -151,23 +158,72 @@ Tarjetas visuales para cada uno de los 21 talleres:
 | Capacidad total por taller | 28 (18 + 10)           |
 | Total de talleres          | 21                     |
 
+**El panel no decide, muestra.** El reparto entre UAA y general lo calcula la
+API con la misma regla que aplica el alta —igualdad con el nombre completo de la
+institución—. El panel lo recalculaba por su cuenta con
+`institucion.includes('UAA')`: dos definiciones distintas de quién ocupa un lugar
+reservado, que solo coincidían porque hoy hay una única institución con «UAA» en
+el nombre.
+
 ## Endpoints consumidos
 
-| Método | Endpoint                    | Uso                               |
-| ------ | --------------------------- | --------------------------------- |
-| GET    | `/api/admin/registros`      | Obtener todos los registros y cupos |
-| POST   | `/api/admin/aprobar_pago`   | Aprobar pago de un participante    |
-| GET    | `/api/admin/comprobante`    | Descargar PDF de comprobante       |
+| Método | Endpoint                  | Uso                                     |
+| ------ | ------------------------- | --------------------------------------- |
+| GET    | `/api/admin/registros`    | Registros y cupos                       |
+| POST   | `/api/admin/aprobar_pago` | Aprobar el pago de un participante      |
+| DELETE | `/api/admin/registro`     | Borrar un registro (envía correo)       |
+| GET    | `/api/admin/comprobante`  | Descargar el PDF de un comprobante      |
 
-Todos los endpoints requieren el header `Authorization: Bearer <ADMIN_SECRET>`.
+Todos requieren `Authorization: Bearer <ADMIN_SECRET>`.
+
+### El contrato
+
+Toda respuesta lleva `ok`; los errores llevan además `codigo` —un identificador
+estable— y `mensaje` —el texto que se le enseña a la persona—. `src/api/cliente.js`
+lo traduce a un `ErrorApi` con esos dos campos, para que el panel pueda decidir
+cómo reaccionar sin comparar cadenas en español.
+
+Antes cada llamada hacía `throw new Error('Error al aprobar pago')` y tiraba lo
+que había respondido el servidor: el Worker explicaba con precisión qué pasaba
+—«este pago ya fue aprobado», «el participante no existe»— y el panel enseñaba
+un texto genérico que no ayudaba a decidir qué hacer.
 
 ## Despliegue (CI/CD)
 
 El despliegue es **100% automático** mediante GitHub Actions:
 
-1. Al hacer `push` a la rama `main`, se dispara el workflow `.github/workflows/deploy.yml`.
-2. El workflow instala dependencias, ejecuta `npm run build` con la variable `VITE_API_URL`, y despliega el contenido de `dist/` a GitHub Pages.
-3. El panel queda disponible en: https://encuadre2026.github.io/Encuadre_Admin_2026
+1. **En cada pull request** corre `.github/workflows/verificacion.yml`: linter y
+   las pruebas de Playwright. Es donde sirve enterarse de que algo falla.
+2. **Al empujar a `main`** corre `.github/workflows/deploy.yml`, que repite esas
+   comprobaciones como puerta —si fallan, no se despliega—, compila con
+   `VITE_API_URL` y publica `dist/` en GitHub Pages.
+3. El panel queda en https://encuadre2026.github.io/Encuadre_Admin_2026
+
+Antes el despliegue solo compilaba. El linter llevaba tiempo en rojo —trece
+errores, seis de ellos un componente creado dentro del render— sin que nadie se
+enterara, porque nada lo ejecutaba.
+
+## Pruebas
+
+```bash
+npm test          # Playwright: compila, sirve y mide sobre el panel real
+```
+
+No son pruebas de integración: son de **disposición y comportamiento visible**,
+que es lo que ni el linter ni `vite build` pueden ver. Cubren, entre otras cosas:
+
+- Que la página no se desplace en horizontal en 390, 820, 1024 y 1440 px. Lo
+  hacía en todos los anchos por debajo de ~1150, incluido cualquier portátil, y
+  nadie lo notó porque se trabaja en pantalla grande.
+- Que ninguna acción de la tabla quede por debajo del objetivo táctil mínimo de
+  24 px de WCAG 2.2.
+- Que el visor de comprobantes y la confirmación de aprobar aparezcan **dentro**
+  de la ventana. Se colocaban respecto a la página, por un `transform` heredado
+  de la animación de entrada, y podían quedar cientos de píxeles fuera.
+- Que la insignia del cupo distinga las dos bolsas.
+
+Cada una se verificó mutando el código para comprobar que se pone en rojo: una
+prueba que nunca ha fallado no demuestra nada.
 
 > **Nota:** La variable `base` en `vite.config.js` está configurada como `/Encuadre_Admin_2026/` para que los assets se resuelvan correctamente en GitHub Pages.
 
