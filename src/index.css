@@ -17,9 +17,16 @@
   
   --color-danger: #e74c3c;
   --color-success: #2ecc71;
-  /* Azul del comprobante de pago. Estaba escrito como #3498DB en dos sitios
-     dentro del JSX; aquí queda una sola vez y con nombre. */
+  /* Azul del comprobante de pago y de la audiencia foránea. */
   --color-info: #3498db;
+  /* Morado del perfil «Profesor» en la gráfica de perfiles. Era el único de los
+     cinco colores del panel que no tenía token. */
+  --color-accent-purple: #8e44ad;
+
+  /* Superficies de las gráficas. Estaban escritas como '#111' y '#333' en cinco
+     constantes de Dashboard.jsx, sin relación visible con el resto del panel. */
+  --color-grafica-fondo: #111111;
+  --color-grafica-borde: #333333;
   
   --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
@@ -1443,4 +1450,67 @@ select:focus-visible {
 .data-table td {
   padding-left: 0.5rem;
   padding-right: 0.5rem;
+}
+
+/* ============================================================
+   COLOR — un solo sitio donde vive cada uno
+   ------------------------------------------------------------
+   Los mismos cinco colores estaban escritos a mano treinta y una
+   veces en el JSX, en mayúsculas allí y en minúsculas en los
+   tokens. No se veían distintos —son idénticos— pero nada impedía
+   que dejaran de serlo, y un cambio de marca obligaba a buscarlos
+   uno a uno.
+   ============================================================ */
+
+.estado-celda {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+}
+
+.estado-celda.afirmativo {
+  color: var(--color-success);
+}
+
+.estado-celda.negativo {
+  color: var(--color-text-muted);
+}
+
+/* Acciones de la fila desplegada. */
+.btn-detalle {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.75rem;
+  min-height: 30px;
+  border-radius: 5px;
+  background-color: transparent;
+  border: 1px solid;
+}
+
+.btn-detalle.credencial {
+  border-color: var(--color-accent-gold);
+  color: var(--color-accent-gold);
+}
+.btn-detalle.comprobante {
+  border-color: var(--color-info);
+  color: var(--color-info);
+}
+.btn-detalle.aprobar {
+  border-color: var(--color-success);
+  color: var(--color-success);
+}
+.btn-detalle.eliminar {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
+.btn-detalle:hover:not(:disabled) {
+  background-color: var(--color-bg-hover);
+}
+
+/* El porcentaje acompaña a la cifra en las leyendas de los donuts, en tono
+   menor: lo que se busca de un vistazo es el número absoluto. */
+.leyenda-porcentaje {
+  opacity: 0.6;
+  font-size: 0.9em;
 }

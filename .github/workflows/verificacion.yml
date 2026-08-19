@@ -28,6 +28,10 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      # Un linter no puede atrapar `color: '#2ECC71'`: es JavaScript válido.
+      - name: Revisar que el color viva en los tokens
+        run: npm run revisar:color
+
       - name: Versión de Playwright
         id: playwright
         run: |
