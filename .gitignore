@@ -11,7 +11,13 @@ node_modules
 dist
 dist-ssr
 *.local
+
+# Se ignoran todas las variantes: Vite carga `.env.local`,
+# `.env.development` y `.env.production`, y listar solo `.env` dejaba el
+# resto sin cubrir.
 .env
+.env.*
+!.env.example
 
 # Editor directories and files
 .vscode/*
