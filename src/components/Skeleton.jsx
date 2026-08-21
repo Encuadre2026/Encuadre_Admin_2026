@@ -44,7 +44,7 @@ export function KpiSkeleton() {
   return (
     <div className="card kpi-card">
       <Skeleton variant="circle" width="52px" height="52px" />
-      <div style={{ flex: 1 }}>
+      <div className="skeleton-kpi-texto">
         <Skeleton width="80px" height="0.7rem" />
         <Skeleton width="60px" height="1.5rem" className="skeleton-mt" />
       </div>
@@ -69,7 +69,9 @@ export function TableRowSkeleton({ columns = 8, rows = 5 }) {
       {Array.from({ length: rows }, (_, i) => (
         <tr key={i} className="skeleton-row">
           {Array.from({ length: columns }, (_, j) => (
-            <td key={j} style={{ padding: '0.75rem' }}>
+            // El relleno lo pone `.skeleton-row td`, que ya existía en el CSS y
+            // decía exactamente lo mismo que este `style`.
+            <td key={j}>
               <Skeleton
                 width={j === 0 ? '16px' : j === 2 ? '100%' : '70%'}
                 height="0.8rem"

@@ -51,12 +51,12 @@ export default function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="card max-w-md w-full fade-in-up">
-        <div className="flex flex-col items-center gap-4 mb-8 text-center" style={{ marginBottom: '2rem' }}>
-          <div style={{ backgroundColor: 'var(--color-accent-gold-dim)', padding: '1rem', borderRadius: '50%' }}>
-            <Lock size={32} color="var(--color-accent-gold)" />
+        <div className="acceso-marca">
+          <div className="acceso-icono">
+            <Lock size={32} />
           </div>
           <div>
-            <h1 style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>Acceso Administrativo</h1>
+            <h1 className="acceso-titulo">Acceso Administrativo</h1>
             <p className="text-muted">Panel de control · Encuadre 2026</p>
           </div>
         </div>
@@ -77,7 +77,9 @@ export default function Login() {
           </div>
 
           {error && (
-            <div style={{ color: 'var(--color-danger)', fontSize: '0.875rem', marginBottom: '1rem', backgroundColor: 'rgba(231,76,60,0.1)', padding: '0.5rem', borderRadius: '4px' }}>
+            // `role="alert"` para que el fallo se anuncie en cuanto aparece: es
+            // la única respuesta que recibe quien acaba de pulsar «Ingresar».
+            <div className="acceso-error" role="alert">
               {error}
             </div>
           )}

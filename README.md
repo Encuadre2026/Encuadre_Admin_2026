@@ -31,6 +31,7 @@ El panel **no se conecta directamente** a la base de datos. Toda la comunicació
 | Vite             | 8.x     | Bundler y servidor de desarrollo         |
 | Recharts         | 3.x     | Gráficas del dashboard                   |
 | Lucide React     | 1.x     | Iconografía                              |
+| Inter (Fontsource) | 5.x   | Tipografía, autoalojada con la aplicación |
 | SheetJS (xlsx)   | 0.18    | Exportación de datos a Excel             |
 | ESLint           | 10.x   | Linting de código                        |
 | GitHub Actions   | —       | CI/CD automático a GitHub Pages          |
@@ -59,8 +60,7 @@ Encuadre_Admin_2026/
 │   │   ├── Participantes.jsx  # Tabla de registros con filtros y paginación
 │   │   └── Cupos.jsx          # Vista de disponibilidad por taller
 │   ├── App.jsx                # Componente raíz y enrutamiento
-│   ├── App.css                # Estilos específicos del App
-│   ├── index.css              # Sistema de diseño global (dark theme)
+│   ├── index.css              # Sistema de diseño: tokens, componentes y responsive
 │   └── main.jsx               # Punto de entrada de React
 ├── .env.example               # Plantilla de variables de entorno
 ├── vite.config.js             # Configuración de Vite (base path para GH Pages)
@@ -221,6 +221,12 @@ que es lo que ni el linter ni `vite build` pueden ver. Cubren, entre otras cosas
   de la ventana. Se colocaban respecto a la página, por un `transform` heredado
   de la animación de entrada, y podían quedar cientos de píxeles fuera.
 - Que la insignia del cupo distinga las dos bolsas.
+- Que la fuente **llegue**, no solo que se pida: un token bien escrito y un
+  archivo que no carga se ven exactamente igual en el código.
+- Que el texto apagado alcance 4.5:1 sobre las dos superficies.
+- Que con el movimiento reducido el contenido aparezca, en vez de quedarse en el
+  `opacity: 0` con el que arranca la animación de entrada.
+- Que la dirección del panel a secas lleve al dashboard y no a la página 404.
 
 Cada una se verificó mutando el código para comprobar que se pone en rojo: una
 prueba que nunca ha fallado no demuestra nada.
@@ -235,20 +241,72 @@ prueba que nunca ha fallado no demuestra nada.
 - **ErrorBoundary**: captura errores de React para evitar pantallas en blanco.
 - **CORS**: la API solo acepta peticiones desde dominios autorizados.
 
-## Color
+## Sistema de diseño
 
-Los colores del panel viven **solo** en los tokens de `:root`, dentro de
-`src/index.css`. El JSX los usa como `var(--color-…)`, incluidas las gráficas:
-recharts pasa el relleno tal cual al SVG y `fill` resuelve `var()`.
+Todo lo que decide el aspecto del panel vive en el bloque `:root` de
+`src/index.css`: color, tipografía, espaciado, radios, elevación, duraciones y
+capas. Fuera de ahí se usa `var(--…)`.
+
+| Escala | Tokens |
+| ------ | ------ |
+| Color | `--color-bg-*`, `--color-text-*`, los cinco de marca y sus `-dim` |
+| Tipografía | `--texto-xs` … `--texto-3xl` (11 → 28 px) |
+| Espaciado | `--espacio-1` … `--espacio-7` (4 → 48 px) |
+| Radios | `--radio-sm/md/lg/pill` |
+| Elevación | `--sombra-1/2/3` |
+| Movimiento | `--transicion-rapida/normal` y `--curva` |
+| Capas | `--z-boton-flotante`, `--z-velo-lateral`, `--z-sidebar`, `--z-visor`, `--z-confirmacion`, `--z-avisos` |
+
+Antes solo el color estaba centralizado. Lo demás se elegía en cada regla:
+**ocho** tamaños de letra distintos (0.65, 0.7, 0.72, 0.75, 0.8, 0.85, 0.875,
+0.9 rem), seis radios y seis z-index sueltos. Ninguno estaba mal por separado;
+lo que no había era relación entre ellos, y eso es justo lo que se ve.
+
+### Tipografía
+
+La fuente es **Inter**, autoalojada con `@fontsource-variable/inter` e importada
+en `src/main.jsx`. El token `--font-family` la pedía desde el primer día y nadie
+la cargaba: el panel se veía con Segoe UI en Windows y con San Francisco en un
+Mac. Se autoaloja en vez de pedirla a Google para no depender de un tercero en
+cada carga; el navegador se descarga solo el recorte Unicode que necesita.
+
+Las cifras que se comparan entre sí —KPIs, cupos, paginación, IDs— llevan
+`tabular-nums`, para que un `1` mida lo mismo que un `8` y las columnas de
+números no queden dentadas.
+
+### Color
+
+Los colores del panel viven **solo** en los tokens de `:root`. El JSX los usa
+como `var(--color-…)`, incluidas las gráficas: recharts pasa el relleno tal cual
+al SVG y `fill` resuelve `var()`.
 
 `npm run revisar:color` falla si aparece un hex escrito a mano fuera de los
-tokens, y corre en las dos puertas de CI. Un linter no puede atrapar esto:
-`color: '#2ECC71'` es JavaScript perfectamente válido. Llegaron a estar los
-mismos cinco colores escritos treinta y una veces, en mayúsculas en el JSX y en
-minúsculas en los tokens.
+tokens —**en el JSX y en el CSS**— y corre en las dos puertas de CI. Un linter no
+puede atrapar esto: `color: '#2ECC71'` es JavaScript perfectamente válido.
+Llegaron a estar los mismos cinco colores escritos treinta y una veces, en
+mayúsculas en el JSX y en minúsculas en los tokens.
+
+El script nació mirando solo el JavaScript, y con eso cerró la mitad del
+agujero: en el propio `index.css` seguían un `#2ECC71` en la insignia de cupo,
+un `#3498DB` en el aviso informativo y un `#9B59B6` en el icono del KPI de pagos
+que ni siquiera era el morado de las gráficas. Dos morados distintos a dos
+pantallas de distancia, sin que nadie lo hubiera decidido.
 
 Se permiten el negro y el blanco puros: no son colores de marca, se usan como
-contraste sobre una superficie ya coloreada.
+contraste sobre una superficie ya coloreada. Y los comentarios del CSS quedan
+fuera de la revisión, porque con un color no se pinta nada desde un comentario y
+estas notas necesitan poder decir qué valor sustituyó a cuál.
+
+### Contraste y movimiento
+
+`--color-text-muted` era `#666666`: 3.4:1, por debajo del 4.5:1 que pide WCAG
+para texto pequeño, y con él estaban escritos los rótulos de la fila desplegada,
+los de cada gráfica y la marca de «Actualizado hace un minuto». La rampa nueva
+lo deja por encima del mínimo sobre las dos superficies, y hay una prueba que lo
+mide para que no vuelva a caer.
+
+Con `prefers-reduced-motion: reduce`, las animaciones se anulan. Solo sobrevive
+el giro del indicador de carga: es el que dice que algo está ocurriendo.
 
 ## Enlaces de producción
 

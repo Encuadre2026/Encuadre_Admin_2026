@@ -31,8 +31,8 @@ export default function Cupos({ registrosHook }) {
       </div>
 
       {loading && cupos.length === 0 ? (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}>
-          <RefreshCw size={32} className="spin" style={{ color: 'var(--color-text-muted)' }} />
+        <div className="cupos-cargando">
+          <RefreshCw size={32} className="spin" />
         </div>
       ) : (
         <div className="cupos-grid">
@@ -102,7 +102,7 @@ export default function Cupos({ registrosHook }) {
 
                 <div className="cupo-stats">
                   <div className="cupo-stat">
-                    <div className="cupo-stat-value" style={{ color: pctTotal >= 80 ? 'var(--color-accent-gold)' : 'var(--color-text-primary)' }}>
+                    <div className={`cupo-stat-value${pctTotal >= 80 ? ' destacado' : ''}`}>
                       {totalInscritos}
                     </div>
                     <div className="cupo-stat-label">Inscritos</div>

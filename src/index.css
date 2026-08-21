@@ -1,20 +1,38 @@
+/* ============================================================
+   TOKENS — lo único que se edita para cambiar el aspecto
+   ------------------------------------------------------------
+   Antes aquí solo vivía el color. Todo lo demás —tamaños de
+   letra, espaciado, radios, duraciones, capas— se elegía en
+   cada regla: ocho tamaños de letra distintos (0.65, 0.7, 0.72,
+   0.75, 0.8, 0.85, 0.875, 0.9 rem), seis radios y seis z-index
+   sueltos. Ninguno estaba mal por separado; el problema es que
+   entre ellos no había relación, y eso es lo que se ve.
+   ============================================================ */
 :root {
-  --color-bg-base: #000000;
-  --color-bg-surface: #0a0a0a;
-  --color-bg-card: #141414;
-  --color-bg-hover: #1a1a1a;
-  
+  /* --- Neutros ---------------------------------------------
+     El negro puro contra #141414 es duro y aplana la jerarquía:
+     las cuatro capas se distinguían por poco y la interfaz
+     parecía un agujero. Esta rampa mantiene el panel oscuro pero
+     deja ver dónde acaba una superficie y empieza la siguiente. */
+  --color-bg-base: #0a0b0d;
+  --color-bg-surface: #121317;
+  --color-bg-card: #1a1c21;
+  --color-bg-hover: #212429;
+
   --color-text-primary: #ffffff;
-  --color-text-secondary: #aaaaaa;
-  --color-text-muted: #666666;
-  
+  --color-text-secondary: #a6adba;
+  /* 4.6:1 sobre la tarjeta y 5:1 sobre la superficie. El #666666
+     de antes se quedaba en 3.4:1, por debajo del mínimo de WCAG
+     para texto pequeño, y con él estaban escritos los rótulos de
+     la fila desplegada y los de cada gráfica. */
+  --color-text-muted: #7d8593;
+
+  /* --- Marca -----------------------------------------------
+     Estos cinco no se tocan: `pruebas/color-y-graficas.spec.js`
+     fija su valor exacto, precisamente para que un cambio de
+     rampa no se los lleve por delante sin que nadie lo note. */
   --color-accent-gold: #F4D03F;
   --color-accent-gold-hover: #D4AC0D;
-  --color-accent-gold-dim: rgba(244, 208, 63, 0.15);
-  
-  --color-border: #333333;
-  --color-border-light: #444444;
-  
   --color-danger: #e74c3c;
   --color-success: #2ecc71;
   /* Azul del comprobante de pago y de la audiencia foránea. */
@@ -23,12 +41,82 @@
      cinco colores del panel que no tenía token. */
   --color-accent-purple: #8e44ad;
 
+  /* Los mismos cinco al 15 %, para insignias y fondos de icono.
+     Estaban escritos como `rgba(46, 204, 113, 0.15)` en nueve
+     reglas distintas: los mismos colores otra vez, pero en otra
+     notación, así que ni el ojo ni el script los relacionaba con
+     su token. */
+  --color-accent-gold-dim: rgba(244, 208, 63, 0.15);
+  --color-danger-dim: rgba(231, 76, 60, 0.15);
+  --color-success-dim: rgba(46, 204, 113, 0.15);
+  --color-info-dim: rgba(52, 152, 219, 0.15);
+  --color-accent-purple-dim: rgba(142, 68, 173, 0.18);
+
+  --color-border: #272a30;
+  --color-border-light: #343841;
+
   /* Superficies de las gráficas. Estaban escritas como '#111' y '#333' en cinco
      constantes de Dashboard.jsx, sin relación visible con el resto del panel. */
-  --color-grafica-fondo: #111111;
-  --color-grafica-borde: #333333;
-  
-  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --color-grafica-fondo: #1a1c21;
+  --color-grafica-borde: #272a30;
+
+  /* --- Tipografía ------------------------------------------
+     `Inter` se pedía aquí desde el principio y nadie la cargaba
+     nunca: el panel se veía con Segoe UI en Windows y con San
+     Francisco en un Mac, distinto en cada máquina. Ahora se
+     autoaloja desde `@fontsource-variable/inter`, que se importa
+     en `main.jsx`. */
+  --font-family: 'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  --texto-xs: 0.6875rem;
+  --texto-sm: 0.75rem;
+  --texto-md: 0.8125rem;
+  --texto-base: 0.875rem;
+  --texto-lg: 1rem;
+  --texto-xl: 1.125rem;
+  --texto-2xl: 1.5rem;
+  --texto-3xl: 1.75rem;
+
+  /* --- Espaciado ------------------------------------------- */
+  --espacio-1: 0.25rem;
+  --espacio-2: 0.5rem;
+  --espacio-3: 0.75rem;
+  --espacio-4: 1rem;
+  --espacio-5: 1.5rem;
+  --espacio-6: 2rem;
+  --espacio-7: 3rem;
+
+  /* --- Radios ----------------------------------------------
+     Eran 4, 5, 6, 8, 10 y 20 px según la regla. Tres escalones
+     bastan, y así una insignia dentro de una tarjeta guarda
+     siempre la misma proporción con ella. */
+  --radio-sm: 6px;
+  --radio-md: 8px;
+  --radio-lg: 12px;
+  --radio-pill: 999px;
+
+  /* --- Elevación -------------------------------------------
+     Solo el toast tenía sombra. Sin ninguna, una tarjeta sobre
+     un fondo casi del mismo tono no se despega de él. */
+  --sombra-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --sombra-2: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --sombra-3: 0 16px 48px rgba(0, 0, 0, 0.6);
+
+  /* --- Movimiento ------------------------------------------ */
+  --transicion-rapida: 120ms;
+  --transicion-normal: 220ms;
+  --curva: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  /* --- Capas -----------------------------------------------
+     38, 39, 40, 50, 60 y 100, cada uno decidido en su regla. Con
+     nombres se ve el orden de un vistazo, que es justo lo que hay
+     que saber al añadir una ventana nueva. */
+  --z-boton-flotante: 38;
+  --z-velo-lateral: 39;
+  --z-sidebar: 40;
+  --z-visor: 50;
+  --z-confirmacion: 60;
+  --z-avisos: 100;
 }
 
 * {
@@ -49,12 +137,16 @@ body {
 h1, h2, h3, h4, h5, h6 {
   font-weight: 600;
   color: var(--color-text-primary);
+  /* Inter se dibuja con las letras algo separadas en tamaños
+     grandes; apretarlas una pizca es lo que la hace parecer un
+     titular y no un párrafo en negrita. */
+  letter-spacing: -0.011em;
 }
 
 a {
   color: var(--color-accent-gold);
   text-decoration: none;
-  transition: color 0.2s;
+  transition: color var(--transicion-rapida) var(--curva);
 }
 a:hover {
   color: var(--color-accent-gold-hover);
@@ -64,6 +156,12 @@ a:hover {
 .text-gold { color: var(--color-accent-gold); }
 .text-muted { color: var(--color-text-muted); }
 
+/* Cifras que se comparan entre sí —KPIs, cupos, paginación, IDs—.
+   Con las cifras proporcionales de Inter, un 1 mide menos que un 8
+   y una columna de números queda dentada; `tabular-nums` les da a
+   todas el mismo ancho. */
+.cifra { font-variant-numeric: tabular-nums; }
+
 /* Layouts */
 .min-h-screen { min-height: 100vh; }
 .flex { display: flex; }
@@ -71,12 +169,12 @@ a:hover {
 .items-center { align-items: center; }
 .justify-center { justify-content: center; }
 .justify-between { justify-content: space-between; }
-.gap-2 { gap: 0.5rem; }
-.gap-4 { gap: 1rem; }
-.gap-6 { gap: 1.5rem; }
-.p-4 { padding: 1rem; }
-.p-6 { padding: 1.5rem; }
-.p-8 { padding: 2rem; }
+.gap-2 { gap: var(--espacio-2); }
+.gap-4 { gap: var(--espacio-4); }
+.gap-6 { gap: var(--espacio-5); }
+.p-4 { padding: var(--espacio-4); }
+.p-6 { padding: var(--espacio-5); }
+.p-8 { padding: var(--espacio-6); }
 .w-full { width: 100%; }
 .max-w-md { max-width: 28rem; width: 100%; }
 
@@ -84,20 +182,21 @@ a:hover {
 .card {
   background-color: var(--color-bg-surface);
   border: 1px solid var(--color-border);
-  border-radius: 8px;
-  padding: 1.5rem;
+  border-radius: var(--radio-lg);
+  padding: var(--espacio-5);
+  box-shadow: var(--sombra-1);
 }
 
 /* Forms */
 .input-group {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
+  gap: var(--espacio-2);
+  margin-bottom: var(--espacio-4);
 }
 
 .input-label {
-  font-size: 0.875rem;
+  font-size: var(--texto-base);
   font-weight: 500;
   color: var(--color-text-secondary);
 }
@@ -106,28 +205,33 @@ a:hover {
   background-color: var(--color-bg-card);
   border: 1px solid var(--color-border);
   color: var(--color-text-primary);
-  padding: 0.75rem 1rem;
-  border-radius: 6px;
-  font-size: 1rem;
-  transition: all 0.2s;
+  padding: var(--espacio-3) var(--espacio-4);
+  border-radius: var(--radio-md);
+  font-size: var(--texto-lg);
+  font-family: inherit;
+  transition: border-color var(--transicion-rapida) var(--curva),
+              box-shadow var(--transicion-rapida) var(--curva);
   outline: none;
 }
 .input-field:focus {
   border-color: var(--color-accent-gold);
-  box-shadow: 0 0 0 2px var(--color-accent-gold-dim);
+  box-shadow: 0 0 0 3px var(--color-accent-gold-dim);
 }
 
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  border-radius: 6px;
+  gap: var(--espacio-2);
+  padding: var(--espacio-3) var(--espacio-5);
+  border-radius: var(--radio-md);
   font-weight: 600;
-  font-size: 1rem;
+  font-size: var(--texto-lg);
+  font-family: inherit;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: background-color var(--transicion-rapida) var(--curva),
+              border-color var(--transicion-rapida) var(--curva),
+              color var(--transicion-rapida) var(--curva);
   border: none;
   outline: none;
 }
@@ -151,6 +255,7 @@ a:hover {
 }
 .btn-outline:hover:not(:disabled) {
   background-color: var(--color-bg-hover);
+  border-color: var(--color-border-light);
 }
 
 /* Animations */
@@ -179,24 +284,24 @@ a:hover {
   flex-direction: column;
   position: fixed;
   height: 100vh;
-  z-index: 40;
+  z-index: var(--z-sidebar);
   overflow-y: auto;
-  transition: transform 0.3s ease;
+  transition: transform var(--transicion-normal) var(--curva);
 }
 
 .sidebar-header {
-  padding: 1.25rem 1.25rem;
+  padding: var(--espacio-4) var(--espacio-4);
   border-bottom: 1px solid var(--color-border);
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--espacio-3);
 }
 
 .sidebar-logo {
   width: 36px;
   height: 36px;
   background-color: var(--color-accent-gold);
-  border-radius: 8px;
+  border-radius: var(--radio-md);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -204,27 +309,30 @@ a:hover {
 }
 
 .sidebar-title {
-  font-size: 1.05rem;
+  font-size: var(--texto-xl);
   font-weight: 700;
+  letter-spacing: -0.011em;
 }
 
 .sidebar-nav {
   display: flex;
   flex-direction: column;
-  padding: 0.5rem;
+  padding: var(--espacio-2);
+  gap: 2px;
   flex: 1;
 }
 
 .sidebar-link {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.7rem 1rem;
-  border-radius: 6px;
+  gap: var(--espacio-3);
+  padding: var(--espacio-3) var(--espacio-4);
+  border-radius: var(--radio-md);
   color: var(--color-text-secondary);
-  font-size: 0.875rem;
+  font-size: var(--texto-base);
   font-weight: 500;
-  transition: all 0.2s;
+  transition: background-color var(--transicion-rapida) var(--curva),
+              color var(--transicion-rapida) var(--curva);
   text-decoration: none;
   border: none;
   border-left: 3px solid transparent;
@@ -247,24 +355,25 @@ a:hover {
 
 .sidebar-link .link-count {
   margin-left: auto;
-  font-size: 0.7rem;
+  font-size: var(--texto-xs);
   background: var(--color-bg-card);
   padding: 2px 8px;
-  border-radius: 10px;
+  border-radius: var(--radio-pill);
   color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
 }
 
 .sidebar-footer {
-  padding: 1rem;
+  padding: var(--espacio-4);
   border-top: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--espacio-2);
 }
 
 .sidebar-footer .btn {
-  font-size: 0.8rem;
-  padding: 0.5rem 0.75rem;
+  font-size: var(--texto-md);
+  padding: var(--espacio-2) var(--espacio-3);
   justify-content: flex-start;
 }
 
@@ -279,8 +388,8 @@ a:hover {
   min-width: 0;
   margin-left: 260px;
   min-height: 100vh;
-  transition: margin-left 0.3s ease;
-  padding: 2rem;
+  transition: margin-left var(--transicion-normal) var(--curva);
+  padding: var(--espacio-6);
 }
 
 .sidebar-overlay { display: none; }
@@ -294,30 +403,31 @@ a:hover {
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 1rem;
-  margin-bottom: 1.75rem;
+  gap: var(--espacio-4);
+  margin-bottom: var(--espacio-5);
 }
 
 .page-header h1 {
-  font-size: 1.5rem;
+  font-size: var(--texto-2xl);
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--espacio-3);
 }
 
 .page-header .header-actions {
   display: flex;
-  gap: 0.75rem;
+  gap: var(--espacio-3);
   align-items: center;
 }
 
 .page-header .count-badge {
-  font-size: 0.8rem;
+  font-size: var(--texto-md);
   background: var(--color-accent-gold-dim);
   color: var(--color-accent-gold);
   padding: 2px 10px;
-  border-radius: 10px;
+  border-radius: var(--radio-pill);
   font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 
 /* ============================================================
@@ -325,12 +435,12 @@ a:hover {
    ============================================================ */
 .toast-container {
   position: fixed;
-  top: 1.5rem;
-  right: 1.5rem;
-  z-index: 100;
+  top: var(--espacio-5);
+  right: var(--espacio-5);
+  z-index: var(--z-avisos);
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: var(--espacio-3);
   pointer-events: none;
 }
 
@@ -338,23 +448,23 @@ a:hover {
   pointer-events: auto;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.875rem 1.25rem;
-  border-radius: 8px;
-  background: var(--color-bg-surface);
+  gap: var(--espacio-3);
+  padding: var(--espacio-3) var(--espacio-4);
+  border-radius: var(--radio-md);
+  background: var(--color-bg-card);
   border: 1px solid var(--color-border);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--sombra-2);
   min-width: 300px;
   max-width: 420px;
   animation: toast-in 0.35s ease-out forwards;
-  font-size: 0.875rem;
+  font-size: var(--texto-base);
 }
 
 .toast.toast-exit {
   animation: toast-out 0.3s ease-in forwards;
 }
 
-.toast-icon { flex-shrink: 0; }
+.toast-icon { flex-shrink: 0; display: flex; }
 .toast-message { flex: 1; color: var(--color-text-primary); }
 
 .toast-close {
@@ -364,7 +474,7 @@ a:hover {
   cursor: pointer;
   padding: 4px;
   flex-shrink: 0;
-  transition: color 0.2s;
+  transition: color var(--transicion-rapida) var(--curva);
   display: flex;
 }
 .toast-close:hover { color: var(--color-text-primary); }
@@ -375,8 +485,8 @@ a:hover {
 .toast-error { border-left: 3px solid var(--color-danger); }
 .toast-error .toast-icon { color: var(--color-danger); }
 
-.toast-info { border-left: 3px solid #3498DB; }
-.toast-info .toast-icon { color: #3498DB; }
+.toast-info { border-left: 3px solid var(--color-info); }
+.toast-info .toast-icon { color: var(--color-info); }
 
 @keyframes toast-in {
   from { opacity: 0; transform: translateX(100%); }
@@ -392,13 +502,13 @@ a:hover {
    ============================================================ */
 .expandable-row {
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: background-color var(--transicion-rapida) var(--curva);
 }
 .expandable-row:hover { background-color: var(--color-bg-hover); }
 .expandable-row.expanded { background-color: var(--color-bg-hover); }
 
 .expand-icon {
-  transition: transform 0.3s ease;
+  transition: transform var(--transicion-normal) var(--curva);
   color: var(--color-text-muted);
   flex-shrink: 0;
 }
@@ -406,21 +516,21 @@ a:hover {
 
 .row-details {
   overflow: hidden;
-  transition: max-height 0.35s ease;
+  transition: max-height 0.35s var(--curva);
   background: rgba(244, 208, 63, 0.03);
   border-bottom: 1px solid var(--color-border);
 }
 
 .row-details-inner {
-  padding: 1.25rem 1.5rem;
+  padding: var(--espacio-4) var(--espacio-5);
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 1rem 1.5rem;
+  gap: var(--espacio-4) var(--espacio-5);
 }
 
 .detail-item label {
   display: block;
-  font-size: 0.7rem;
+  font-size: var(--texto-xs);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--color-text-muted);
@@ -428,7 +538,7 @@ a:hover {
 }
 
 .detail-item span {
-  font-size: 0.9rem;
+  font-size: var(--texto-base);
   color: var(--color-text-primary);
   font-weight: 500;
   overflow-wrap: break-word;
@@ -438,9 +548,10 @@ a:hover {
 .detail-actions {
   grid-column: 1 / -1;
   display: flex;
-  gap: 0.75rem;
-  margin-top: 0.5rem;
-  padding-top: 0.75rem;
+  gap: var(--espacio-3);
+  flex-wrap: wrap;
+  margin-top: var(--espacio-2);
+  padding-top: var(--espacio-3);
   border-top: 1px solid var(--color-border);
 }
 
@@ -450,110 +561,130 @@ a:hover {
 .cupos-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1.25rem;
+  gap: var(--espacio-4);
 }
 
 .cupo-card {
   background-color: var(--color-bg-surface);
   border: 1px solid var(--color-border);
-  border-radius: 8px;
-  padding: 1.25rem;
-  transition: transform 0.2s, border-color 0.2s;
+  border-radius: var(--radio-lg);
+  padding: var(--espacio-4);
+  box-shadow: var(--sombra-1);
+  transition: transform var(--transicion-normal) var(--curva),
+              border-color var(--transicion-normal) var(--curva),
+              box-shadow var(--transicion-normal) var(--curva);
 }
 .cupo-card:hover {
   transform: translateY(-2px);
   border-color: var(--color-border-light);
+  box-shadow: var(--sombra-2);
+}
+
+/* El spinner de la carga inicial. Estaba escrito en línea en el JSX. */
+.cupos-cargando {
+  display: flex;
+  justify-content: center;
+  padding: var(--espacio-7);
+  color: var(--color-text-muted);
 }
 
 .cupo-card-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
+  gap: var(--espacio-2);
+  margin-bottom: var(--espacio-4);
 }
 
 .cupo-card-title {
-  font-size: 0.9rem;
+  font-size: var(--texto-base);
   font-weight: 600;
   color: var(--color-text-primary);
   line-height: 1.3;
 }
 
 .cupo-badge {
-  font-size: 0.65rem;
+  font-size: var(--texto-xs);
   padding: 3px 8px;
-  border-radius: 10px;
+  border-radius: var(--radio-pill);
   font-weight: 600;
   white-space: nowrap;
   flex-shrink: 0;
 }
 
 .cupo-badge.disponible {
-  background: rgba(46, 204, 113, 0.15);
-  color: #2ECC71;
+  background: var(--color-success-dim);
+  color: var(--color-success);
 }
 .cupo-badge.casi-lleno {
-  background: rgba(244, 208, 63, 0.15);
-  color: #F4D03F;
+  background: var(--color-accent-gold-dim);
+  color: var(--color-accent-gold);
 }
 .cupo-badge.lleno {
-  background: rgba(231, 76, 60, 0.15);
-  color: #E74C3C;
+  background: var(--color-danger-dim);
+  color: var(--color-danger);
 }
 
-.cupo-progress { margin-bottom: 0.5rem; }
+.cupo-progress { margin-bottom: var(--espacio-2); }
 
 .cupo-progress-label {
   display: flex;
   justify-content: space-between;
-  font-size: 0.7rem;
+  font-size: var(--texto-sm);
   color: var(--color-text-muted);
   margin-bottom: 4px;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Una barra al 100 % se pintaba igual que una al 20 %: el único aviso de que
    esa bolsa está agotada era comparar dos cifras diminutas. */
 .cupo-progress-label.saturado {
-  color: #E74C3C;
+  color: var(--color-danger);
   font-weight: 600;
 }
 
 .cupo-progress-bar {
   height: 6px;
   background: var(--color-bg-card);
-  border-radius: 3px;
+  border-radius: var(--radio-pill);
   overflow: hidden;
 }
 
 .cupo-progress-fill {
   height: 100%;
-  border-radius: 3px;
-  transition: width 0.5s ease;
+  border-radius: var(--radio-pill);
+  transition: width 0.5s var(--curva);
 }
 .cupo-progress-fill.gold { background: var(--color-accent-gold); }
-.cupo-progress-fill.blue { background: #3498DB; }
+.cupo-progress-fill.blue { background: var(--color-info); }
 
 .cupo-stats {
   display: flex;
-  gap: 1rem;
+  gap: var(--espacio-4);
   justify-content: center;
-  margin-top: 0.75rem;
-  padding-top: 0.75rem;
+  margin-top: var(--espacio-3);
+  padding-top: var(--espacio-3);
   border-top: 1px solid var(--color-border);
 }
 
 .cupo-stat { text-align: center; }
 
 .cupo-stat-value {
-  font-size: 1.25rem;
+  font-size: var(--texto-2xl);
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Un taller a punto de llenarse: la cifra en dorado, como la insignia. */
+.cupo-stat-value.destacado {
+  color: var(--color-accent-gold);
 }
 
 .cupo-stat-label {
-  font-size: 0.65rem;
+  font-size: var(--texto-xs);
   color: var(--color-text-muted);
   text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 /* ============================================================
@@ -562,13 +693,13 @@ a:hover {
 .filter-bar {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
+  gap: var(--espacio-3);
   align-items: center;
 }
 
 .filter-bar .input-field {
-  font-size: 0.85rem;
-  padding: 0.5rem 0.75rem;
+  font-size: var(--texto-md);
+  padding: var(--espacio-2) var(--espacio-3);
 }
 
 /* Sin esto, cada control de la barra reclama su ancho de contenido y ninguno
@@ -589,22 +720,26 @@ a:hover {
 
 .filter-pills {
   display: flex;
-  gap: 0.35rem;
+  gap: var(--espacio-1);
 }
 
 .filter-pill {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 0.35rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.75rem;
+  padding: var(--espacio-1) var(--espacio-3);
+  border-radius: var(--radio-pill);
+  font-size: var(--texto-sm);
   font-weight: 600;
+  font-family: inherit;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: background-color var(--transicion-rapida) var(--curva),
+              border-color var(--transicion-rapida) var(--curva),
+              color var(--transicion-rapida) var(--curva);
   border: 1px solid var(--color-border);
   background: transparent;
   color: var(--color-text-secondary);
+  min-height: 28px;
 }
 .filter-pill:hover {
   border-color: var(--color-border-light);
@@ -622,54 +757,61 @@ a:hover {
 .dashboard-kpi-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 1.25rem;
-  margin-bottom: 1.75rem;
+  gap: var(--espacio-4);
+  margin-bottom: var(--espacio-5);
 }
 
 .kpi-card {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: var(--espacio-4);
 }
 
 .kpi-icon {
-  padding: 0.75rem;
-  border-radius: 8px;
+  padding: var(--espacio-3);
+  border-radius: var(--radio-md);
   display: flex;
   align-items: center;
   justify-content: center;
 }
-.kpi-icon-gold { background-color: rgba(244, 208, 63, 0.1); color: var(--color-accent-gold); }
-.kpi-icon-blue { background-color: rgba(52, 152, 219, 0.1); color: #3498DB; }
-.kpi-icon-green { background-color: rgba(46, 204, 113, 0.1); color: #2ECC71; }
-.kpi-icon-purple { background-color: rgba(155, 89, 182, 0.1); color: #9B59B6; }
+.kpi-icon-gold { background-color: var(--color-accent-gold-dim); color: var(--color-accent-gold); }
+.kpi-icon-blue { background-color: var(--color-info-dim); color: var(--color-info); }
+.kpi-icon-green { background-color: var(--color-success-dim); color: var(--color-success); }
+/* Era `#9B59B6` sobre `rgba(155, 89, 182, 0.1)`: un sexto color de marca que
+   no aparecía en ningún token y que además no es el morado de la gráfica de
+   perfiles —ese es el #8e44ad—. Dos morados distintos a dos pantallas de
+   distancia, sin que nadie lo hubiera decidido. */
+.kpi-icon-purple { background-color: var(--color-accent-purple-dim); color: var(--color-accent-purple); }
 
 .kpi-label {
-  font-size: 0.8rem;
+  font-size: var(--texto-md);
   font-weight: 600;
   text-transform: uppercase;
+  letter-spacing: 0.04em;
   color: var(--color-text-muted);
-  margin-bottom: 0.25rem;
+  margin-bottom: var(--espacio-1);
 }
 
 .kpi-value {
-  font-size: 1.75rem;
+  font-size: var(--texto-3xl);
   margin: 0;
   line-height: 1.2;
+  font-variant-numeric: tabular-nums;
 }
 
 .kpi-sub {
-  font-size: 0.75rem;
+  font-size: var(--texto-sm);
   color: var(--color-text-secondary);
   margin: 0;
   margin-top: 0.2rem;
+  font-variant-numeric: tabular-nums;
 }
 
 .dashboard-chart-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.25rem;
-  margin-bottom: 1.25rem;
+  gap: var(--espacio-4);
+  margin-bottom: var(--espacio-4);
 }
 
 /* Las otras dos rejillas del panel ya colapsaban solas con `auto-fit`; esta
@@ -679,19 +821,24 @@ a:hover {
 .dashboard-chart-grid-2col {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 1.25rem;
-  margin-bottom: 1.75rem;
+  gap: var(--espacio-4);
+  margin-bottom: var(--espacio-5);
+}
+
+/* La gráfica que ocupa la fila entera. Estaba en línea en el JSX. */
+.chart-ancho-total {
+  grid-column: 1 / -1;
 }
 
 .chart-title {
-  margin-bottom: 1rem;
-  font-size: 1rem;
+  margin-bottom: var(--espacio-4);
+  font-size: var(--texto-lg);
   text-align: center;
 }
 
 .chart-title-left {
-  margin-bottom: 1rem;
-  font-size: 1rem;
+  margin-bottom: var(--espacio-4);
+  font-size: var(--texto-lg);
   text-align: left;
 }
 
@@ -754,28 +901,31 @@ select:focus-visible {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.75rem 1rem;
+  padding: var(--espacio-3) var(--espacio-4);
   border-top: 1px solid var(--color-border);
   flex-wrap: wrap;
-  gap: 0.75rem;
+  gap: var(--espacio-3);
 }
 
 .pagination-info {
-  font-size: 0.8rem;
+  font-size: var(--texto-md);
   color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
 }
 
 .pagination-controls {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: var(--espacio-1);
 }
 
 .pagination-btn {
-  padding: 0.35rem 0.65rem !important;
-  font-size: 0.8rem !important;
+  padding: var(--espacio-1) var(--espacio-2) !important;
+  font-size: var(--texto-md) !important;
   min-width: 34px;
+  min-height: 30px;
   justify-content: center;
+  font-variant-numeric: tabular-nums;
 }
 
 .pagination-btn-active {
@@ -787,8 +937,8 @@ select:focus-visible {
 
 .pagination-dots {
   color: var(--color-text-muted);
-  padding: 0 0.25rem;
-  font-size: 0.85rem;
+  padding: 0 var(--espacio-1);
+  font-size: var(--texto-md);
   user-select: none;
 }
 
@@ -800,11 +950,11 @@ select:focus-visible {
   inset: 0;
   background-color: rgba(0, 0, 0, 0.75);
   backdrop-filter: blur(4px);
-  z-index: 60;
+  z-index: var(--z-confirmacion);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1.5rem;
+  padding: var(--espacio-5);
   animation: confirm-fade-in 0.2s ease-out;
 }
 
@@ -812,40 +962,41 @@ select:focus-visible {
   max-width: 420px;
   width: 100%;
   text-align: center;
-  padding: 2rem !important;
+  padding: var(--espacio-6) !important;
+  box-shadow: var(--sombra-3);
   animation: confirm-slide-up 0.25s ease-out;
 }
 
 .confirm-icon-wrapper {
   display: inline-flex;
-  padding: 0.75rem;
+  padding: var(--espacio-3);
   border-radius: 50%;
-  background-color: rgba(231, 76, 60, 0.12);
-  margin-bottom: 1rem;
+  background-color: var(--color-danger-dim);
+  margin-bottom: var(--espacio-4);
 }
 
 .confirm-title {
-  font-size: 1.1rem;
-  margin-bottom: 0.5rem;
+  font-size: var(--texto-xl);
+  margin-bottom: var(--espacio-2);
 }
 
 .confirm-message {
-  font-size: 0.85rem;
+  font-size: var(--texto-base);
   color: var(--color-text-secondary);
   line-height: 1.6;
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--espacio-5);
 }
 
 .confirm-actions {
   display: flex;
-  gap: 0.75rem;
+  gap: var(--espacio-3);
   justify-content: center;
 }
 
 .confirm-actions .btn {
   flex: 1;
-  font-size: 0.85rem;
-  padding: 0.6rem 1rem;
+  font-size: var(--texto-base);
+  padding: var(--espacio-2) var(--espacio-4);
 }
 
 .confirm-btn-action:hover:not(:disabled) {
@@ -877,19 +1028,28 @@ select:focus-visible {
 }
 
 .data-table th {
-  padding: 0.75rem;
+  padding: var(--espacio-3);
   color: var(--color-text-secondary);
-  font-weight: 500;
-  font-size: 0.8rem;
+  font-weight: 600;
+  font-size: var(--texto-md);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .data-table th:first-child {
-  padding: 0.75rem 0.5rem;
+  padding: var(--espacio-3) var(--espacio-2);
   width: 30px;
 }
 
+/* Las filas se separan con una línea tenue: sin ella, con el nombre y el correo
+   en dos renglones, no se ve dónde acaba un participante y empieza el
+   siguiente. */
+.data-table tbody tr.expandable-row {
+  border-top: 1px solid var(--color-border);
+}
+
 .data-table td.empty-state {
-  padding: 3rem;
+  padding: var(--espacio-7);
   text-align: center;
   color: var(--color-text-muted);
 }
@@ -911,11 +1071,11 @@ select:focus-visible {
   inset: 0;
   background-color: rgba(0, 0, 0, 0.8);
   backdrop-filter: blur(4px);
-  z-index: 50;
+  z-index: var(--z-visor);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 2rem;
+  padding: var(--espacio-6);
 }
 
 .pdf-modal-card {
@@ -929,13 +1089,14 @@ select:focus-visible {
   flex-direction: column;
   position: relative;
   overflow: hidden;
+  box-shadow: var(--sombra-3);
 }
 
 .pdf-modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
+  margin-bottom: var(--espacio-4);
   flex-shrink: 0;
   min-height: 40px;
   position: relative;
@@ -944,6 +1105,7 @@ select:focus-visible {
 
 .pdf-modal-header h3 {
   margin: 0;
+  font-size: var(--texto-xl);
 }
 
 /* Antes era `height: calc(100% - 56px)`: los 40 px de alto mínimo de la
@@ -955,7 +1117,7 @@ select:focus-visible {
   flex: 1;
   min-height: 0;
   background-color: #000;
-  border-radius: 4px;
+  border-radius: var(--radio-sm);
   overflow: hidden;
   position: relative;
   z-index: 1;
@@ -977,13 +1139,13 @@ select:focus-visible {
 }
 
 .pdf-modal-loading .spin {
-  margin-bottom: 1rem;
+  margin-bottom: var(--espacio-4);
 }
 
 .pdf-modal-error {
   color: var(--color-danger);
   text-align: center;
-  padding: 2rem;
+  padding: var(--espacio-6);
 }
 
 /* ============================================================
@@ -1006,25 +1168,30 @@ select:focus-visible {
 
 .search-input-field {
   width: 100%;
-  padding: 0.5rem 0.75rem 0.5rem 2.25rem !important;
-  font-size: 0.85rem;
+  padding: var(--espacio-2) var(--espacio-3) var(--espacio-2) 2.25rem !important;
+  font-size: var(--texto-md);
 }
 
 /* ============================================================
    HEADER ACTION BUTTONS
    ============================================================ */
 .btn-header {
-  padding: 0.5rem 0.75rem;
-  font-size: 0.8rem;
+  padding: var(--espacio-2) var(--espacio-3);
+  font-size: var(--texto-md);
+  min-height: 34px;
 }
 
 .btn-excel {
   border-color: var(--color-success);
   color: var(--color-success);
 }
+.btn-excel:hover:not(:disabled) {
+  background-color: var(--color-success-dim);
+  border-color: var(--color-success);
+}
 
 .btn-close-modal {
-  padding: 0.5rem;
+  padding: var(--espacio-2);
   background-color: var(--color-bg-surface);
 }
 
@@ -1032,8 +1199,8 @@ select:focus-visible {
    FILTER CARD
    ============================================================ */
 .filter-card {
-  margin-bottom: 1.25rem;
-  padding: 1rem 1.25rem;
+  margin-bottom: var(--espacio-4);
+  padding: var(--espacio-4) var(--espacio-4);
 }
 
 /* ============================================================
@@ -1051,11 +1218,11 @@ select:focus-visible {
    LAST UPDATED INDICATOR
    ============================================================ */
 .last-updated {
-  font-size: 0.7rem;
+  font-size: var(--texto-sm);
   color: var(--color-text-muted);
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: var(--espacio-1);
 }
 
 /* ============================================================
@@ -1063,11 +1230,11 @@ select:focus-visible {
    ============================================================ */
 .link-badge-danger {
   margin-left: auto;
-  font-size: 0.65rem;
-  background: rgba(231, 76, 60, 0.15);
+  font-size: var(--texto-xs);
+  background: var(--color-danger-dim);
   color: var(--color-danger);
   padding: 2px 8px;
-  border-radius: 10px;
+  border-radius: var(--radio-pill);
   font-weight: 600;
   animation: pulse-badge 2s ease-in-out infinite;
 }
@@ -1078,8 +1245,12 @@ select:focus-visible {
 }
 
 .btn-logout {
-  border-color: var(--color-danger);
+  border-color: var(--color-border);
   color: var(--color-danger);
+}
+.btn-logout:hover:not(:disabled) {
+  border-color: var(--color-danger);
+  background-color: var(--color-danger-dim);
 }
 
 /* ============================================================
@@ -1094,7 +1265,7 @@ select:focus-visible {
   );
   background-size: 200% 100%;
   animation: skeleton-shimmer 1.5s ease-in-out infinite;
-  border-radius: 4px;
+  border-radius: var(--radio-sm);
 }
 
 .skeleton-circle {
@@ -1102,20 +1273,23 @@ select:focus-visible {
 }
 
 .skeleton-rect {
-  border-radius: 6px;
+  border-radius: var(--radio-md);
 }
 
 .skeleton-group {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--espacio-2);
 }
 
-.skeleton-mt { margin-top: 0.5rem; }
-.skeleton-mb { margin-bottom: 1rem; }
+.skeleton-mt { margin-top: var(--espacio-2); }
+.skeleton-mb { margin-bottom: var(--espacio-4); }
+
+/* El bloque de texto del KPI fantasma. Estaba en línea en el JSX. */
+.skeleton-kpi-texto { flex: 1; }
 
 .skeleton-row td {
-  padding: 0.75rem;
+  padding: var(--espacio-3);
 }
 
 @keyframes skeleton-shimmer {
@@ -1129,7 +1303,7 @@ select:focus-visible {
 .data-table th.sortable {
   cursor: pointer;
   user-select: none;
-  transition: color 0.2s;
+  transition: color var(--transicion-rapida) var(--curva);
   white-space: nowrap;
 }
 
@@ -1144,9 +1318,10 @@ select:focus-visible {
 .sort-arrow {
   display: inline-block;
   margin-left: 4px;
-  font-size: 0.7rem;
+  font-size: var(--texto-sm);
   opacity: 0.4;
-  transition: opacity 0.2s, transform 0.2s;
+  transition: opacity var(--transicion-rapida) var(--curva),
+              transform var(--transicion-rapida) var(--curva);
 }
 
 .sort-arrow.active {
@@ -1166,23 +1341,23 @@ select:focus-visible {
   align-items: center;
   justify-content: center;
   min-height: 70vh;
-  padding: 2rem;
+  padding: var(--espacio-6);
 }
 
 .not-found-card {
   max-width: 460px;
   width: 100%;
   text-align: center;
-  padding: 3rem 2.5rem !important;
+  padding: var(--espacio-7) 2.5rem !important;
 }
 
 .not-found-icon {
   display: inline-flex;
-  padding: 1rem;
+  padding: var(--espacio-4);
   border-radius: 50%;
   background-color: var(--color-accent-gold-dim);
   color: var(--color-accent-gold);
-  margin-bottom: 1.25rem;
+  margin-bottom: var(--espacio-4);
   animation: not-found-pulse 2s ease-in-out infinite;
 }
 
@@ -1195,34 +1370,139 @@ select:focus-visible {
   font-size: 4.5rem;
   font-weight: 800;
   line-height: 1;
+  letter-spacing: -0.03em;
   background: linear-gradient(135deg, var(--color-accent-gold), var(--color-accent-gold-hover));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  margin-bottom: 0.5rem;
+  margin-bottom: var(--espacio-2);
 }
 
 .not-found-title {
-  font-size: 1.25rem;
-  margin-bottom: 0.75rem;
+  font-size: var(--texto-2xl);
+  margin-bottom: var(--espacio-3);
 }
 
 .not-found-message {
-  font-size: 0.875rem;
+  font-size: var(--texto-base);
   color: var(--color-text-secondary);
   line-height: 1.6;
-  margin-bottom: 2rem;
+  margin-bottom: var(--espacio-6);
 }
 
 .not-found-actions {
   display: flex;
-  gap: 0.75rem;
+  gap: var(--espacio-3);
   justify-content: center;
 }
 
 .not-found-actions .btn {
-  font-size: 0.85rem;
-  padding: 0.6rem 1.25rem;
+  font-size: var(--texto-base);
+  padding: var(--espacio-2) var(--espacio-5);
+}
+
+/* ============================================================
+   PANTALLA DE ACCESO
+   ------------------------------------------------------------
+   Estaba escrita con `style={{...}}` dentro del JSX: seis
+   declaraciones sueltas, ninguna reutilizable y ninguna
+   alcanzable por los tokens.
+   ============================================================ */
+.acceso-marca {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--espacio-4);
+  text-align: center;
+  margin-bottom: var(--espacio-6);
+}
+
+.acceso-icono {
+  background-color: var(--color-accent-gold-dim);
+  color: var(--color-accent-gold);
+  padding: var(--espacio-4);
+  border-radius: 50%;
+  display: inline-flex;
+}
+
+.acceso-titulo {
+  font-size: var(--texto-2xl);
+  margin-bottom: var(--espacio-1);
+}
+
+.acceso-error {
+  color: var(--color-danger);
+  font-size: var(--texto-base);
+  margin-bottom: var(--espacio-4);
+  background-color: var(--color-danger-dim);
+  border: 1px solid var(--color-danger);
+  padding: var(--espacio-2) var(--espacio-3);
+  border-radius: var(--radio-sm);
+}
+
+/* ============================================================
+   PANTALLA DE ERROR (ErrorBoundary)
+   ============================================================ */
+.pantalla-error {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--espacio-6);
+  background-color: var(--color-bg-base);
+}
+
+.error-tarjeta {
+  max-width: 480px;
+  width: 100%;
+  text-align: center;
+  padding: 2.5rem !important;
+}
+
+.error-icono {
+  background-color: var(--color-danger-dim);
+  color: var(--color-danger);
+  padding: var(--espacio-4);
+  border-radius: 50%;
+  display: inline-flex;
+  margin-bottom: var(--espacio-5);
+}
+
+.error-titulo {
+  font-size: var(--texto-2xl);
+  margin-bottom: var(--espacio-2);
+}
+
+.error-mensaje {
+  color: var(--color-text-secondary);
+  font-size: var(--texto-base);
+  line-height: 1.6;
+  margin-bottom: var(--espacio-5);
+}
+
+.error-detalle {
+  background-color: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radio-sm);
+  padding: var(--espacio-3);
+  margin-bottom: var(--espacio-5);
+  text-align: left;
+  font-size: var(--texto-sm);
+  color: var(--color-danger);
+  font-family: ui-monospace, SFMono-Regular, 'Cascadia Code', Consolas, monospace;
+  max-height: 100px;
+  overflow: auto;
+}
+
+.error-acciones {
+  display: flex;
+  gap: var(--espacio-3);
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.error-acciones .btn {
+  font-size: var(--texto-base);
 }
 
 /* ============================================================
@@ -1241,7 +1521,7 @@ select:focus-visible {
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.6);
-    z-index: 39;
+    z-index: var(--z-velo-lateral);
   }
   .sidebar-overlay.visible {
     display: block;
@@ -1251,9 +1531,9 @@ select:focus-visible {
     align-items: center;
     justify-content: center;
     position: fixed;
-    bottom: 1.5rem;
-    right: 1.5rem;
-    z-index: 38;
+    bottom: var(--espacio-5);
+    right: var(--espacio-5);
+    z-index: var(--z-boton-flotante);
     width: 48px;
     height: 48px;
     border-radius: 50%;
@@ -1265,7 +1545,7 @@ select:focus-visible {
   }
   .main-content {
     margin-left: 0;
-    padding: 1.25rem;
+    padding: var(--espacio-4);
   }
   .cupos-grid {
     grid-template-columns: 1fr;
@@ -1274,8 +1554,8 @@ select:focus-visible {
     grid-template-columns: 1fr 1fr;
   }
   .toast-container {
-    right: 0.75rem;
-    left: 0.75rem;
+    right: var(--espacio-3);
+    left: var(--espacio-3);
   }
   .toast {
     min-width: unset;
@@ -1322,15 +1602,15 @@ select:focus-visible {
    ============================================================ */
 
 .celda-institucion {
-  padding: 0.6rem 0.5rem;
-  font-size: 0.85rem;
+  padding: 0.6rem var(--espacio-2);
+  font-size: var(--texto-md);
   white-space: nowrap;
   color: var(--color-text-secondary);
 }
 
 .celda-taller {
-  padding: 0.6rem 0.5rem;
-  font-size: 0.85rem;
+  padding: 0.6rem var(--espacio-2);
+  font-size: var(--texto-md);
   min-width: 200px;
 }
 
@@ -1341,6 +1621,44 @@ select:focus-visible {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* Las celdas que llevaban su `padding` escrito en línea, una por una, en el
+   JSX de la fila. */
+.celda-desplegar {
+  padding: var(--espacio-3) var(--espacio-2);
+  width: 30px;
+}
+
+.celda-id {
+  padding: var(--espacio-3);
+  font-weight: 600;
+  color: var(--color-accent-gold);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.celda-accion {
+  padding: var(--espacio-3);
+}
+
+.celda-accion-grupo {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.celda-detalle {
+  padding: 0;
+  border: none;
+}
+
+.insignia-perfil {
+  padding: 0.2rem var(--espacio-2);
+  background-color: var(--color-bg-hover);
+  border-radius: var(--radio-sm);
+  font-size: var(--texto-sm);
+  white-space: nowrap;
 }
 
 /* ------------------------------------------------------------
@@ -1355,9 +1673,9 @@ select:focus-visible {
   align-items: center;
   gap: 0.3rem;
   min-height: 26px;
-  padding: 0.25rem 0.5rem;
-  border-radius: 5px;
-  font-size: 0.7rem;
+  padding: var(--espacio-1) var(--espacio-2);
+  border-radius: var(--radio-sm);
+  font-size: var(--texto-sm);
   font-weight: 600;
   background-color: transparent;
   border: 1px solid;
@@ -1387,11 +1705,11 @@ select:focus-visible {
 .filter-group {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--espacio-2);
 }
 
 .filter-group-label {
-  font-size: 0.7rem;
+  font-size: var(--texto-sm);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -1413,9 +1731,9 @@ select:focus-visible {
 .btn-validar-pago {
   min-height: 28px;
   padding: 0.3rem 0.7rem;
-  font-size: 0.72rem;
+  font-size: var(--texto-sm);
   font-weight: 600;
-  border-radius: 5px;
+  border-radius: var(--radio-sm);
   background-color: transparent;
   border: 1px solid var(--color-success);
   color: var(--color-success);
@@ -1423,14 +1741,14 @@ select:focus-visible {
 }
 
 .btn-validar-pago:hover:not(:disabled) {
-  background-color: rgba(46, 204, 113, 0.12);
+  background-color: var(--color-success-dim);
 }
 
 /* El nombre se partía en dos renglones y, con el correo debajo, dejaba las filas
    en 91 px de alto: doce cabían en pantalla de 47. Al reducir la institución a
    su sigla quedó ancho de sobra para que quepa de una vez. */
 .celda-participante {
-  padding: 0.6rem 0.5rem;
+  padding: 0.6rem var(--espacio-2);
   white-space: nowrap;
 }
 
@@ -1439,7 +1757,7 @@ select:focus-visible {
 }
 
 .participante-correo {
-  font-size: 0.75rem;
+  font-size: var(--texto-sm);
   color: var(--color-text-muted);
 }
 
@@ -1448,8 +1766,8 @@ select:focus-visible {
    hasta obligar a desplazarla también en un monitor de 1440. */
 .data-table th,
 .data-table td {
-  padding-left: 0.5rem;
-  padding-right: 0.5rem;
+  padding-left: var(--espacio-2);
+  padding-right: var(--espacio-2);
 }
 
 /* ============================================================
@@ -1466,7 +1784,7 @@ select:focus-visible {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 0.8rem;
+  font-size: var(--texto-md);
 }
 
 .estado-celda.afirmativo {
@@ -1479,10 +1797,10 @@ select:focus-visible {
 
 /* Acciones de la fila desplegada. */
 .btn-detalle {
-  padding: 0.35rem 0.75rem;
-  font-size: 0.75rem;
+  padding: var(--espacio-1) var(--espacio-3);
+  font-size: var(--texto-sm);
   min-height: 30px;
-  border-radius: 5px;
+  border-radius: var(--radio-sm);
   background-color: transparent;
   border: 1px solid;
 }
@@ -1513,4 +1831,36 @@ select:focus-visible {
 .leyenda-porcentaje {
   opacity: 0.6;
   font-size: 0.9em;
+}
+
+/* ============================================================
+   MOVIMIENTO REDUCIDO
+   ------------------------------------------------------------
+   El panel animaba siempre, y `.fade-in-up` arranca en
+   `opacity: 0`: quien tiene desactivado el movimiento en su
+   sistema —por mareo, por migraña o porque le estorba— no veía una
+   entrada suave, veía una página que tardaba medio segundo en
+   existir. Aquí el contenido aparece y ya está.
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .fade-in-up {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* El único movimiento que se conserva: es el que dice que algo está
+     ocurriendo, y sin él un botón de «Actualizar» pulsado no se distingue de
+     uno que no ha hecho nada. */
+  .spin {
+    animation: spin 1.5s linear infinite !important;
+  }
 }

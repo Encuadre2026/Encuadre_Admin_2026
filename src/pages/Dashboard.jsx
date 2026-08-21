@@ -270,7 +270,7 @@ export default function Dashboard({ registrosHook }) {
 
       {/* Charts Row 2 */}
       <div className="dashboard-chart-grid-2col">
-        <div className="card fade-in-up" style={{ gridColumn: '1 / -1', animationDelay: '0.4s' }}>
+        <div className="card fade-in-up chart-ancho-total" style={{ animationDelay: '0.4s' }}>
           <h3 className="chart-title-left">Curva de Inscripciones por Día</h3>
           <div className="chart-container-lg">
             <ResponsiveContainer width="100%" height="100%">

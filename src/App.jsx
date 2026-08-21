@@ -1,5 +1,5 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
-import { Routes, Route, useNavigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { Menu, RefreshCw } from 'lucide-react';
 import { ToastProvider } from './context/ToastContext';
 import useRegistros from './hooks/useRegistros';
@@ -61,6 +61,11 @@ function AuthenticatedLayout() {
       <main className="main-content">
         <Suspense fallback={<PageLoader />}>
           <Routes>
+            {/* La raíz no estaba definida, así que caía en el comodín y quien
+                entraba a la dirección del panel a secas —sin `#/dashboard`—
+                aterrizaba en «Página no encontrada». Es lo primero que ve
+                alguien que llega desde un enlace o desde sus marcadores. */}
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<Dashboard registrosHook={registrosHook} />} />
             <Route path="/participantes" element={<Participantes registrosHook={registrosHook} />} />
             <Route path="/cupos" element={<Cupos registrosHook={registrosHook} />} />
