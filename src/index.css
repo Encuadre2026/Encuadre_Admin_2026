@@ -817,12 +817,24 @@ a:hover {
 /* Las otras dos rejillas del panel ya colapsaban solas con `auto-fit`; esta
    estaba clavada a dos columnas, así que en un móvil de 390 px las dos
    gráficas de talleres se quedaban en 170 px cada una: las barras
-   desaparecían y las etiquetas se partían en «Didácticas p el a». */
+   desaparecían y las etiquetas se partían en «Didácticas p el a».
+
+   Pero `auto-fit` con un mínimo de 320 px hacía lo contrario en pantalla
+   grande: en un monitor de 1440 caben tres columnas de 361 px, y como aquí solo
+   hay dos gráficas de talleres, la tercera se quedaba vacía y la fila terminaba
+   a media pantalla. Son dos, y son dos: una columna hasta la tableta, dos a
+   partir de ahí. */
 .dashboard-chart-grid-2col {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: 1fr;
   gap: var(--espacio-4);
   margin-bottom: var(--espacio-5);
+}
+
+@media (min-width: 769px) {
+  .dashboard-chart-grid-2col {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 /* La gráfica que ocupa la fila entera. Estaba en línea en el JSX. */
@@ -869,8 +881,10 @@ a:hover {
   text-decoration: underline;
 }
 
+/* Los 230 px de antes los repartían el donut y su leyenda, y con tres perfiles
+   la leyenda ocupa tres renglones: el círculo quedaba pegado al primero. */
 .chart-container {
-  height: 230px;
+  height: 260px;
 }
 
 .chart-container-lg {
@@ -1054,13 +1068,16 @@ select:focus-visible {
   border-bottom: 1px solid var(--color-border);
 }
 
+/* Sin versalitas, a diferencia del resto de los rótulos del panel. Se probaron
+   —quedan bien, dan aire de rejilla de datos— y cuestan 42 px de ancho de tabla
+   medidos: 1173 px en vez de 1131, dentro de un contenedor de 1114. La tabla se
+   desplaza en horizontal de las dos maneras, pero la columna que se queda fuera
+   es «Asistencia», y cuanto menos haya que desplazarse para verla, mejor. */
 .data-table th {
   padding: var(--espacio-3);
   color: var(--color-text-secondary);
   font-weight: 600;
   font-size: var(--texto-md);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 
 .data-table th:first-child {
