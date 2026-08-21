@@ -1,33 +1,25 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, Ticket, CheckCircle, DollarSign, RefreshCw, ArrowRight, BarChart3, AlertTriangle } from 'lucide-react';
-import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, LineChart, Line, CartesianGrid, Legend, LabelList } from 'recharts';
+import { RefreshCw, ArrowRight, BarChart3, AlertTriangle } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import { useToast } from '../context/toast-contexto';
+import { estadoDeCupo } from '../cupos';
 import EstadoVacio from '../components/EstadoVacio';
 import { KpiSkeleton, ChartSkeleton } from '../components/Skeleton';
 
 /**
- * Los colores del panel, una sola vez.
+ * Los colores de la composición, una sola vez y en el orden de siempre.
  *
- * Estaban escritos a mano treinta y una veces entre este archivo y los
- * componentes: los mismos cinco valores, en mayúsculas aquí y en minúsculas en
- * el CSS, sin nada que los mantuviera juntos. No es que se vieran distintos
- * —son idénticos—, es que nada impedía que dejaran de serlo.
- *
- * Recharts pasa el relleno tal cual al SVG, y `fill` resuelve `var()`, así que
- * los tokens del CSS valen sin puente ninguno. Una de las porciones ya lo hacía;
- * ahora lo hacen todas.
+ * Son clases, no valores: los cinco colores de marca siguen escritos
+ * únicamente en los tokens de `index.css` —que es lo que vigila
+ * `scripts/revisar-color.mjs`— y aquí solo se elige cuál toca.
  */
-const COLORS = [
-  'var(--color-accent-gold)',
-  'var(--color-accent-purple)',
-  'var(--color-info)',
-  'var(--color-danger)',
-  'var(--color-success)',
-];
+const TONOS = ['tono-oro', 'tono-morado', 'tono-info', 'tono-peligro', 'tono-exito'];
+
 const TOOLTIP_STYLE = {
   backgroundColor: 'var(--color-grafica-fondo)',
   borderColor: 'var(--color-grafica-borde)',
+  borderRadius: '8px',
 };
 const TOOLTIP_ITEM_STYLE = { color: 'var(--color-text-primary)' };
 const TOOLTIP_LABEL_STYLE = {
@@ -35,66 +27,90 @@ const TOOLTIP_LABEL_STYLE = {
   fontWeight: 600,
   marginBottom: '4px',
 };
-const CURSOR_STYLE = { fill: 'rgba(255,255,255,0.05)' };
-const TOOLTIP_CONTENT_WIDE = {
-  ...TOOLTIP_STYLE,
-  maxWidth: '320px',
-  whiteSpace: 'normal',
-};
 
 /** Un solo formato de número para todo el panel. */
 const numero = new Intl.NumberFormat('es-MX');
 
 /**
- * Leyenda que además dice cuánto vale cada porción.
+ * Reparte un total en porciones con su porcentaje ya calculado.
  *
- * Los tres donuts solo mostraban colores y nombres: para saber que eran 10
- * confirmados y 37 pendientes había que pasar el ratón por encima, cosa que en
- * una tableta no ocurre nunca. La cifra estaba en los datos y no se enseñaba.
+ * El porcentaje que se escribe va redondeado y el ancho del segmento no: si la
+ * barra se dibujara con los enteros, tres porciones de 33,3 % dejarían un
+ * píxel de fondo al final que parece un cuarto valor.
  */
-function leyendaConCifra(porciones) {
-  const total = porciones.reduce((suma, p) => suma + p.value, 0);
-  return (valor, entrada) => {
-    const porcion = porciones.find((p) => p.name === valor);
-    if (!porcion) return valor;
-    const porcentaje = total ? Math.round((porcion.value / total) * 100) : 0;
-    return (
-      <span style={{ color: entrada.color }}>
-        {valor} <strong>{numero.format(porcion.value)}</strong>{' '}
-        <span className="leyenda-porcentaje">{porcentaje}%</span>
-      </span>
-    );
-  };
+function porciones(partes, tonos = TONOS) {
+  const total = partes.reduce((suma, p) => suma + p.valor, 0);
+  return partes.map((parte, i) => ({
+    ...parte,
+    tono: tonos[i % tonos.length],
+    porcentaje: total ? Math.round((parte.valor / total) * 100) : 0,
+    ancho: total ? (parte.valor / total) * 100 : 0,
+  }));
 }
 
 /**
- * Una tarjeta de gráfica, con lo que enseñar cuando no hay nada que dibujar.
- *
- * Sin datos, recharts no falla: pinta un lienzo perfectamente vacío. Un donut
- * sin porciones y una curva sin línea se ven exactamente igual que una gráfica
- * rota, y en un panel que se abre el primer día del pre-registro —cuando todavía
- * no hay nadie inscrito— eso es lo que se ve.
+ * Una sección del dashboard: número de orden, nombre y, a la derecha, la cifra
+ * que la resume.
  *
  * Vive fuera del componente de página, como `SortHeader` en Participantes:
  * definida dentro, React la trataría como un tipo nuevo en cada renderizado y
  * volvería a montar la gráfica entera cada vez.
  */
-function TarjetaGrafica({ titulo, hayDatos, vacio, retraso, ancha = false, alta = false, children }) {
+function Seccion({ indice, nombre, meta, retraso, children }) {
   return (
-    <div
-      className={`card fade-in-up${ancha ? ' chart-ancho-total' : ''}`}
-      style={{ animationDelay: retraso }}
-    >
-      <h3 className="chart-title">{titulo}</h3>
-      <div className={alta ? 'chart-container-lg' : 'chart-container'}>
-        {hayDatos ? (
-          <ResponsiveContainer width="100%" height="100%">
-            {children}
-          </ResponsiveContainer>
-        ) : (
-          <EstadoVacio {...vacio} />
-        )}
+    <section className="seccion fade-in-up" style={{ animationDelay: retraso }}>
+      <div className="seccion-cabecera">
+        <div className="seccion-titulo">
+          <span className="seccion-indice cifra">{indice}</span>
+          <h2 className="seccion-nombre">{nombre}</h2>
+        </div>
+        {meta && <span className="seccion-meta">{meta}</span>}
       </div>
+      {children}
+    </section>
+  );
+}
+
+/**
+ * Una barra de proporción con su leyenda.
+ *
+ * Sustituye a los tres donuts. El donut obliga a comparar ángulos para
+ * responder a lo que aquí se pregunta —cuánto falta por validar, cuánta gente
+ * viene de fuera—, y las cifras solo aparecían al pasar el ratón o en la
+ * leyenda; en una tableta, lo primero no ocurre nunca.
+ */
+function Proporcion({ titulo, partes, hayDatos, vacio }) {
+  return (
+    <div className="proporcion">
+      <div className="rotulo-seccion">{titulo}</div>
+      {hayDatos ? (
+        <>
+          <div className="proporcion-barra">
+            {/* Una porción de valor cero no se dibuja: con `min-width` acabaría
+                siendo una raya igual que la de un valor pequeño pero real. La
+                leyenda sí la sigue nombrando, con su cero. */}
+            {partes.filter((p) => p.valor > 0).map((parte) => (
+              <div
+                key={parte.nombre}
+                className={`proporcion-segmento ${parte.tono}`}
+                style={{ width: `${parte.ancho}%` }}
+              />
+            ))}
+          </div>
+          <div className="proporcion-leyenda">
+            {partes.map((parte) => (
+              <div className="proporcion-fila" key={parte.nombre}>
+                <span className={`proporcion-punto ${parte.tono}`} aria-hidden="true" />
+                <span className="proporcion-nombre">{parte.nombre}</span>
+                <span className="proporcion-cifra">{numero.format(parte.valor)}</span>
+                <span className="proporcion-porcentaje">{parte.porcentaje} %</span>
+              </div>
+            ))}
+          </div>
+        </>
+      ) : (
+        <EstadoVacio {...vacio} />
+      )}
     </div>
   );
 }
@@ -111,14 +127,15 @@ export default function Dashboard({ registrosHook }) {
     const totalRegistros = regs.length;
     const asistencia = regs.filter(r => r.asistio).length;
 
-    let totalCapacidad = 0;
-    let totalOcupados = 0;
-    cups.forEach(c => {
-      // Los lugares reservados los declara la API por taller, en vez de darlos
-      // por sabidos aquí.
-      totalCapacidad += c.cupo_maximo + (c.lugares_reservados_uaa ?? 0);
-      totalOcupados += c.inscritos;
-    });
+    // Un taller por fila, ordenados por demanda. Antes eran dos gráficas —«Top
+    // 5» y «Top 3 menos solicitados»— que con cinco talleres enseñaban los
+    // mismos talleres dos veces.
+    const talleres = cups
+      .map((c) => ({ nombre: c.nombre, ...estadoDeCupo(c) }))
+      .sort((a, b) => b.inscritos - a.inscritos);
+
+    const totalCapacidad = talleres.reduce((suma, t) => suma + t.capacidad, 0);
+    const totalOcupados = talleres.reduce((suma, t) => suma + t.inscritos, 0);
     const porcentajeOcupacion = totalCapacidad ? Math.round((totalOcupados / totalCapacidad) * 100) : 0;
 
     const perfilesMap = {};
@@ -126,42 +143,29 @@ export default function Dashboard({ registrosHook }) {
       const p = r.perfil || 'Desconocido';
       perfilesMap[p] = (perfilesMap[p] || 0) + 1;
     });
-    const perfilesData = Object.entries(perfilesMap).map(([name, value]) => ({ name, value }));
-
-    const instMap = {};
-    regs.forEach(r => {
-      const i = r.institucion || 'Otra';
-      const name = i.includes('UAA') ? 'UAA' : (i.includes('General') ? 'Público Gral' : i);
-      instMap[name] = (instMap[name] || 0) + 1;
-    });
-    const instData = Object.entries(instMap)
-      .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 5);
+    const perfilesData = porciones(
+      Object.entries(perfilesMap)
+        .sort((a, b) => b[1] - a[1])
+        .map(([nombre, valor]) => ({ nombre, valor }))
+    );
 
     const pagosConfirmados = regs.filter(r => r.pago_aprobado).length;
     const pagosPendientes = totalRegistros - pagosConfirmados;
-    const pagosData = [
-      { name: 'Confirmados', value: pagosConfirmados },
-      { name: 'Pendientes', value: pagosPendientes },
-    ];
-
-    const talleresOrdenados = [...cups].sort((a, b) => b.inscritos - a.inscritos);
-    const top5Talleres = talleresOrdenados.slice(0, 5).map(t => ({
-      name: t.nombre,
-      inscritos: t.inscritos,
-    }));
-    const bottom3Talleres = talleresOrdenados.slice(-3).reverse().map(t => ({
-      name: t.nombre,
-      inscritos: t.inscritos,
-    }));
+    // El verde y el rojo no son «el color 1 y el color 2» de una serie: son los
+    // colores de estado del panel, y aquí lo que se enseña es justamente un
+    // estado. Los perfiles, que no significan nada bueno ni malo, sí van con la
+    // rampa neutra.
+    const pagosData = porciones([
+      { nombre: 'Confirmados', valor: pagosConfirmados },
+      { nombre: 'Pendientes', valor: pagosPendientes },
+    ], ['tono-exito', 'tono-peligro']);
 
     const uaaCount = regs.filter(r => (r.institucion || '').includes('UAA')).length;
     const foraneosCount = totalRegistros - uaaCount;
-    const audienciaData = [
-      { name: 'UAA (Local)', value: uaaCount },
-      { name: 'Foráneos / Otras', value: foraneosCount },
-    ];
+    const audienciaData = porciones([
+      { nombre: 'UAA · local', valor: uaaCount },
+      { nombre: 'Otras instituciones', valor: foraneosCount },
+    ], ['tono-oro', 'tono-info']);
 
     const fechasMap = {};
     regs.forEach(r => {
@@ -180,10 +184,11 @@ export default function Dashboard({ registrosHook }) {
 
     return {
       totalRegistros, asistencia, totalCapacidad, totalOcupados, porcentajeOcupacion,
-      perfilesData, instData, pagosConfirmados, pagosPendientes, pagosData,
-      top5Talleres, bottom3Talleres, audienciaData, fechasData,
+      perfilesData, pagosConfirmados, pagosPendientes, pagosData,
+      talleres, audienciaData, fechasData,
       totalTalleres: cups.length,
       porcentajeAsistencia: totalRegistros ? Math.round((asistencia / totalRegistros) * 100) : 0,
+      porcentajePagos: totalRegistros ? Math.round((pagosConfirmados / totalRegistros) * 100) : 0,
     };
   }, [data]);
 
@@ -202,8 +207,8 @@ export default function Dashboard({ registrosHook }) {
   // panel.
   const falloSinDatos = Boolean(error) && !error.noAutorizado && !hayRegistros;
 
-  // El motivo lo cuenta el aviso de arriba, una vez. Repetirlo en las seis
-  // tarjetas serían siete copias de la misma frase en una pantalla.
+  // El motivo lo cuenta el aviso de arriba, una vez. Repetirlo en cada sección
+  // serían varias copias de la misma frase en una pantalla.
   const vacio = falloSinDatos
     ? {
         icono: AlertTriangle,
@@ -212,14 +217,19 @@ export default function Dashboard({ registrosHook }) {
     : {
         icono: BarChart3,
         titulo: 'Sin datos todavía',
-        mensaje: 'Esta gráfica se dibujará en cuanto haya registros que contar.',
+        mensaje: 'Esto se dibujará en cuanto haya registros que contar.',
       };
 
   return (
     <div className="fade-in-up">
-      {/* Page header */}
       <div className="page-header">
-        <h1>Dashboard</h1>
+        <div className="page-header-titulo">
+          <div className="rotulo-seccion">Panel · Dashboard</div>
+          <h1>Estado del padrón</h1>
+          <p className="page-header-contexto">
+            36 FTD · Futurología y Tendencia del Diseño · del 29 al 31 de octubre de 2026
+          </p>
+        </div>
         <div className="header-actions">
           <button onClick={onRefresh} className="btn btn-outline btn-header" disabled={loading}>
             <RefreshCw size={15} className={loading ? 'spin' : ''} /> Actualizar
@@ -227,158 +237,155 @@ export default function Dashboard({ registrosHook }) {
         </div>
       </div>
 
-      {/* KPIs */}
+      {/* Las cuatro cifras de cabecera. La primera al doble de cuerpo: es la
+          que resume el evento. */}
       <div className="dashboard-kpi-grid">
         {isFirstLoad ? (
           <><KpiSkeleton /><KpiSkeleton /><KpiSkeleton /><KpiSkeleton /></>
         ) : (
           <>
-            <div className="card fade-in-up kpi-card" style={{ animationDelay: '0.05s' }}>
-              <div className="kpi-icon kpi-icon-gold"><Users size={28} /></div>
-              <div>
-                <p className="kpi-label">Total Registros</p>
-                <h2 className="kpi-value">{falloSinDatos ? '—' : numero.format(stats.totalRegistros)}</h2>
-                {!falloSinDatos && <p className="kpi-sub">en {stats.totalTalleres} talleres</p>}
-              </div>
+            <div className="kpi-card fade-in-up" style={{ animationDelay: '0.05s' }}>
+              <p className="kpi-label">Registros totales</p>
+              <h2 className="kpi-value">{falloSinDatos ? '—' : numero.format(stats.totalRegistros)}</h2>
+              {!falloSinDatos && (
+                <p className="kpi-sub">
+                  en {stats.totalTalleres} talleres · {numero.format(stats.totalOcupados)} lugares ocupados
+                </p>
+              )}
             </div>
 
-            <div className="card fade-in-up kpi-card" style={{ animationDelay: '0.1s' }}>
-              <div className="kpi-icon kpi-icon-blue"><Ticket size={28} /></div>
-              <div>
-                <p className="kpi-label">Ocupación Global</p>
-                <h2 className="kpi-value">{falloSinDatos ? '—' : `${stats.porcentajeOcupacion}%`}</h2>
-                {!falloSinDatos && <p className="kpi-sub">{stats.totalOcupados} / {stats.totalCapacidad}</p>}
-              </div>
+            <div className="kpi-card fade-in-up" style={{ animationDelay: '0.1s' }}>
+              <p className="kpi-label">Ocupación global</p>
+              <h2 className="kpi-value">{falloSinDatos ? '—' : `${stats.porcentajeOcupacion}%`}</h2>
+              {!falloSinDatos && (
+                <>
+                  <div className="kpi-medida">
+                    <div className="kpi-medida-relleno tono-oro" style={{ width: `${stats.porcentajeOcupacion}%` }} />
+                  </div>
+                  <p className="kpi-sub">{stats.totalOcupados} de {stats.totalCapacidad} lugares</p>
+                </>
+              )}
             </div>
 
-            <div className="card fade-in-up kpi-card" style={{ animationDelay: '0.15s' }}>
-              <div className="kpi-icon kpi-icon-green"><CheckCircle size={28} /></div>
-              <div>
-                <p className="kpi-label">Asistencias</p>
-                <h2 className="kpi-value">{falloSinDatos ? '—' : numero.format(stats.asistencia)}</h2>
-                {/* Un número de asistencias sin el total contra el que compararlo
-                    no dice si el evento fue bien o fue mal. */}
-                {!falloSinDatos && <p className="kpi-sub">{stats.porcentajeAsistencia}% del total</p>}
-              </div>
+            <div className="kpi-card fade-in-up" style={{ animationDelay: '0.15s' }}>
+              <p className="kpi-label">Asistencia</p>
+              <h2 className="kpi-value">{falloSinDatos ? '—' : numero.format(stats.asistencia)}</h2>
+              {/* Un número de asistencias sin el total contra el que compararlo
+                  no dice si el evento fue bien o fue mal. */}
+              {!falloSinDatos && (
+                <>
+                  <div className="kpi-medida">
+                    <div className="kpi-medida-relleno tono-exito" style={{ width: `${stats.porcentajeAsistencia}%` }} />
+                  </div>
+                  <p className="kpi-sub">{stats.porcentajeAsistencia} % del padrón</p>
+                </>
+              )}
             </div>
 
-            <div className="card fade-in-up kpi-card" style={{ animationDelay: '0.2s' }}>
-              <div className="kpi-icon kpi-icon-purple"><DollarSign size={28} /></div>
-              <div>
-                <p className="kpi-label">Pagos Validados</p>
-                <h2 className="kpi-value">{falloSinDatos ? '—' : numero.format(stats.pagosConfirmados)}</h2>
-                {/* Lo que se hace después de leer «37 pendientes» es ir a
-                    validarlos, y eso eran tres clics: la barra lateral, la
-                    tabla y el filtro. La barra lateral ya llevaba el filtro
-                    puesto; esta cifra hace lo mismo. */}
-                {falloSinDatos ? null : stats.pagosPendientes > 0 ? (
-                  <button
-                    className="kpi-enlace"
-                    onClick={() => navigate('/participantes', { state: { filtroPago: 'Pendientes' } })}
-                  >
-                    {numero.format(stats.pagosPendientes)} pendientes
-                    <ArrowRight size={12} />
-                  </button>
-                ) : (
-                  <p className="kpi-sub">sin pagos pendientes</p>
-                )}
-              </div>
+            <div className="kpi-card fade-in-up" style={{ animationDelay: '0.2s' }}>
+              <p className="kpi-label">Pagos validados</p>
+              <h2 className="kpi-value">{falloSinDatos ? '—' : numero.format(stats.pagosConfirmados)}</h2>
+              {/* Lo que se hace después de leer «37 pendientes» es ir a
+                  validarlos, y eso eran tres clics: la barra lateral, la tabla
+                  y el filtro. */}
+              {falloSinDatos ? null : (
+                <>
+                  <div className="kpi-medida">
+                    <div className="kpi-medida-relleno tono-exito" style={{ width: `${stats.porcentajePagos}%` }} />
+                  </div>
+                  {stats.pagosPendientes > 0 ? (
+                    <button
+                      className="kpi-enlace"
+                      onClick={() => navigate('/participantes', { state: { filtroPago: 'Pendientes' } })}
+                    >
+                      {numero.format(stats.pagosPendientes)} pendientes
+                      <ArrowRight size={12} />
+                    </button>
+                  ) : (
+                    <p className="kpi-sub">sin pagos pendientes</p>
+                  )}
+                </>
+              )}
             </div>
           </>
         )}
       </div>
 
-      {/* La curva y los talleres primero: son las dos preguntas que se hacen al
-          abrir el panel —cómo va el ritmo y qué se está llenando—. Los donuts
-          describen la composición, que se consulta de vez en cuando. */}
-      <div className="dashboard-chart-grid-2col">
-        <TarjetaGrafica titulo="Curva de Inscripciones por Día" hayDatos={stats.fechasData.length > 0} vacio={vacio} retraso="0.25s" ancha alta>
-          <LineChart data={stats.fechasData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--color-grafica-borde)" vertical={false} />
-            <XAxis dataKey="name" stroke="var(--color-text-muted)" tick={{ fill: 'var(--color-text-secondary)', fontSize: 12 }} />
-            <YAxis stroke="var(--color-text-muted)" tick={{ fill: 'var(--color-text-secondary)' }} allowDecimals={false} />
-            <RechartsTooltip contentStyle={TOOLTIP_STYLE} itemStyle={TOOLTIP_ITEM_STYLE} labelStyle={TOOLTIP_LABEL_STYLE} />
-            <Line type="monotone" dataKey="Inscripciones" stroke="var(--color-accent-gold)" strokeWidth={3} dot={{ r: 4, fill: 'var(--color-accent-gold)' }} activeDot={{ r: 6 }} />
-          </LineChart>
-        </TarjetaGrafica>
-
-        <TarjetaGrafica titulo="Top 5 Talleres" hayDatos={stats.top5Talleres.length > 0} vacio={vacio} retraso="0.3s" alta>
-          <BarChart data={stats.top5Talleres} layout="vertical" margin={{ top: 5, right: 34, left: 20, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--color-grafica-borde)" horizontal vertical={false} />
-            <XAxis type="number" stroke="var(--color-text-muted)" tick={{ fill: 'var(--color-text-secondary)' }} allowDecimals={false} />
-            <YAxis dataKey="name" type="category" stroke="var(--color-text-muted)" tick={{ fill: 'var(--color-text-secondary)', fontSize: 10 }} width={120} tickFormatter={v => v.length > 22 ? v.substring(0, 22) + '...' : v} />
-            <RechartsTooltip cursor={CURSOR_STYLE} contentStyle={TOOLTIP_CONTENT_WIDE} labelStyle={TOOLTIP_LABEL_STYLE} itemStyle={TOOLTIP_ITEM_STYLE} />
-            <Bar dataKey="inscritos" fill="var(--color-danger)" radius={[0, 4, 4, 0]} minPointSize={2}>
-              {/* La cifra, escrita. Es lo mismo que ya hacen las leyendas de los
-                  donuts: sin ella hay que estimar la longitud de la barra
-                  contra un eje, o pasar el ratón por encima —que en una tableta
-                  no ocurre nunca—. */}
-              <LabelList dataKey="inscritos" position="right" fill="var(--color-text-secondary)" fontSize={11} formatter={(v) => numero.format(v)} />
-            </Bar>
-          </BarChart>
-        </TarjetaGrafica>
-
-        <TarjetaGrafica titulo="Top 3 Menos Solicitados" hayDatos={stats.bottom3Talleres.length > 0} vacio={vacio} retraso="0.35s" alta>
-          <BarChart data={stats.bottom3Talleres} layout="vertical" margin={{ top: 5, right: 34, left: 20, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--color-grafica-borde)" horizontal vertical={false} />
-            <XAxis type="number" stroke="var(--color-text-muted)" tick={{ fill: 'var(--color-text-secondary)' }} allowDecimals={false} />
-            <YAxis dataKey="name" type="category" stroke="var(--color-text-muted)" tick={{ fill: 'var(--color-text-secondary)', fontSize: 10 }} width={120} tickFormatter={v => v.length > 22 ? v.substring(0, 22) + '...' : v} />
-            <RechartsTooltip cursor={CURSOR_STYLE} contentStyle={TOOLTIP_CONTENT_WIDE} labelStyle={TOOLTIP_LABEL_STYLE} itemStyle={TOOLTIP_ITEM_STYLE} />
-            {/* `minPointSize` no es adorno: recharts no dibuja rectángulo para
-                un valor de 0, y sin rectángulo tampoco hay etiqueta. Un taller
-                sin nadie inscrito desaparecía por completo de la gráfica que
-                existe justamente para enseñarlo: ni barra, ni cifra, solo su
-                nombre en el eje. Con dos píxeles hay rectángulo, y con él
-                aparece el «0». */}
-            <Bar dataKey="inscritos" fill="var(--color-info)" radius={[0, 4, 4, 0]} minPointSize={2}>
-              <LabelList dataKey="inscritos" position="right" fill="var(--color-text-secondary)" fontSize={11} formatter={(v) => numero.format(v)} />
-            </Bar>
-          </BarChart>
-        </TarjetaGrafica>
-      </div>
-
-      {/* Composición: quién se inscribe y cómo va el pago. */}
-      {isFirstLoad ? (
-        <div className="dashboard-chart-grid">
-          <ChartSkeleton /><ChartSkeleton /><ChartSkeleton />
+      {/* El ritmo primero: es la pregunta que se hace al abrir el panel. */}
+      <Seccion
+        indice="01"
+        nombre="Ritmo del pre-registro"
+        meta={hayRegistros ? `${stats.fechasData.length} días con inscripciones` : null}
+        retraso="0.25s"
+      >
+        <div className="chart-container-lg">
+          {stats.fechasData.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={stats.fechasData} margin={{ top: 20, right: 20, left: 0, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-grafica-borde)" vertical={false} />
+                <XAxis dataKey="name" stroke="var(--color-text-muted)" tick={{ fill: 'var(--color-text-secondary)', fontSize: 12 }} />
+                <YAxis stroke="var(--color-text-muted)" tick={{ fill: 'var(--color-text-secondary)' }} allowDecimals={false} />
+                <RechartsTooltip contentStyle={TOOLTIP_STYLE} itemStyle={TOOLTIP_ITEM_STYLE} labelStyle={TOOLTIP_LABEL_STYLE} />
+                <Line type="monotone" dataKey="Inscripciones" stroke="var(--color-accent-gold)" strokeWidth={2} dot={{ r: 3, fill: 'var(--color-accent-gold)' }} activeDot={{ r: 6 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <EstadoVacio {...vacio} />
+          )}
         </div>
-      ) : (
-        <div className="dashboard-chart-grid">
-          <TarjetaGrafica titulo="Estatus de Pagos" hayDatos={hayRegistros} vacio={vacio} retraso="0.4s">
-            <PieChart>
-              <Pie data={stats.pagosData} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={5} dataKey="value">
-                <Cell fill="var(--color-success)" />
-                <Cell fill="var(--color-danger)" />
-              </Pie>
-              <RechartsTooltip contentStyle={TOOLTIP_STYLE} itemStyle={TOOLTIP_ITEM_STYLE} />
-              <Legend formatter={leyendaConCifra(stats.pagosData)} />
-            </PieChart>
-          </TarjetaGrafica>
+      </Seccion>
 
-          <TarjetaGrafica titulo="Audiencia Local vs Foránea" hayDatos={hayRegistros} vacio={vacio} retraso="0.45s">
-            <PieChart>
-              <Pie data={stats.audienciaData} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={5} dataKey="value">
-                <Cell fill="var(--color-accent-gold)" />
-                <Cell fill="var(--color-info)" />
-              </Pie>
-              <RechartsTooltip contentStyle={TOOLTIP_STYLE} itemStyle={TOOLTIP_ITEM_STYLE} />
-              <Legend formatter={leyendaConCifra(stats.audienciaData)} />
-            </PieChart>
-          </TarjetaGrafica>
+      <Seccion
+        indice="02"
+        nombre="Demanda por taller"
+        meta={stats.talleres.length > 0
+          ? `${stats.totalTalleres} talleres · ${stats.totalOcupados} de ${stats.totalCapacidad} lugares`
+          : null}
+        retraso="0.3s"
+      >
+        {stats.talleres.length > 0 ? (
+          <div className="taller-lista">
+            {stats.talleres.map((taller, i) => (
+              <div className="taller-fila" key={taller.nombre}>
+                <span className="taller-indice cifra">{String(i + 1).padStart(2, '0')}</span>
+                <span className="taller-nombre" title={taller.nombre}>{taller.nombre}</span>
+                {taller.inscritos === 0 ? (
+                  <span className="taller-insignia insignia-alerta">Sin inscritos</span>
+                ) : taller.insignia !== 'Disponible' ? (
+                  <span className={`taller-insignia ${taller.insignia === 'Lleno' ? 'insignia-alerta' : 'insignia-aviso'}`}>
+                    {taller.insignia}
+                  </span>
+                ) : null}
+                <div className="taller-barra">
+                  <div
+                    className={`taller-barra-relleno${taller.inscritos === 0 ? ' vacio' : ''}`}
+                    style={{ width: taller.inscritos === 0 ? '2px' : `${Math.round(taller.porcentaje)}%` }}
+                  />
+                </div>
+                <span className={`taller-cifra cifra${taller.inscritos === 0 ? ' apagada' : ''}`}>
+                  {numero.format(taller.inscritos)} / {numero.format(taller.capacidad)}
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <EstadoVacio {...vacio} />
+        )}
+      </Seccion>
 
-          <TarjetaGrafica titulo="Distribución de Perfiles" hayDatos={stats.perfilesData.length > 0} vacio={vacio} retraso="0.5s">
-            <PieChart>
-              <Pie data={stats.perfilesData} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={5} dataKey="value">
-                {stats.perfilesData.map((_, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <RechartsTooltip contentStyle={TOOLTIP_STYLE} itemStyle={TOOLTIP_ITEM_STYLE} />
-              <Legend formatter={leyendaConCifra(stats.perfilesData)} />
-            </PieChart>
-          </TarjetaGrafica>
-        </div>
-      )}
+      <Seccion indice="03" nombre="Quién se inscribe" retraso="0.35s">
+        {isFirstLoad ? (
+          <div className="composicion-grid">
+            <ChartSkeleton /><ChartSkeleton /><ChartSkeleton />
+          </div>
+        ) : (
+          <div className="composicion-grid">
+            <Proporcion titulo="Estatus de pago" partes={stats.pagosData} hayDatos={hayRegistros} vacio={vacio} />
+            <Proporcion titulo="Procedencia" partes={stats.audienciaData} hayDatos={hayRegistros} vacio={vacio} />
+            <Proporcion titulo="Perfil" partes={stats.perfilesData} hayDatos={stats.perfilesData.length > 0} vacio={vacio} />
+          </div>
+        )}
+      </Seccion>
     </div>
   );
 }

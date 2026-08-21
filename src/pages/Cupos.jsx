@@ -1,6 +1,24 @@
 import { RefreshCw, AlertTriangle, Ticket } from 'lucide-react';
 import { useToast } from '../context/toast-contexto';
+import { estadoDeCupo } from '../cupos';
 import EstadoVacio from '../components/EstadoVacio';
+
+/**
+ * Qué significa cada insignia, en una frase.
+ *
+ * «Solo general» es exacto y no dice nada a quien no tenga presente que un
+ * cupo son dos bolsas: lo que hace falta saber es que hoy un estudiante de la
+ * UAA no puede inscribirse en ese taller, y eso no cabe en una insignia.
+ */
+const NOTAS = {
+  'Disponible': 'Quedan lugares en las dos bolsas.',
+  'Casi lleno': 'Quedan pocos lugares en total.',
+  'Solo general': 'La reserva de la UAA está agotada: hoy solo puede inscribirse público general.',
+  'Solo UAA': 'La bolsa general está agotada: hoy solo pueden inscribirse personas de la UAA.',
+  'Lleno': 'Las dos bolsas están agotadas.',
+};
+
+const numero = new Intl.NumberFormat('es-MX');
 
 export default function Cupos({ registrosHook }) {
   const { data, loading, error, fetchRegistros } = registrosHook;
@@ -19,13 +37,33 @@ export default function Cupos({ registrosHook }) {
   };
 
   const cupos = data.cupos || [];
+  const totales = cupos.reduce(
+    (suma, c) => {
+      const estado = estadoDeCupo(c);
+      return {
+        inscritos: suma.inscritos + estado.inscritos,
+        capacidad: suma.capacidad + estado.capacidad,
+        conBolsaAgotada: suma.conBolsaAgotada + (estado.generalLleno || estado.uaaLleno ? 1 : 0),
+        vacios: suma.vacios + (estado.inscritos === 0 ? 1 : 0),
+      };
+    },
+    { inscritos: 0, capacidad: 0, conBolsaAgotada: 0, vacios: 0 }
+  );
 
   return (
     <div className="fade-in-up">
       <div className="page-header">
-        <h1>Cupos por Taller</h1>
+        <div className="page-header-titulo">
+          <div className="rotulo-seccion">Panel · Cupos</div>
+          <h1>Cupos por taller</h1>
+          <p className="page-header-contexto">
+            {cupos.length > 0
+              ? `${numero.format(totales.inscritos)} de ${numero.format(totales.capacidad)} lugares ocupados · ${totales.conBolsaAgotada} con una bolsa agotada · ${totales.vacios} sin inscritos`
+              : 'Cada taller son dos bolsas independientes: la general y la reservada a la UAA.'}
+          </p>
+        </div>
         <div className="header-actions">
-          <button onClick={onRefresh} className="btn btn-outline btn-header" disabled={loading}>
+          <button onClick={onRefresh} className="btn btn-outline btn-header" disabled={loading} aria-label="Actualizar cupos">
             <RefreshCw size={15} className={loading ? 'spin' : ''} />
           </button>
         </div>
@@ -56,82 +94,51 @@ export default function Cupos({ registrosHook }) {
           )}
         </div>
       ) : (
-        <div className="cupos-grid">
+        <div className="cupos-lista">
           {cupos.map((c, i) => {
-            const reservadosUaa = c.lugares_reservados_uaa ?? 0;
-            const inscritosUaa = c.inscritos_uaa ?? 0;
-            const inscritosGeneral = c.inscritos_general ?? 0;
-            const totalInscritos = c.inscritos ?? inscritosUaa + inscritosGeneral;
-            const totalCapacidad = c.cupo_maximo + reservadosUaa;
-            const pctTotal = totalCapacidad ? (totalInscritos / totalCapacidad) * 100 : 0;
-
-            // Un cupo son dos bolsas independientes: la general y la reservada
-            // a la UAA. La insignia miraba solo el total, así que un taller con
-            // la reserva UAA agotada y hueco general se anunciaba en verde como
-            // «Disponible» — y ningún estudiante de la UAA podía inscribirse en
-            // él. El panel decía que sí donde el alta decía que no.
-            const generalLleno = inscritosGeneral >= c.cupo_maximo;
-            const uaaLleno = reservadosUaa > 0 && inscritosUaa >= reservadosUaa;
-
-            let badgeClass = 'disponible';
-            let badgeText = 'Disponible';
-            if (generalLleno && uaaLleno) {
-              badgeClass = 'lleno';
-              badgeText = 'Lleno';
-            } else if (uaaLleno) {
-              badgeClass = 'casi-lleno';
-              badgeText = 'Solo general';
-            } else if (generalLleno) {
-              badgeClass = 'casi-lleno';
-              badgeText = 'Solo UAA';
-            } else if (pctTotal >= 80) {
-              badgeClass = 'casi-lleno';
-              badgeText = 'Casi lleno';
-            }
-
-            const pctGeneral = c.cupo_maximo
-              ? Math.min(100, (inscritosGeneral / c.cupo_maximo) * 100)
-              : 0;
-            const pctUAA = reservadosUaa ? Math.min(100, (inscritosUaa / reservadosUaa) * 100) : 0;
+            const estado = estadoDeCupo(c);
 
             return (
-              <div key={c.nombre} className="cupo-card fade-in-up" style={{ animationDelay: `${0.05 * i}s` }}>
-                <div className="cupo-card-header">
-                  <span className="cupo-card-title">{c.nombre}</span>
-                  <span className={`cupo-badge ${badgeClass}`}>{badgeText}</span>
+              <div key={c.nombre} className="cupo-fila fade-in-up" style={{ animationDelay: `${0.05 * i}s` }}>
+                <div className="cupo-fila-identidad">
+                  <div className="cupo-fila-cabecera">
+                    <span className="cupo-indice cifra">{String(i + 1).padStart(2, '0')}</span>
+                    <span className={`cupo-badge ${estado.clase}`}>{estado.insignia}</span>
+                  </div>
+                  <h2 className="cupo-card-title">{c.nombre}</h2>
+                  <p className="cupo-nota">{NOTAS[estado.insignia]}</p>
                 </div>
 
-                <div className="cupo-progress">
-                  <div className={`cupo-progress-label${generalLleno ? ' saturado' : ''}`}>
-                    <span>General</span>
-                    <span>{inscritosGeneral} / {c.cupo_maximo}{generalLleno ? ' · lleno' : ''}</span>
-                  </div>
-                  <div className="cupo-progress-bar">
-                    <div className="cupo-progress-fill blue" style={{ width: `${pctGeneral}%` }}></div>
-                  </div>
-                </div>
-
-                <div className="cupo-progress">
-                  <div className={`cupo-progress-label${uaaLleno ? ' saturado' : ''}`}>
-                    <span>UAA</span>
-                    <span>{inscritosUaa} / {reservadosUaa}{uaaLleno ? ' · lleno' : ''}</span>
-                  </div>
-                  <div className="cupo-progress-bar">
-                    <div className="cupo-progress-fill gold" style={{ width: `${pctUAA}%` }}></div>
-                  </div>
-                </div>
-
-                <div className="cupo-stats">
-                  <div className="cupo-stat">
-                    <div className={`cupo-stat-value${pctTotal >= 80 ? ' destacado' : ''}`}>
-                      {totalInscritos}
+                <div className="cupo-bolsas">
+                  <div className="cupo-progress">
+                    <div className={`cupo-progress-label${estado.generalLleno ? ' saturado' : ''}`}>
+                      <span>General</span>
+                      <span>{estado.inscritosGeneral} / {c.cupo_maximo}{estado.generalLleno ? ' · lleno' : ''}</span>
                     </div>
-                    <div className="cupo-stat-label">Inscritos</div>
+                    <div className="cupo-progress-bar">
+                      <div className="cupo-progress-fill blue" style={{ width: `${estado.porcentajeGeneral}%` }}></div>
+                    </div>
                   </div>
-                  <div className="cupo-stat">
-                    <div className="cupo-stat-value">{totalCapacidad}</div>
-                    <div className="cupo-stat-label">Capacidad</div>
+
+                  <div className="cupo-progress">
+                    <div className={`cupo-progress-label${estado.uaaLleno ? ' saturado' : ''}`}>
+                      <span>UAA</span>
+                      <span>{estado.inscritosUaa} / {estado.reservadosUaa}{estado.uaaLleno ? ' · lleno' : ''}</span>
+                    </div>
+                    <div className="cupo-progress-bar">
+                      <div className="cupo-progress-fill gold" style={{ width: `${estado.porcentajeUaa}%` }}></div>
+                    </div>
                   </div>
+                </div>
+
+                <div className="cupo-total">
+                  <div className="cupo-total-cifra">
+                    <span className={`cupo-stat-value${estado.inscritos === 0 ? ' vacio' : ''}`}>
+                      {numero.format(estado.inscritos)}
+                    </span>
+                    <span className="cupo-total-de">/ {numero.format(estado.capacidad)}</span>
+                  </div>
+                  <div className="cupo-total-pct">{Math.round(estado.porcentaje)} % ocupado</div>
                 </div>
               </div>
             );

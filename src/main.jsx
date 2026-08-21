@@ -13,6 +13,9 @@ import App from './App.jsx';
 // Son siete recortes por rango Unicode y el navegador solo se descarga el que
 // necesita: para un panel en español, el latino y ya.
 import '@fontsource-variable/inter';
+// La segunda familia, solo para titulares y cifras grandes. Es variable y se
+// carga el mismo recorte latino que Inter: un archivo más, no siete.
+import '@fontsource-variable/bricolage-grotesque';
 import './index.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(

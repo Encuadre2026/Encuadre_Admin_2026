@@ -68,6 +68,23 @@
      en `main.jsx`. */
   --font-family: 'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
+  /* La segunda familia, y la única. Inter sabe ser todo —rótulo, dato,
+     párrafo— y precisamente por eso un panel escrito entero en Inter no dice
+     nada de sí mismo: es la letra por defecto de cualquier panel de cualquier
+     cosa. Bricolage Grotesque tiene grotesca ancha y algo torcida, y aparece
+     solo donde hay jerarquía que marcar: titulares, cifras grandes y el
+     nombre del festival. El cuerpo, los rótulos y las tablas siguen en Inter,
+     que es la que se lee a 12 px. */
+  --font-display: 'Bricolage Grotesque Variable', 'Inter Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  /* --- Escala de titulares ---------------------------------
+     Aparte de la escala de texto: son tamaños de composición, no de lectura,
+     y se eligen contra el ancho de la columna, no contra el cuerpo base. */
+  --display-sm: 1.375rem;
+  --display-md: 1.75rem;
+  --display-lg: 2.5rem;
+  --display-xl: 4.1875rem;
+
   --texto-xs: 0.6875rem;
   --texto-sm: 0.75rem;
   --texto-md: 0.8125rem;
@@ -135,12 +152,25 @@ body {
 
 /* Typography */
 h1, h2, h3, h4, h5, h6 {
-  font-weight: 600;
+  font-family: var(--font-display);
+  font-weight: 700;
   color: var(--color-text-primary);
-  /* Inter se dibuja con las letras algo separadas en tamaños
-     grandes; apretarlas una pizca es lo que la hace parecer un
-     titular y no un párrafo en negrita. */
-  letter-spacing: -0.011em;
+  /* Una grotesca ancha en negrita necesita bastante más apriete que Inter para
+     leerse como un bloque y no como palabras sueltas; el -0.011em de antes,
+     calculado para Inter, aquí se queda corto. */
+  letter-spacing: -0.028em;
+  line-height: 1.1;
+}
+
+/* El rótulo que va encima de cada titular y dice dónde está uno: «Panel ·
+   Dashboard». Sustituye al titular a secas, que en las cuatro pantallas
+   repetía la palabra del menú lateral y no añadía nada. */
+.rotulo-seccion {
+  font-size: var(--texto-xs);
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
 }
 
 a {
@@ -290,36 +320,49 @@ a:hover {
 }
 
 .sidebar-header {
-  padding: var(--espacio-4) var(--espacio-4);
+  padding: var(--espacio-5) var(--espacio-4) var(--espacio-4);
   border-bottom: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-2);
+}
+
+/* La marca eran un cuadrado dorado con el icono de barras de la librería
+   dentro y el nombre en negrita al lado: el mismo cuadrado con las mismas
+   esquinas redondeadas que lleva cualquier panel. Ahora es el dibujo del
+   favicon —las tres barras que ya identifican al panel en la pestaña— y el
+   nombre compuesto, sin caja. */
+.sidebar-marca {
   display: flex;
   align-items: center;
   gap: var(--espacio-3);
 }
 
-.sidebar-logo {
-  width: 36px;
-  height: 36px;
-  background-color: var(--color-accent-gold);
-  border-radius: var(--radio-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.sidebar-marca-icono {
+  color: var(--color-accent-gold);
   flex-shrink: 0;
 }
 
 .sidebar-title {
-  font-size: var(--texto-xl);
+  font-family: var(--font-display);
+  font-size: var(--display-sm);
   font-weight: 700;
-  letter-spacing: -0.011em;
+  letter-spacing: -0.035em;
+  line-height: 1;
 }
 
 .sidebar-nav {
   display: flex;
   flex-direction: column;
-  padding: var(--espacio-2);
+  padding: var(--espacio-4) var(--espacio-2) var(--espacio-2);
   gap: 2px;
   flex: 1;
+}
+
+/* «Secciones»: el menú empezaba directamente en el primer enlace, y con la
+   marca justo encima los tres botones parecían parte de ella. */
+.sidebar-nav-rotulo {
+  padding: 0 var(--espacio-3) var(--espacio-3);
 }
 
 .sidebar-link {
@@ -327,7 +370,7 @@ a:hover {
   align-items: center;
   gap: var(--espacio-3);
   padding: var(--espacio-3) var(--espacio-4);
-  border-radius: var(--radio-md);
+  border-radius: 0 var(--radio-md) var(--radio-md) 0;
   color: var(--color-text-secondary);
   font-size: var(--texto-base);
   font-weight: 500;
@@ -335,11 +378,27 @@ a:hover {
               color var(--transicion-rapida) var(--curva);
   text-decoration: none;
   border: none;
-  border-left: 3px solid transparent;
+  border-left: 2px solid transparent;
   background: none;
   cursor: pointer;
   width: 100%;
   font-family: inherit;
+  text-align: left;
+}
+
+/* El número de orden de cada sección. Es lo que convierte tres botones en una
+   lista numerada, y de paso da al menú la misma voz que los «01 / 02 / 03» que
+   encabezan las secciones del dashboard. */
+.sidebar-link-indice {
+  font-size: var(--texto-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+.sidebar-link-nombre {
+  flex: 1;
+  min-width: 0;
 }
 
 .sidebar-link:hover {
@@ -348,17 +407,20 @@ a:hover {
 }
 
 .sidebar-link.active {
-  background-color: var(--color-bg-hover);
+  background-color: var(--color-bg-card);
   color: var(--color-accent-gold);
   border-left-color: var(--color-accent-gold);
 }
 
+.sidebar-link.active .sidebar-link-indice {
+  color: var(--color-text-secondary);
+}
+
+/* Cuántos hay dentro de esa sección. Era una píldora con fondo propio —una
+   tercera superficie dentro de un botón dentro de la barra—; basta la cifra. */
 .sidebar-link .link-count {
   margin-left: auto;
-  font-size: var(--texto-xs);
-  background: var(--color-bg-card);
-  padding: 2px 8px;
-  border-radius: var(--radio-pill);
+  font-size: var(--texto-sm);
   color: var(--color-text-muted);
   font-variant-numeric: tabular-nums;
 }
@@ -400,18 +462,39 @@ a:hover {
    ============================================================ */
 .page-header {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: var(--espacio-4);
   margin-bottom: var(--espacio-5);
+  padding-bottom: var(--espacio-5);
+  /* La cabecera se separaba del contenido con aire y nada más, así que en una
+     pantalla llena de tarjetas no se leía como cabecera. Un filete la cierra
+     por abajo: es la misma idea que ordena el resto del panel —una línea fina
+     en vez de una caja— y no añade ninguna superficie nueva. */
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* Rótulo, titular y línea de contexto, en una columna. */
+.page-header-titulo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-2);
+  min-width: 0;
 }
 
 .page-header h1 {
-  font-size: var(--texto-2xl);
+  font-size: var(--display-lg);
   display: flex;
   align-items: center;
   gap: var(--espacio-3);
+}
+
+/* Qué evento y cuándo. El panel no lo decía en ninguna parte: quien lo abre en
+   octubre de 2026 no tiene por qué acordarse de las fechas del festival. */
+.page-header-contexto {
+  font-size: var(--texto-md);
+  color: var(--color-text-muted);
 }
 
 .page-header .header-actions {
@@ -556,58 +639,88 @@ a:hover {
 }
 
 /* ============================================================
-   CUPOS CARDS
+   CUPOS POR TALLER
+   ------------------------------------------------------------
+   Era una rejilla de tarjetas de 300 px. Con cinco talleres y
+   nombres de cien caracteres, la tarjeta obliga a repartir en
+   tres renglones lo que se lee en uno, y deja el dato que se
+   consulta —cuántos lugares quedan en cada bolsa— dentro de una
+   caja del ancho de un móvil aunque la pantalla mida 1440.
+
+   Una fila por taller usa el ancho que hay: el nombre a la
+   izquierda con su estado explicado, las dos bolsas en el
+   centro y el total a la derecha, todos alineados entre filas
+   para poder compararlos de un vistazo.
    ============================================================ */
-.cupos-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: var(--espacio-4);
+.cupos-lista {
+  display: flex;
+  flex-direction: column;
 }
 
-.cupo-card {
+.cupo-fila {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--espacio-4) var(--espacio-6);
+  padding: var(--espacio-4) var(--espacio-2);
+  border-top: 1px solid var(--color-border);
+  transition: background-color var(--transicion-rapida) var(--curva);
+}
+
+.cupo-fila:last-child {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.cupo-fila:hover {
   background-color: var(--color-bg-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radio-lg);
-  padding: var(--espacio-4);
-  box-shadow: var(--sombra-1);
-  transition: transform var(--transicion-normal) var(--curva),
-              border-color var(--transicion-normal) var(--curva),
-              box-shadow var(--transicion-normal) var(--curva);
-}
-.cupo-card:hover {
-  transform: translateY(-2px);
-  border-color: var(--color-border-light);
-  box-shadow: var(--sombra-2);
 }
 
-/* El spinner de la carga inicial. Estaba escrito en línea en el JSX. */
-.cupos-cargando {
+.cupo-fila-identidad {
+  flex: 1 1 18rem;
+  min-width: 0;
   display: flex;
-  justify-content: center;
-  padding: var(--espacio-7);
-  color: var(--color-text-muted);
-}
-
-.cupo-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+  flex-direction: column;
   gap: var(--espacio-2);
-  margin-bottom: var(--espacio-4);
+}
+
+.cupo-fila-cabecera {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-3);
+}
+
+.cupo-indice {
+  font-size: var(--texto-sm);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
 }
 
 .cupo-card-title {
-  font-size: var(--texto-base);
-  font-weight: 600;
+  font-family: var(--font-display);
+  font-size: var(--display-sm);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
   color: var(--color-text-primary);
-  line-height: 1.3;
+  margin: 0;
+}
+
+/* Qué significa la insignia, en una frase. «Solo general» es exacto y no dice
+   nada a quien no sepa que un cupo son dos bolsas: lo que hace falta saber es
+   que hoy un estudiante de la UAA no puede inscribirse en ese taller. */
+.cupo-nota {
+  font-size: var(--texto-md);
+  color: var(--color-text-muted);
+  margin: 0;
 }
 
 .cupo-badge {
   font-size: var(--texto-xs);
-  padding: 3px 8px;
+  padding: 2px 8px;
   border-radius: var(--radio-pill);
   font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -625,26 +738,33 @@ a:hover {
   color: var(--color-danger);
 }
 
-.cupo-progress { margin-bottom: var(--espacio-2); }
+.cupo-bolsas {
+  flex: 0 1 26rem;
+  min-width: 12rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-3);
+}
 
 .cupo-progress-label {
   display: flex;
   justify-content: space-between;
+  gap: var(--espacio-3);
   font-size: var(--texto-sm);
-  color: var(--color-text-muted);
-  margin-bottom: 4px;
+  color: var(--color-text-secondary);
+  margin-bottom: 5px;
   font-variant-numeric: tabular-nums;
 }
 
 /* Una barra al 100 % se pintaba igual que una al 20 %: el único aviso de que
    esa bolsa está agotada era comparar dos cifras diminutas. */
 .cupo-progress-label.saturado {
-  color: var(--color-danger);
+  color: var(--color-accent-gold);
   font-weight: 600;
 }
 
 .cupo-progress-bar {
-  height: 6px;
+  height: 8px;
   background: var(--color-bg-card);
   border-radius: var(--radio-pill);
   overflow: hidden;
@@ -658,33 +778,55 @@ a:hover {
 .cupo-progress-fill.gold { background: var(--color-accent-gold); }
 .cupo-progress-fill.blue { background: var(--color-info); }
 
-.cupo-stats {
+/* El total del taller, alineado a la derecha de todas las filas. */
+.cupo-total {
+  flex: 0 0 auto;
+  min-width: 7rem;
   display: flex;
-  gap: var(--espacio-4);
-  justify-content: center;
-  margin-top: var(--espacio-3);
-  padding-top: var(--espacio-3);
-  border-top: 1px solid var(--color-border);
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--espacio-1);
 }
 
-.cupo-stat { text-align: center; }
-
-.cupo-stat-value {
-  font-size: var(--texto-2xl);
-  font-weight: 700;
+.cupo-total-cifra {
+  display: flex;
+  align-items: baseline;
+  gap: var(--espacio-1);
+  font-family: var(--font-display);
+  letter-spacing: -0.035em;
+  line-height: 1;
   font-variant-numeric: tabular-nums;
 }
 
-/* Un taller a punto de llenarse: la cifra en dorado, como la insignia. */
-.cupo-stat-value.destacado {
-  color: var(--color-accent-gold);
+.cupo-stat-value {
+  font-size: var(--display-md);
+  font-weight: 700;
+  color: var(--color-text-primary);
 }
 
-.cupo-stat-label {
-  font-size: var(--texto-xs);
+/* Un taller sin nadie inscrito: la cifra en rojo, como su insignia. */
+.cupo-stat-value.vacio {
+  color: var(--color-danger);
+}
+
+.cupo-total-de {
+  font-size: var(--texto-xl);
+  font-weight: 700;
   color: var(--color-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+}
+
+.cupo-total-pct {
+  font-size: var(--texto-sm);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* El spinner de la carga inicial. Estaba escrito en línea en el JSX. */
+.cupos-cargando {
+  display: flex;
+  justify-content: center;
+  padding: var(--espacio-7);
+  color: var(--color-text-muted);
 }
 
 /* ============================================================
@@ -752,111 +894,101 @@ a:hover {
 }
 
 /* ============================================================
-   DASHBOARD KPI & CHARTS
+   DASHBOARD — CIFRAS Y SECCIONES
+   ------------------------------------------------------------
+   Las cuatro cifras de cabecera eran cuatro tarjetas idénticas
+   con un icono de color en una caja redondeada a la izquierda:
+   la disposición que trae por defecto cualquier plantilla de
+   panel, y que reparte el mismo peso entre «Total registros» y
+   «Pagos validados» aunque una sea la cifra que resume el evento
+   y la otra un detalle operativo.
+
+   Aquí no hay tarjetas: hay una franja de cifras separadas por
+   filetes, con la primera compuesta al doble de cuerpo. La
+   jerarquía la marca el tamaño, no una caja.
    ============================================================ */
 .dashboard-kpi-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: var(--espacio-4);
-  margin-bottom: var(--espacio-5);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espacio-5) 0;
+  margin-bottom: var(--espacio-6);
 }
 
 .kpi-card {
+  flex: 1 1 190px;
+  min-width: 0;
   display: flex;
-  align-items: center;
-  gap: var(--espacio-4);
+  flex-direction: column;
+  gap: var(--espacio-2);
+  /* Los filetes separan de arriba mientras las cifras van apiladas o en dos
+     filas, y pasan a separar de lado en cuanto las cuatro caben en una. Un
+     borde izquierdo en una franja que envuelve deja líneas sueltas a mitad de
+     fila, que es peor que no tener ninguna. */
+  padding: var(--espacio-4) 0 0;
+  border-top: 1px solid var(--color-border);
 }
 
-.kpi-icon {
-  padding: var(--espacio-3);
-  border-radius: var(--radio-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.kpi-card:first-child {
+  flex-grow: 1.7;
+  padding-top: 0;
+  border-top: none;
 }
-.kpi-icon-gold { background-color: var(--color-accent-gold-dim); color: var(--color-accent-gold); }
-.kpi-icon-blue { background-color: var(--color-info-dim); color: var(--color-info); }
-.kpi-icon-green { background-color: var(--color-success-dim); color: var(--color-success); }
-/* Era `#9B59B6` sobre `rgba(155, 89, 182, 0.1)`: un sexto color de marca que
-   no aparecía en ningún token y que además no es el morado de la gráfica de
-   perfiles —ese es el #8e44ad—. Dos morados distintos a dos pantallas de
-   distancia, sin que nadie lo hubiera decidido. */
-.kpi-icon-purple { background-color: var(--color-accent-purple-dim); color: var(--color-accent-purple); }
+
+@media (min-width: 1200px) {
+  .kpi-card {
+    padding: 0 var(--espacio-5);
+    border-top: none;
+    border-left: 1px solid var(--color-border);
+  }
+  .kpi-card:first-child {
+    padding-left: 0;
+    border-left: none;
+  }
+}
 
 .kpi-label {
-  font-size: var(--texto-md);
+  font-size: var(--texto-xs);
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.16em;
   color: var(--color-text-muted);
-  margin-bottom: var(--espacio-1);
 }
 
 .kpi-value {
-  font-size: var(--texto-3xl);
+  font-size: var(--display-lg);
   margin: 0;
-  line-height: 1.2;
+  line-height: 1;
+  letter-spacing: -0.04em;
   font-variant-numeric: tabular-nums;
+}
+
+/* La cifra que resume el evento. Es la única que se lee desde lejos y la
+   única que alguien recuerda al cerrar el panel. */
+.kpi-card:first-child .kpi-value {
+  font-size: var(--display-xl);
 }
 
 .kpi-sub {
   font-size: var(--texto-sm);
   color: var(--color-text-secondary);
   margin: 0;
-  margin-top: 0.2rem;
   font-variant-numeric: tabular-nums;
 }
 
-.dashboard-chart-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: var(--espacio-4);
-  margin-bottom: var(--espacio-4);
+/* El filete que dice cuánto falta. Tres de las cuatro cifras son una parte de
+   un total —44 de 140 lugares, 7 de 47 asistencias, 10 de 47 pagos— y ese
+   total solo estaba escrito en letra pequeña debajo. */
+.kpi-medida {
+  height: 3px;
+  border-radius: var(--radio-pill);
+  background-color: var(--color-border);
+  overflow: hidden;
 }
 
-/* Las otras dos rejillas del panel ya colapsaban solas con `auto-fit`; esta
-   estaba clavada a dos columnas, así que en un móvil de 390 px las dos
-   gráficas de talleres se quedaban en 170 px cada una: las barras
-   desaparecían y las etiquetas se partían en «Didácticas p el a».
-
-   Pero `auto-fit` con un mínimo de 320 px hacía lo contrario en pantalla
-   grande: en un monitor de 1440 caben tres columnas de 361 px, y como aquí solo
-   hay dos gráficas de talleres, la tercera se quedaba vacía y la fila terminaba
-   a media pantalla. Son dos, y son dos: una columna hasta la tableta, dos a
-   partir de ahí. */
-.dashboard-chart-grid-2col {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--espacio-4);
-  margin-bottom: var(--espacio-5);
-}
-
-@media (min-width: 769px) {
-  .dashboard-chart-grid-2col {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
-/* La gráfica que ocupa la fila entera. Estaba en línea en el JSX. */
-.chart-ancho-total {
-  grid-column: 1 / -1;
-}
-
-/* Todos alineados a la izquierda. Convivían dos clases —una centrada y otra no—
-   sin más criterio que el orden en que se fueron añadiendo las gráficas, y en
-   una rejilla de tres tarjetas se nota: los títulos no forman línea. */
-.chart-title {
-  margin-bottom: var(--espacio-4);
-  font-size: var(--texto-lg);
-  text-align: left;
-}
-
-/* El «sin datos» ocupa el hueco de la gráfica que no se puede dibujar. */
-.chart-container .estado-vacio,
-.chart-container-lg .estado-vacio {
+.kpi-medida-relleno {
   height: 100%;
-  justify-content: center;
-  padding: var(--espacio-3);
+  border-radius: var(--radio-pill);
+  transition: width 0.5s var(--curva);
 }
 
 /* La cifra de pagos pendientes lleva a validarlos. */
@@ -864,7 +996,6 @@ a:hover {
   display: inline-flex;
   align-items: center;
   gap: var(--espacio-1);
-  margin-top: 0.2rem;
   padding: 0;
   background: none;
   border: none;
@@ -872,13 +1003,264 @@ a:hover {
   font-size: var(--texto-sm);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  color: var(--color-accent-gold);
+  color: var(--color-danger);
   cursor: pointer;
 }
 
 .kpi-enlace:hover {
-  color: var(--color-accent-gold-hover);
+  color: var(--color-text-primary);
   text-decoration: underline;
+}
+
+/* ------------------------------------------------------------
+   Secciones numeradas
+   ------------------------------------------------------------
+   Cada gráfica vivía en su propia tarjeta con borde, fondo y
+   sombra: seis rectángulos iguales sin más orden entre ellos que
+   el de la rejilla. Numerarlas y separarlas con un filete dice lo
+   que la tarjeta no decía —en qué orden se leen— y devuelve al
+   fondo el espacio que ocupaban seis superficies. */
+.seccion {
+  margin-bottom: var(--espacio-6);
+}
+
+.seccion-cabecera {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--espacio-3);
+  margin-bottom: var(--espacio-4);
+}
+
+.seccion-titulo {
+  display: flex;
+  align-items: baseline;
+  gap: var(--espacio-4);
+  min-width: 0;
+}
+
+.seccion-indice {
+  font-size: var(--texto-md);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.seccion-nombre {
+  font-size: var(--display-md);
+  margin: 0;
+}
+
+.seccion-meta {
+  font-size: var(--texto-md);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ------------------------------------------------------------
+   Demanda por taller
+   ------------------------------------------------------------
+   Eran dos gráficas de barras: «Top 5 Talleres» y «Top 3 Menos
+   Solicitados». Con cinco talleres en el festival, las dos
+   enseñaban los mismos talleres —tres de ellos aparecían en las
+   dos, uno arriba y otro abajo— y había que leer los rótulos de
+   los ejes para darse cuenta. Una sola lista ordenada los dice
+   todos, con su cifra escrita y sin repetir ninguno. */
+.taller-lista {
+  display: flex;
+  flex-direction: column;
+}
+
+.taller-fila {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--espacio-2) var(--espacio-4);
+  padding: var(--espacio-3) var(--espacio-2);
+  border-top: 1px solid var(--color-border);
+  transition: background-color var(--transicion-rapida) var(--curva);
+}
+
+.taller-fila:last-child {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.taller-fila:hover {
+  background-color: var(--color-bg-surface);
+}
+
+.taller-indice {
+  width: 22px;
+  flex-shrink: 0;
+  font-size: var(--texto-sm);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.taller-nombre {
+  flex: 1 1 12rem;
+  min-width: 0;
+  font-size: var(--texto-base);
+  color: var(--color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.taller-barra {
+  flex: 0 1 300px;
+  min-width: 90px;
+  height: 8px;
+  border-radius: var(--radio-pill);
+  background-color: var(--color-bg-card);
+  overflow: hidden;
+}
+
+.taller-barra-relleno {
+  height: 100%;
+  border-radius: var(--radio-pill);
+  background-color: var(--color-accent-gold);
+  transition: width 0.5s var(--curva);
+}
+
+/* Un taller sin nadie inscrito no tiene barra que dibujar, y sin barra la fila
+   se lee como si le faltara el dato. Dos píxeles en rojo dicen que el dato es
+   cero, que es distinto. */
+.taller-barra-relleno.vacio {
+  background-color: var(--color-danger);
+}
+
+.taller-cifra {
+  width: 5.5rem;
+  flex-shrink: 0;
+  text-align: right;
+  font-size: var(--texto-md);
+  color: var(--color-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.taller-cifra.apagada {
+  color: var(--color-text-muted);
+}
+
+.taller-insignia {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: var(--radio-pill);
+  font-size: var(--texto-xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------
+   Composición
+   ------------------------------------------------------------
+   Eran tres donuts de recharts con su leyenda. El donut tiene un
+   problema para lo que aquí se pregunta —cuánto falta por
+   validar, cuánta gente viene de fuera—: hay que comparar
+   ángulos, y las cifras solo aparecían en la leyenda. Una barra
+   de proporción se lee de un vistazo, cabe en una línea y deja
+   sitio para escribir las cifras al lado. */
+.composicion-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--espacio-6);
+}
+
+.proporcion {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-3);
+}
+
+.proporcion-barra {
+  display: flex;
+  /* Dos píxeles de fondo entre segmentos: pegados, dos colores contiguos
+     forman un borde que parece un tercer valor. */
+  gap: 2px;
+  height: 10px;
+}
+
+.proporcion-segmento {
+  height: 10px;
+  min-width: 2px;
+  border-radius: var(--radio-pill);
+  transition: width 0.5s var(--curva);
+}
+
+.proporcion-leyenda {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-2);
+}
+
+.proporcion-fila {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-3);
+}
+
+.proporcion-punto {
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+  border-radius: 2px;
+}
+
+.proporcion-nombre {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--texto-base);
+  color: var(--color-text-secondary);
+}
+
+.proporcion-cifra {
+  font-size: var(--texto-md);
+  color: var(--color-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.proporcion-porcentaje {
+  width: 2.75rem;
+  text-align: right;
+  font-size: var(--texto-sm);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Los cinco colores de marca, disponibles como relleno para segmentos y
+   puntos de leyenda. Viven aquí y no en el JSX para que sigan estando escritos
+   una sola vez, en los tokens. */
+.tono-oro { background-color: var(--color-accent-gold); }
+.tono-exito { background-color: var(--color-success); }
+.tono-peligro { background-color: var(--color-danger); }
+.tono-info { background-color: var(--color-info); }
+.tono-morado { background-color: var(--color-accent-purple); }
+
+/* Las insignias usan el mismo color al 15 %. */
+.insignia-aviso {
+  background-color: var(--color-accent-gold-dim);
+  color: var(--color-accent-gold);
+}
+
+.insignia-alerta {
+  background-color: var(--color-danger-dim);
+  color: var(--color-danger);
+}
+
+/* El «sin datos» ocupa el hueco de la gráfica que no se puede dibujar. */
+.chart-container .estado-vacio,
+.chart-container-lg .estado-vacio,
+.seccion .estado-vacio {
+  justify-content: center;
+  padding: var(--espacio-5) var(--espacio-3);
+}
+
+.chart-container .estado-vacio,
+.chart-container-lg .estado-vacio {
+  height: 100%;
 }
 
 /* Los 230 px de antes los repartían el donut y su leyenda, y con tres perfiles
@@ -888,7 +1270,7 @@ a:hover {
 }
 
 .chart-container-lg {
-  height: 280px;
+  height: 300px;
 }
 
 /* ============================================================
@@ -1460,21 +1842,87 @@ select:focus-visible {
 
 /* ============================================================
    SIDEBAR PENDING BADGE
+   ------------------------------------------------------------
+   Era una píldora roja parpadeando dentro de la lista de
+   secciones: se leía como un cuarto enlace del menú, del mismo
+   tamaño que los otros tres, cuando es lo único de la barra que
+   pide hacer algo. Ahora es un bloque aparte, abajo, con la cifra
+   compuesta en grande y el verbo debajo.
+
+   Conserva la clase `sidebar-link` porque sigue siendo lo que
+   era —un botón que navega a Participantes ya filtrado— y porque
+   así se sigue anunciando y probando como tal.
    ============================================================ */
-.link-badge-danger {
-  margin-left: auto;
-  font-size: var(--texto-xs);
-  background: var(--color-danger-dim);
+.sidebar-aviso {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--espacio-2);
+  width: auto;
+  margin: 0 var(--espacio-3) var(--espacio-3);
+  padding: var(--espacio-3);
+  border: 1px solid var(--color-danger);
+  border-left-width: 1px;
+  border-radius: var(--radio-md);
+  background-color: var(--color-danger-dim);
+}
+
+.sidebar-aviso:hover,
+.sidebar-aviso.active {
+  background-color: var(--color-danger-dim);
+  border-color: var(--color-danger);
+  border-left-color: var(--color-danger);
+}
+
+.sidebar-aviso-rotulo {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-2);
   color: var(--color-danger);
-  padding: 2px 8px;
-  border-radius: var(--radio-pill);
+  font-size: var(--texto-xs);
   font-weight: 600;
-  animation: pulse-badge 2s ease-in-out infinite;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+/* El punto que late. La píldora entera parpadeaba, texto incluido, y un texto
+   que aparece y desaparece es más difícil de leer, no más urgente. */
+.sidebar-aviso-punto {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: var(--color-danger);
+  animation: pulse-badge 2.4s ease-in-out infinite;
+}
+
+.sidebar-aviso-cifra {
+  font-family: var(--font-display);
+  font-size: var(--display-sm);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1;
+  color: var(--color-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.sidebar-aviso-texto {
+  font-size: var(--texto-md);
+  color: var(--color-text-secondary);
+  text-align: left;
+}
+
+.sidebar-aviso-accion {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espacio-1);
+  color: var(--color-danger);
+  font-size: var(--texto-md);
+  font-weight: 600;
 }
 
 @keyframes pulse-badge {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
+  50% { opacity: 0.35; }
 }
 
 .btn-logout {
@@ -1517,9 +1965,6 @@ select:focus-visible {
 
 .skeleton-mt { margin-top: var(--espacio-2); }
 .skeleton-mb { margin-bottom: var(--espacio-4); }
-
-/* El bloque de texto del KPI fantasma. Estaba en línea en el JSX. */
-.skeleton-kpi-texto { flex: 1; }
 
 .skeleton-row td {
   padding: var(--espacio-3);
@@ -1637,40 +2082,163 @@ select:focus-visible {
 /* ============================================================
    PANTALLA DE ACCESO
    ------------------------------------------------------------
-   Estaba escrita con `style={{...}}` dentro del JSX: seis
-   declaraciones sueltas, ninguna reutilizable y ninguna
-   alcanzable por los tokens.
+   Era una tarjeta de 28 rem centrada en una pantalla negra, con
+   un candado dentro de un círculo dorado encima del título: la
+   pantalla de acceso que trae cualquier plantilla, y la primera
+   —a veces la única— que ve alguien que entra desde un enlace.
+
+   Ahora la pantalla se parte en dos: a la izquierda el festival
+   —que es de lo que va este panel y no se decía en ninguna
+   parte—, a la derecha el formulario. Por debajo de 900 px
+   vuelve a una sola columna, con la identidad arriba y reducida.
    ============================================================ */
-.acceso-marca {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--espacio-4);
-  text-align: center;
-  margin-bottom: var(--espacio-6);
+.acceso {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
 }
 
-.acceso-icono {
-  background-color: var(--color-accent-gold-dim);
+.acceso-identidad {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-6);
+  padding: var(--espacio-7) clamp(var(--espacio-5), 5vw, var(--espacio-7));
+  overflow: hidden;
+  /* Cuatro filetes verticales, del color de las tarjetas: la retícula sobre la
+     que está compuesto el resto del panel, aquí a la vista. Es un fondo, no un
+     degradado de adorno: no tiñe nada ni cambia el contraste del texto. */
+  background-image: repeating-linear-gradient(
+    to right,
+    transparent 0,
+    transparent calc(20% - 1px),
+    var(--color-bg-card) calc(20% - 1px),
+    var(--color-bg-card) 20%
+  );
+}
+
+.acceso-marca {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-3);
   color: var(--color-accent-gold);
-  padding: var(--espacio-4);
-  border-radius: 50%;
-  display: inline-flex;
 }
 
 .acceso-titulo {
-  font-size: var(--texto-2xl);
-  margin-bottom: var(--espacio-1);
+  font-size: clamp(2.75rem, 7vw, 5.5rem);
+  line-height: 0.98;
+  letter-spacing: -0.04em;
+  margin: 0;
+}
+
+/* Bricolage Grotesque no tiene cursiva, y una cursiva falsa —la romana
+   inclinada por el navegador— se nota. El acento lo dan el color y el peso. */
+.acceso-titulo-acento {
+  color: var(--color-accent-gold);
+  font-weight: 400;
+}
+
+.acceso-filete {
+  width: 120px;
+  height: 1px;
+  background-color: var(--color-border-light);
+}
+
+/* El nombre del festival, centrado en el alto que deja la marca. Los márgenes
+   automáticos hacen el centrado: con `space-between` y dos hijos, el titular se
+   iba al borde de abajo. */
+.acceso-bloque {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-5);
+  position: relative;
+  margin: auto 0;
+}
+
+.acceso-formulario {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--espacio-5);
+  padding: var(--espacio-7) clamp(var(--espacio-5), 4vw, var(--espacio-6));
+  background-color: var(--color-bg-surface);
+  border-left: 1px solid var(--color-border);
+}
+
+.acceso-encabezado {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-3);
+}
+
+.acceso-titulo-formulario {
+  font-size: var(--display-md);
+  margin: 0;
+}
+
+/* El campo y el botón de ver la contraseña, que antes no existía: se escribe a
+   ciegas una contraseña compartida por un canal donde es fácil que llegue con
+   un espacio de más. */
+.acceso-campo {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.acceso-campo .input-field {
+  width: 100%;
+  padding-right: var(--espacio-7);
+}
+
+.acceso-ojo {
+  position: absolute;
+  right: var(--espacio-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: var(--radio-sm);
+  background: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: color var(--transicion-rapida) var(--curva);
+}
+
+.acceso-ojo:hover {
+  color: var(--color-text-primary);
 }
 
 .acceso-error {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-2);
   color: var(--color-danger);
   font-size: var(--texto-base);
-  margin-bottom: var(--espacio-4);
   background-color: var(--color-danger-dim);
   border: 1px solid var(--color-danger);
-  padding: var(--espacio-2) var(--espacio-3);
-  border-radius: var(--radio-sm);
+  padding: var(--espacio-3);
+  border-radius: var(--radio-md);
+  margin-bottom: var(--espacio-4);
+}
+
+@media (max-width: 900px) {
+  .acceso {
+    grid-template-columns: 1fr;
+  }
+  .acceso-identidad {
+    gap: var(--espacio-5);
+    padding: var(--espacio-6) var(--espacio-5);
+  }
+  .acceso-titulo {
+    font-size: clamp(2.25rem, 9vw, 3.5rem);
+  }
+  .acceso-formulario {
+    border-left: none;
+    border-top: 1px solid var(--color-border);
+    padding: var(--espacio-6) var(--espacio-5) var(--espacio-7);
+  }
 }
 
 /* ============================================================
@@ -1780,9 +2348,6 @@ select:focus-visible {
     margin-left: 0;
     padding: var(--espacio-4);
   }
-  .cupos-grid {
-    grid-template-columns: 1fr;
-  }
   .row-details-inner {
     grid-template-columns: 1fr 1fr;
   }
@@ -1797,6 +2362,28 @@ select:focus-visible {
   .page-header {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  /* La cifra grande se compone contra el ancho de su columna, y en un móvil esa
+     columna es la pantalla entera: a 67 px, «1.284» no cabe. */
+  .kpi-card:first-child .kpi-value {
+    font-size: var(--display-lg);
+  }
+
+  .page-header h1 {
+    font-size: var(--display-md);
+  }
+
+  /* Nombre del taller en su propio renglón: con la barra y la cifra al lado, en
+     390 px se quedaba en tres palabras cortadas. */
+  .taller-nombre,
+  .cupo-fila-identidad {
+    flex-basis: 100%;
+  }
+
+  .taller-fila,
+  .cupo-fila {
+    gap: var(--espacio-2) var(--espacio-3);
   }
   .filter-bar {
     flex-direction: column;
@@ -1865,8 +2452,11 @@ select:focus-visible {
 
 .celda-id {
   padding: var(--espacio-3);
-  font-weight: 600;
-  color: var(--color-accent-gold);
+  font-weight: 500;
+  /* Iba en dorado. El dorado es el color de marca y en esta pantalla marca lo
+     que hay que hacer —validar un pago—; gastado también en los 47 ID de la
+     primera columna, deja de señalar nada. */
+  color: var(--color-text-secondary);
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
@@ -1915,14 +2505,19 @@ select:focus-visible {
   white-space: nowrap;
 }
 
-.btn-documento.credencial {
-  border-color: var(--color-accent-gold);
-  color: var(--color-accent-gold);
+/* Los dos van iguales. Uno en dorado y otro en azul repartían dos colores de
+   marca entre dos botones secundarios que ya se distinguen por su rótulo
+   —«Credencial» y «Comprobante»—, y competían con la única acción de la fila
+   que importa. */
+.btn-documento.credencial,
+.btn-documento.comprobante {
+  border-color: var(--color-border);
+  color: var(--color-text-secondary);
 }
 
-.btn-documento.comprobante {
-  border-color: var(--color-info);
-  color: var(--color-info);
+.btn-documento:hover:not(:disabled) {
+  border-color: var(--color-border-light);
+  color: var(--color-text-primary);
 }
 
 .btn-documento:hover:not(:disabled) {
@@ -1968,13 +2563,18 @@ select:focus-visible {
   font-weight: 600;
   border-radius: var(--radio-sm);
   background-color: transparent;
-  border: 1px solid var(--color-success);
-  color: var(--color-success);
+  /* En dorado, no en verde. El verde es el color del estado «confirmado», y
+     este botón es justamente lo contrario: lo que hay que hacer para que ese
+     estado llegue. Además es la acción principal de la pantalla, y el dorado
+     es lo que el panel usa para decirlo. */
+  border: 1px solid var(--color-accent-gold);
+  color: var(--color-accent-gold);
   white-space: nowrap;
 }
 
 .btn-validar-pago:hover:not(:disabled) {
-  background-color: var(--color-success-dim);
+  background-color: var(--color-accent-gold);
+  color: #000;
 }
 
 /* El nombre se partía en dos renglones y, con el correo debajo, dejaba las filas
@@ -2057,13 +2657,6 @@ select:focus-visible {
 
 .btn-detalle:hover:not(:disabled) {
   background-color: var(--color-bg-hover);
-}
-
-/* El porcentaje acompaña a la cifra en las leyendas de los donuts, en tono
-   menor: lo que se busca de un vistazo es el número absoluto. */
-.leyenda-porcentaje {
-  opacity: 0.6;
-  font-size: 0.9em;
 }
 
 /* ============================================================

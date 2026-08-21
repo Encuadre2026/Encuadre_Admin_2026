@@ -1,10 +1,22 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { comprobarSecreto, guardarSesion, haySesion, olvidarSesion } from '../api/cliente';
-import { Lock, Loader2, ArrowRight } from 'lucide-react';
+import { Loader2, ArrowRight, Eye, EyeOff, AlertTriangle } from 'lucide-react';
+
+/** Las tres barras del favicon, que son la marca del panel. */
+function MarcaEncuadre() {
+  return (
+    <svg width="26" height="26" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true">
+      <rect x="4" y="17" width="5" height="10" rx="1" opacity="0.4" />
+      <rect x="13" y="11" width="5" height="16" rx="1" opacity="0.7" />
+      <rect x="22" y="5" width="5" height="22" rx="1" />
+    </svg>
+  );
+}
 
 export default function Login() {
   const [secret, setSecret] = useState('');
+  const [verClave, setVerClave] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -49,47 +61,74 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="card max-w-md w-full fade-in-up">
+    <div className="acceso">
+      {/* De qué es este panel. La pantalla de acceso no lo decía en ninguna
+          parte —«Acceso Administrativo · Panel de control»— y es la primera que
+          ve alguien que llega desde un enlace. */}
+      <section className="acceso-identidad">
         <div className="acceso-marca">
-          <div className="acceso-icono">
-            <Lock size={32} />
-          </div>
-          <div>
-            <h1 className="acceso-titulo">Acceso Administrativo</h1>
-            <p className="text-muted">Panel de control · Encuadre 2026</p>
-          </div>
+          <MarcaEncuadre />
+          <span className="rotulo-seccion">Universidad Autónoma de Aguascalientes</span>
+        </div>
+
+        <div className="acceso-bloque">
+          <div className="rotulo-seccion text-gold">36 FTD</div>
+          <h1 className="acceso-titulo">
+            Futurología<br />y Tendencia<br />
+            <span className="acceso-titulo-acento">del Diseño</span>
+          </h1>
+          <div className="acceso-filete" />
+        </div>
+      </section>
+
+      <section className="acceso-formulario">
+        <div className="acceso-encabezado">
+          <div className="rotulo-seccion">Acceso administrativo</div>
+          <h2 className="acceso-titulo-formulario">Entrar al panel</h2>
         </div>
 
         <form onSubmit={handleSubmit}>
           <div className="input-group">
             <label className="input-label" htmlFor="secret">Contraseña</label>
-            <input
-              id="secret"
-              type="password"
-              className="input-field"
-              placeholder="Ingresa la contraseña"
-              value={secret}
-              onChange={(e) => setSecret(e.target.value)}
-              disabled={loading}
-              autoFocus
-            />
+            <div className="acceso-campo">
+              <input
+                id="secret"
+                type={verClave ? 'text' : 'password'}
+                className="input-field"
+                placeholder="Ingresa la contraseña"
+                value={secret}
+                onChange={(e) => setSecret(e.target.value)}
+                disabled={loading}
+                autoFocus
+              />
+              {/* Se escribe a ciegas una contraseña que llega por otro canal, y
+                  un espacio de más se lee igual que una contraseña equivocada. */}
+              <button
+                type="button"
+                className="acceso-ojo"
+                onClick={() => setVerClave((v) => !v)}
+                aria-label={verClave ? 'Ocultar la contraseña' : 'Ver la contraseña'}
+              >
+                {verClave ? <EyeOff size={17} /> : <Eye size={17} />}
+              </button>
+            </div>
           </div>
 
           {error && (
             // `role="alert"` para que el fallo se anuncie en cuanto aparece: es
             // la única respuesta que recibe quien acaba de pulsar «Ingresar».
             <div className="acceso-error" role="alert">
-              {error}
+              <AlertTriangle size={16} />
+              <span>{error}</span>
             </div>
           )}
 
           <button type="submit" className="btn btn-primary w-full" disabled={loading || !secret.trim()}>
-            {loading ? <Loader2 className="spin" size={20} /> : 'Ingresar al Panel'}
-            {!loading && <ArrowRight size={20} />}
+            {loading ? <Loader2 className="spin" size={20} /> : 'Ingresar al panel'}
+            {!loading && <ArrowRight size={18} />}
           </button>
         </form>
-      </div>
+      </section>
     </div>
   );
 }

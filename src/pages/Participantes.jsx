@@ -374,14 +374,22 @@ export default function Participantes({ registrosHook }) {
     <div className="fade-in-up">
       {/* Page header */}
       <div className="page-header">
-        <h1>
-          Participantes
-          {/* Un número suelto no dice si se está viendo el padrón entero o un
-              trozo. Con filtros puestos, dice de cuántos. */}
-          <span className="count-badge cifra">
-            {hayFiltros ? `${filteredRegistros.length} de ${totalRegistros}` : filteredRegistros.length}
-          </span>
-        </h1>
+        <div className="page-header-titulo">
+          <div className="rotulo-seccion">Panel · Participantes</div>
+          <h1>
+            Padrón
+            {/* Un número suelto no dice si se está viendo el padrón entero o un
+                trozo. Con filtros puestos, dice de cuántos. */}
+            <span className="count-badge cifra">
+              {hayFiltros ? `${filteredRegistros.length} de ${totalRegistros}` : filteredRegistros.length}
+            </span>
+          </h1>
+          <p className="page-header-contexto">
+            {hayFiltros
+              ? 'Filtros puestos: la tabla no enseña el padrón entero.'
+              : `${totalRegistros} registros en ${Math.max(0, talleresUnicos.length - 1)} talleres`}
+          </p>
+        </div>
         <div className="header-actions">
           <button onClick={() => exportToExcel(filteredRegistros)} className="btn btn-outline btn-header btn-excel">
             <Download size={15} /> Excel ({filteredRegistros.length})
