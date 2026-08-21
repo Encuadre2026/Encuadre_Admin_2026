@@ -1,7 +1,9 @@
 import { useMemo } from 'react';
-import { Users, Ticket, CheckCircle, DollarSign, RefreshCw } from 'lucide-react';
-import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, LineChart, Line, CartesianGrid, Legend } from 'recharts';
+import { useNavigate } from 'react-router-dom';
+import { Users, Ticket, CheckCircle, DollarSign, RefreshCw, ArrowRight, BarChart3 } from 'lucide-react';
+import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, LineChart, Line, CartesianGrid, Legend, LabelList } from 'recharts';
 import { useToast } from '../context/toast-contexto';
+import EstadoVacio from '../components/EstadoVacio';
 import { KpiSkeleton, ChartSkeleton } from '../components/Skeleton';
 
 /**
@@ -40,6 +42,9 @@ const TOOLTIP_CONTENT_WIDE = {
   whiteSpace: 'normal',
 };
 
+/** Un solo formato de número para todo el panel. */
+const numero = new Intl.NumberFormat('es-MX');
+
 /**
  * Leyenda que además dice cuánto vale cada porción.
  *
@@ -55,16 +60,53 @@ function leyendaConCifra(porciones) {
     const porcentaje = total ? Math.round((porcion.value / total) * 100) : 0;
     return (
       <span style={{ color: entrada.color }}>
-        {valor} <strong>{porcion.value}</strong>{' '}
+        {valor} <strong>{numero.format(porcion.value)}</strong>{' '}
         <span className="leyenda-porcentaje">{porcentaje}%</span>
       </span>
     );
   };
 }
 
+/**
+ * Una tarjeta de gráfica, con lo que enseñar cuando no hay nada que dibujar.
+ *
+ * Sin datos, recharts no falla: pinta un lienzo perfectamente vacío. Un donut
+ * sin porciones y una curva sin línea se ven exactamente igual que una gráfica
+ * rota, y en un panel que se abre el primer día del pre-registro —cuando todavía
+ * no hay nadie inscrito— eso es lo que se ve.
+ *
+ * Vive fuera del componente de página, como `SortHeader` en Participantes:
+ * definida dentro, React la trataría como un tipo nuevo en cada renderizado y
+ * volvería a montar la gráfica entera cada vez.
+ */
+function TarjetaGrafica({ titulo, hayDatos, retraso, ancha = false, alta = false, children }) {
+  return (
+    <div
+      className={`card fade-in-up${ancha ? ' chart-ancho-total' : ''}`}
+      style={{ animationDelay: retraso }}
+    >
+      <h3 className="chart-title">{titulo}</h3>
+      <div className={alta ? 'chart-container-lg' : 'chart-container'}>
+        {hayDatos ? (
+          <ResponsiveContainer width="100%" height="100%">
+            {children}
+          </ResponsiveContainer>
+        ) : (
+          <EstadoVacio
+            icono={BarChart3}
+            titulo="Sin datos todavía"
+            mensaje="Esta gráfica se dibujará en cuanto haya registros que contar."
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function Dashboard({ registrosHook }) {
   const { data, loading, fetchRegistros } = registrosHook;
   const { showToast } = useToast();
+  const navigate = useNavigate();
 
   const stats = useMemo(() => {
     const regs = data.registros || [];
@@ -144,6 +186,8 @@ export default function Dashboard({ registrosHook }) {
       totalRegistros, asistencia, totalCapacidad, totalOcupados, porcentajeOcupacion,
       perfilesData, instData, pagosConfirmados, pagosPendientes, pagosData,
       top5Talleres, bottom3Talleres, audienciaData, fechasData,
+      totalTalleres: cups.length,
+      porcentajeAsistencia: totalRegistros ? Math.round((asistencia / totalRegistros) * 100) : 0,
     };
   }, [data]);
 
@@ -154,6 +198,7 @@ export default function Dashboard({ registrosHook }) {
 
   // Skeleton state: first load only (no data loaded yet)
   const isFirstLoad = loading && data.registros.length === 0;
+  const hayRegistros = stats.totalRegistros > 0;
 
   return (
     <div className="fade-in-up">
@@ -177,7 +222,8 @@ export default function Dashboard({ registrosHook }) {
               <div className="kpi-icon kpi-icon-gold"><Users size={28} /></div>
               <div>
                 <p className="kpi-label">Total Registros</p>
-                <h2 className="kpi-value">{stats.totalRegistros}</h2>
+                <h2 className="kpi-value">{numero.format(stats.totalRegistros)}</h2>
+                <p className="kpi-sub">en {stats.totalTalleres} talleres</p>
               </div>
             </div>
 
@@ -194,7 +240,10 @@ export default function Dashboard({ registrosHook }) {
               <div className="kpi-icon kpi-icon-green"><CheckCircle size={28} /></div>
               <div>
                 <p className="kpi-label">Asistencias</p>
-                <h2 className="kpi-value">{stats.asistencia}</h2>
+                <h2 className="kpi-value">{numero.format(stats.asistencia)}</h2>
+                {/* Un número de asistencias sin el total contra el que compararlo
+                    no dice si el evento fue bien o fue mal. */}
+                <p className="kpi-sub">{stats.porcentajeAsistencia}% del total</p>
               </div>
             </div>
 
@@ -202,119 +251,119 @@ export default function Dashboard({ registrosHook }) {
               <div className="kpi-icon kpi-icon-purple"><DollarSign size={28} /></div>
               <div>
                 <p className="kpi-label">Pagos Validados</p>
-                <h2 className="kpi-value">{stats.pagosConfirmados}</h2>
-                <p className="kpi-sub">{stats.pagosPendientes} pendientes</p>
+                <h2 className="kpi-value">{numero.format(stats.pagosConfirmados)}</h2>
+                {/* Lo que se hace después de leer «37 pendientes» es ir a
+                    validarlos, y eso eran tres clics: la barra lateral, la
+                    tabla y el filtro. La barra lateral ya llevaba el filtro
+                    puesto; esta cifra hace lo mismo. */}
+                {stats.pagosPendientes > 0 ? (
+                  <button
+                    className="kpi-enlace"
+                    onClick={() => navigate('/participantes', { state: { filtroPago: 'Pendientes' } })}
+                  >
+                    {numero.format(stats.pagosPendientes)} pendientes
+                    <ArrowRight size={12} />
+                  </button>
+                ) : (
+                  <p className="kpi-sub">sin pagos pendientes</p>
+                )}
               </div>
             </div>
           </>
         )}
       </div>
 
-      {/* Charts Row 1 */}
+      {/* La curva y los talleres primero: son las dos preguntas que se hacen al
+          abrir el panel —cómo va el ritmo y qué se está llenando—. Los donuts
+          describen la composición, que se consulta de vez en cuando. */}
+      <div className="dashboard-chart-grid-2col">
+        <TarjetaGrafica titulo="Curva de Inscripciones por Día" hayDatos={stats.fechasData.length > 0} retraso="0.25s" ancha alta>
+          <LineChart data={stats.fechasData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--color-grafica-borde)" vertical={false} />
+            <XAxis dataKey="name" stroke="var(--color-text-muted)" tick={{ fill: 'var(--color-text-secondary)', fontSize: 12 }} />
+            <YAxis stroke="var(--color-text-muted)" tick={{ fill: 'var(--color-text-secondary)' }} allowDecimals={false} />
+            <RechartsTooltip contentStyle={TOOLTIP_STYLE} itemStyle={TOOLTIP_ITEM_STYLE} labelStyle={TOOLTIP_LABEL_STYLE} />
+            <Line type="monotone" dataKey="Inscripciones" stroke="var(--color-accent-gold)" strokeWidth={3} dot={{ r: 4, fill: 'var(--color-accent-gold)' }} activeDot={{ r: 6 }} />
+          </LineChart>
+        </TarjetaGrafica>
+
+        <TarjetaGrafica titulo="Top 5 Talleres" hayDatos={stats.top5Talleres.length > 0} retraso="0.3s" alta>
+          <BarChart data={stats.top5Talleres} layout="vertical" margin={{ top: 5, right: 34, left: 20, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--color-grafica-borde)" horizontal vertical={false} />
+            <XAxis type="number" stroke="var(--color-text-muted)" tick={{ fill: 'var(--color-text-secondary)' }} allowDecimals={false} />
+            <YAxis dataKey="name" type="category" stroke="var(--color-text-muted)" tick={{ fill: 'var(--color-text-secondary)', fontSize: 10 }} width={120} tickFormatter={v => v.length > 22 ? v.substring(0, 22) + '...' : v} />
+            <RechartsTooltip cursor={CURSOR_STYLE} contentStyle={TOOLTIP_CONTENT_WIDE} labelStyle={TOOLTIP_LABEL_STYLE} itemStyle={TOOLTIP_ITEM_STYLE} />
+            <Bar dataKey="inscritos" fill="var(--color-danger)" radius={[0, 4, 4, 0]} minPointSize={2}>
+              {/* La cifra, escrita. Es lo mismo que ya hacen las leyendas de los
+                  donuts: sin ella hay que estimar la longitud de la barra
+                  contra un eje, o pasar el ratón por encima —que en una tableta
+                  no ocurre nunca—. */}
+              <LabelList dataKey="inscritos" position="right" fill="var(--color-text-secondary)" fontSize={11} formatter={(v) => numero.format(v)} />
+            </Bar>
+          </BarChart>
+        </TarjetaGrafica>
+
+        <TarjetaGrafica titulo="Top 3 Menos Solicitados" hayDatos={stats.bottom3Talleres.length > 0} retraso="0.35s" alta>
+          <BarChart data={stats.bottom3Talleres} layout="vertical" margin={{ top: 5, right: 34, left: 20, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--color-grafica-borde)" horizontal vertical={false} />
+            <XAxis type="number" stroke="var(--color-text-muted)" tick={{ fill: 'var(--color-text-secondary)' }} allowDecimals={false} />
+            <YAxis dataKey="name" type="category" stroke="var(--color-text-muted)" tick={{ fill: 'var(--color-text-secondary)', fontSize: 10 }} width={120} tickFormatter={v => v.length > 22 ? v.substring(0, 22) + '...' : v} />
+            <RechartsTooltip cursor={CURSOR_STYLE} contentStyle={TOOLTIP_CONTENT_WIDE} labelStyle={TOOLTIP_LABEL_STYLE} itemStyle={TOOLTIP_ITEM_STYLE} />
+            {/* `minPointSize` no es adorno: recharts no dibuja rectángulo para
+                un valor de 0, y sin rectángulo tampoco hay etiqueta. Un taller
+                sin nadie inscrito desaparecía por completo de la gráfica que
+                existe justamente para enseñarlo: ni barra, ni cifra, solo su
+                nombre en el eje. Con dos píxeles hay rectángulo, y con él
+                aparece el «0». */}
+            <Bar dataKey="inscritos" fill="var(--color-info)" radius={[0, 4, 4, 0]} minPointSize={2}>
+              <LabelList dataKey="inscritos" position="right" fill="var(--color-text-secondary)" fontSize={11} formatter={(v) => numero.format(v)} />
+            </Bar>
+          </BarChart>
+        </TarjetaGrafica>
+      </div>
+
+      {/* Composición: quién se inscribe y cómo va el pago. */}
       {isFirstLoad ? (
         <div className="dashboard-chart-grid">
           <ChartSkeleton /><ChartSkeleton /><ChartSkeleton />
         </div>
       ) : (
         <div className="dashboard-chart-grid">
-          <div className="card fade-in-up" style={{ animationDelay: '0.25s' }}>
-            <h3 className="chart-title">Estatus de Pagos</h3>
-            <div className="chart-container">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={stats.pagosData} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={5} dataKey="value">
-                    <Cell fill="var(--color-success)" />
-                    <Cell fill="var(--color-danger)" />
-                  </Pie>
-                  <RechartsTooltip contentStyle={TOOLTIP_STYLE} itemStyle={TOOLTIP_ITEM_STYLE} />
-                  <Legend formatter={leyendaConCifra(stats.pagosData)} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
+          <TarjetaGrafica titulo="Estatus de Pagos" hayDatos={hayRegistros} retraso="0.4s">
+            <PieChart>
+              <Pie data={stats.pagosData} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={5} dataKey="value">
+                <Cell fill="var(--color-success)" />
+                <Cell fill="var(--color-danger)" />
+              </Pie>
+              <RechartsTooltip contentStyle={TOOLTIP_STYLE} itemStyle={TOOLTIP_ITEM_STYLE} />
+              <Legend formatter={leyendaConCifra(stats.pagosData)} />
+            </PieChart>
+          </TarjetaGrafica>
 
-          <div className="card fade-in-up" style={{ animationDelay: '0.3s' }}>
-            <h3 className="chart-title">Audiencia Local vs Foránea</h3>
-            <div className="chart-container">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={stats.audienciaData} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={5} dataKey="value">
-                    <Cell fill="var(--color-accent-gold)" />
-                    <Cell fill="var(--color-info)" />
-                  </Pie>
-                  <RechartsTooltip contentStyle={TOOLTIP_STYLE} itemStyle={TOOLTIP_ITEM_STYLE} />
-                  <Legend formatter={leyendaConCifra(stats.audienciaData)} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
+          <TarjetaGrafica titulo="Audiencia Local vs Foránea" hayDatos={hayRegistros} retraso="0.45s">
+            <PieChart>
+              <Pie data={stats.audienciaData} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={5} dataKey="value">
+                <Cell fill="var(--color-accent-gold)" />
+                <Cell fill="var(--color-info)" />
+              </Pie>
+              <RechartsTooltip contentStyle={TOOLTIP_STYLE} itemStyle={TOOLTIP_ITEM_STYLE} />
+              <Legend formatter={leyendaConCifra(stats.audienciaData)} />
+            </PieChart>
+          </TarjetaGrafica>
 
-          <div className="card fade-in-up" style={{ animationDelay: '0.35s' }}>
-            <h3 className="chart-title">Distribución de Perfiles</h3>
-            <div className="chart-container">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={stats.perfilesData} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={5} dataKey="value">
-                    {stats.perfilesData.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <RechartsTooltip contentStyle={TOOLTIP_STYLE} itemStyle={TOOLTIP_ITEM_STYLE} />
-                  <Legend formatter={leyendaConCifra(stats.perfilesData)} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
+          <TarjetaGrafica titulo="Distribución de Perfiles" hayDatos={stats.perfilesData.length > 0} retraso="0.5s">
+            <PieChart>
+              <Pie data={stats.perfilesData} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={5} dataKey="value">
+                {stats.perfilesData.map((_, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <RechartsTooltip contentStyle={TOOLTIP_STYLE} itemStyle={TOOLTIP_ITEM_STYLE} />
+              <Legend formatter={leyendaConCifra(stats.perfilesData)} />
+            </PieChart>
+          </TarjetaGrafica>
         </div>
       )}
-
-      {/* Charts Row 2 */}
-      <div className="dashboard-chart-grid-2col">
-        <div className="card fade-in-up chart-ancho-total" style={{ animationDelay: '0.4s' }}>
-          <h3 className="chart-title-left">Curva de Inscripciones por Día</h3>
-          <div className="chart-container-lg">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={stats.fechasData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-grafica-borde)" vertical={false} />
-                <XAxis dataKey="name" stroke="var(--color-text-muted)" tick={{ fill: 'var(--color-text-secondary)', fontSize: 12 }} />
-                <YAxis stroke="var(--color-text-muted)" tick={{ fill: 'var(--color-text-secondary)' }} allowDecimals={false} />
-                <RechartsTooltip contentStyle={TOOLTIP_STYLE} />
-                <Line type="monotone" dataKey="Inscripciones" stroke="var(--color-accent-gold)" strokeWidth={3} dot={{ r: 4, fill: 'var(--color-accent-gold)' }} activeDot={{ r: 6 }} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        <div className="card fade-in-up" style={{ animationDelay: '0.45s' }}>
-          <h3 className="chart-title-left">Top 5 Talleres</h3>
-          <div className="chart-container-lg">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={stats.top5Talleres} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-grafica-borde)" horizontal vertical={false} />
-                <XAxis type="number" stroke="var(--color-text-muted)" tick={{ fill: 'var(--color-text-secondary)' }} allowDecimals={false} />
-                <YAxis dataKey="name" type="category" stroke="var(--color-text-muted)" tick={{ fill: 'var(--color-text-secondary)', fontSize: 10 }} width={120} tickFormatter={v => v.length > 22 ? v.substring(0, 22) + '...' : v} />
-                <RechartsTooltip cursor={CURSOR_STYLE} contentStyle={TOOLTIP_CONTENT_WIDE} labelStyle={TOOLTIP_LABEL_STYLE} />
-                <Bar dataKey="inscritos" fill="var(--color-danger)" radius={[0, 4, 4, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        <div className="card fade-in-up" style={{ animationDelay: '0.5s' }}>
-          <h3 className="chart-title-left">Top 3 Menos Solicitados</h3>
-          <div className="chart-container-lg">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={stats.bottom3Talleres} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-grafica-borde)" horizontal vertical={false} />
-                <XAxis type="number" stroke="var(--color-text-muted)" tick={{ fill: 'var(--color-text-secondary)' }} allowDecimals={false} />
-                <YAxis dataKey="name" type="category" stroke="var(--color-text-muted)" tick={{ fill: 'var(--color-text-secondary)', fontSize: 10 }} width={120} tickFormatter={v => v.length > 22 ? v.substring(0, 22) + '...' : v} />
-                <RechartsTooltip cursor={CURSOR_STYLE} contentStyle={TOOLTIP_CONTENT_WIDE} labelStyle={TOOLTIP_LABEL_STYLE} />
-                <Bar dataKey="inscritos" fill="var(--color-info)" radius={[0, 4, 4, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
