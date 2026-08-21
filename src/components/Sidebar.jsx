@@ -1,16 +1,7 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { BarChart3, Users, Ticket, LogOut, Clock } from 'lucide-react';
 import { olvidarSesion } from '../api/cliente';
-
-function formatTimeAgo(date) {
-  if (!date) return null;
-  const seconds = Math.floor((new Date() - date) / 1000);
-  if (seconds < 60) return 'hace unos segundos';
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `hace ${minutes} min`;
-  const hours = Math.floor(minutes / 60);
-  return `hace ${hours}h`;
-}
+import { hace } from '../fecha';
 
 export default function Sidebar({ totalRegistros = 0, pagosPendientes = 0, lastUpdated, isOpen, onClose }) {
   const navigate = useNavigate();
@@ -80,7 +71,7 @@ export default function Sidebar({ totalRegistros = 0, pagosPendientes = 0, lastU
         {lastUpdated && (
           <div className="last-updated">
             <Clock size={12} />
-            Actualizado {formatTimeAgo(lastUpdated)}
+            Actualizado {hace(lastUpdated)}
           </div>
         )}
         <button onClick={handleLogout} className="btn btn-outline btn-logout">

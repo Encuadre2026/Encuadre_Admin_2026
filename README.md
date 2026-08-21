@@ -217,6 +217,46 @@ que había respondido el servidor: el Worker explicaba con precisión qué pasab
 —«este pago ya fue aprobado», «el participante no existe»— y el panel enseñaba
 un texto genérico que no ayudaba a decidir qué hacer.
 
+## Cuando los datos no llegan
+
+El panel vive de una sola llamada —`GET /api/admin/registros`— y hasta ahora no
+tenía nada que decir cuando esa llamada fallaba. `useRegistros` guardaba el
+error y, salvo el de sesión caducada, **nadie lo enseñaba**: con el Worker caído,
+el panel se quedaba con la tabla vacía y el mensaje «No se encontraron
+registros». Es decir, ante un fallo de red afirmaba que no hay nadie inscrito, y
+quien lo leía no tenía manera de saber que era mentira.
+
+Ahora hay un aviso encima de las tres pantallas, y distingue dos situaciones que
+no se parecen:
+
+| Situación | Qué dice |
+| --------- | -------- |
+| La primera carga falló | «No se pudieron cargar los datos», el motivo que dio el servidor y un botón de reintentar |
+| Había datos y la recarga falló | «No se pudieron actualizar los datos» y **desde cuándo** es lo que se está viendo |
+
+El segundo es el peligroso: la tabla sigue llena y parece al día. Validar un pago
+contra un padrón de hace media hora es el error que este aviso existe para
+evitar.
+
+Además:
+
+- **Sin conexión** se avisa aparte, en tono neutro —no es un fallo del panel ni
+  de quien lo usa— y **el panel recarga solo en cuanto la red vuelve**, que es lo
+  que se iba a hacer a mano. `navigator.onLine` no sustituye al error de la
+  petición: sabe si el sistema cree que hay red, no si hay internet. La verdad la
+  trae el `fetch` que falló.
+- **Un fallo de red se explica en castellano.** `fetch` solo rechaza cuando la
+  petición no llega a hacerse, y lo que trae entonces es un `TypeError` con el
+  texto «Failed to fetch», que salía tal cual por pantalla. `comprobarSecreto` ya
+  distinguía este caso; `pedir` —por donde pasan todas las cargas— no.
+- **Los estados vacíos no fingen.** La tabla, los cupos y las seis gráficas
+  distinguen «todavía no hay nadie» de «no se pudo cargar».
+- **Los KPIs no inventan ceros.** «Total registros 0», «0 % del total», «sin
+  pagos pendientes» son afirmaciones sobre el evento, y tras un fallo no se sabe
+  nada del evento: se muestran como «—».
+- El motivo se dice **una sola vez**. Lo lleva el aviso; las tarjetas dicen qué
+  significa para ellas y ofrecen la salida.
+
 ## Despliegue (CI/CD)
 
 El despliegue es **100% automático** mediante GitHub Actions:
@@ -256,6 +296,10 @@ que es lo que ni el linter ni `vite build` pueden ver. Cubren, entre otras cosas
 - Que con el movimiento reducido el contenido aparezca, en vez de quedarse en el
   `opacity: 0` con el que arranca la animación de entrada.
 - Que la dirección del panel a secas lleve al dashboard y no a la página 404.
+- Que con la API caída el panel lo diga en vez de fingir un padrón vacío, que el
+  aviso advierta de datos desfasados cuando ya había algo en pantalla, que un
+  fallo de red no salga como «Failed to fetch», que al volver la conexión recargue
+  solo, y que los KPIs no afirmen ceros que nadie les ha dicho.
 - Que la cabecera de la tabla siga en pantalla al desplazarla, que la elección
   de filas por página sobreviva a una recarga, que los filtros puestos se puedan
   quitar uno a uno y que `/` lleve al buscador sin robarle la tecla a quien está

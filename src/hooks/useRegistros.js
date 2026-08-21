@@ -4,7 +4,13 @@ import { ErrorApi, obtenerSecreto, olvidarSesion, pedir } from '../api/cliente';
 export default function useRegistros() {
   const [data, setData] = useState({ registros: [], cupos: [] });
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  // El error deja de ser una cadena suelta.
+  //
+  // Valía 'unauthorized' o el mensaje del servidor, y quien lo leía —solo
+  // App.jsx— tenía que comparar contra esa cadena mágica. Como objeto, la
+  // pantalla puede decidir qué enseñar según el código sin adivinar nada.
+  const [error, setError] = useState(null);
+  const [sinConexion, setSinConexion] = useState(() => !navigator.onLine);
   const [lastUpdated, setLastUpdated] = useState(null);
   const blobUrlRef = useRef(null);
 
@@ -12,20 +18,28 @@ export default function useRegistros() {
     if (!obtenerSecreto()) {
       olvidarSesion();
       setLoading(false);
-      setError('unauthorized');
+      setError({ mensaje: 'Tu sesión expiró.', codigo: 'NO_AUTORIZADO', noAutorizado: true });
       return false;
     }
 
     setLoading(true);
-    setError('');
+    setError(null);
     try {
       setData(await pedir('/api/admin/registros'));
       setLastUpdated(new Date());
+      setError(null);
       return true;
     } catch (err) {
-      // 'unauthorized' es la señal que App.jsx usa para mandar al login; el
-      // resto de fallos se enseñan tal como los explicó el servidor.
-      setError(err instanceof ErrorApi && err.esNoAutorizado ? 'unauthorized' : err.message);
+      // `noAutorizado` es la señal que App.jsx usa para mandar al login; el
+      // resto de fallos se enseñan tal como los explicó el servidor, con su
+      // código para que la pantalla pueda distinguir sin comparar textos en
+      // español.
+      const esApi = err instanceof ErrorApi;
+      setError({
+        mensaje: err.message,
+        codigo: esApi ? err.codigo : undefined,
+        noAutorizado: esApi && err.esNoAutorizado,
+      });
       return false;
     } finally {
       setLoading(false);
@@ -107,6 +121,29 @@ export default function useRegistros() {
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { fetchRegistros(); }, [fetchRegistros]);
 
+  // Ida y vuelta de la conexión.
+  //
+  // `navigator.onLine` no sabe si hay internet: sabe si el sistema cree que hay
+  // una red. Con el wifi de un hotel enganchado pero sin salida, dice que sí. Por
+  // eso no sustituye al error de la petición —la verdad la trae el fetch que
+  // falló—, pero sirve para dos cosas que el error no puede: avisar antes de
+  // intentarlo, y volver a cargar solo en cuanto la red regresa, que es
+  // exactamente lo que la persona iba a hacer a mano.
+  useEffect(() => {
+    const alVolver = () => {
+      setSinConexion(false);
+      fetchRegistros();
+    };
+    const alCaer = () => setSinConexion(true);
+
+    window.addEventListener('online', alVolver);
+    window.addEventListener('offline', alCaer);
+    return () => {
+      window.removeEventListener('online', alVolver);
+      window.removeEventListener('offline', alCaer);
+    };
+  }, [fetchRegistros]);
+
   // Auto-refresh cuando la pestaña vuelve a ser visible
   useEffect(() => {
     const handleVisibility = () => {
@@ -127,5 +164,5 @@ export default function useRegistros() {
     };
   }, []);
 
-  return { data, loading, error, lastUpdated, fetchRegistros, handleAprobarPago, handleEliminarRegistro, handleViewPdf, revokePdfUrl, exportToExcel };
+  return { data, loading, error, sinConexion, lastUpdated, fetchRegistros, handleAprobarPago, handleEliminarRegistro, handleViewPdf, revokePdfUrl, exportToExcel };
 }

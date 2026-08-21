@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, Ticket, CheckCircle, DollarSign, RefreshCw, ArrowRight, BarChart3 } from 'lucide-react';
+import { Users, Ticket, CheckCircle, DollarSign, RefreshCw, ArrowRight, BarChart3, AlertTriangle } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, LineChart, Line, CartesianGrid, Legend, LabelList } from 'recharts';
 import { useToast } from '../context/toast-contexto';
 import EstadoVacio from '../components/EstadoVacio';
@@ -79,7 +79,7 @@ function leyendaConCifra(porciones) {
  * definida dentro, React la trataría como un tipo nuevo en cada renderizado y
  * volvería a montar la gráfica entera cada vez.
  */
-function TarjetaGrafica({ titulo, hayDatos, retraso, ancha = false, alta = false, children }) {
+function TarjetaGrafica({ titulo, hayDatos, vacio, retraso, ancha = false, alta = false, children }) {
   return (
     <div
       className={`card fade-in-up${ancha ? ' chart-ancho-total' : ''}`}
@@ -92,11 +92,7 @@ function TarjetaGrafica({ titulo, hayDatos, retraso, ancha = false, alta = false
             {children}
           </ResponsiveContainer>
         ) : (
-          <EstadoVacio
-            icono={BarChart3}
-            titulo="Sin datos todavía"
-            mensaje="Esta gráfica se dibujará en cuanto haya registros que contar."
-          />
+          <EstadoVacio {...vacio} />
         )}
       </div>
     </div>
@@ -104,7 +100,7 @@ function TarjetaGrafica({ titulo, hayDatos, retraso, ancha = false, alta = false
 }
 
 export default function Dashboard({ registrosHook }) {
-  const { data, loading, fetchRegistros } = registrosHook;
+  const { data, loading, error, fetchRegistros } = registrosHook;
   const { showToast } = useToast();
   const navigate = useNavigate();
 
@@ -200,6 +196,25 @@ export default function Dashboard({ registrosHook }) {
   const isFirstLoad = loading && data.registros.length === 0;
   const hayRegistros = stats.totalRegistros > 0;
 
+  // Una gráfica sin datos porque no hay nadie inscrito y una gráfica sin datos
+  // porque la petición falló se dibujan igual —vacías— y significan cosas
+  // opuestas. La primera es una noticia sobre el evento; la segunda, sobre el
+  // panel.
+  const falloSinDatos = Boolean(error) && !error.noAutorizado && !hayRegistros;
+
+  // El motivo lo cuenta el aviso de arriba, una vez. Repetirlo en las seis
+  // tarjetas serían siete copias de la misma frase en una pantalla.
+  const vacio = falloSinDatos
+    ? {
+        icono: AlertTriangle,
+        titulo: 'No se pudieron cargar los datos',
+      }
+    : {
+        icono: BarChart3,
+        titulo: 'Sin datos todavía',
+        mensaje: 'Esta gráfica se dibujará en cuanto haya registros que contar.',
+      };
+
   return (
     <div className="fade-in-up">
       {/* Page header */}
@@ -222,8 +237,8 @@ export default function Dashboard({ registrosHook }) {
               <div className="kpi-icon kpi-icon-gold"><Users size={28} /></div>
               <div>
                 <p className="kpi-label">Total Registros</p>
-                <h2 className="kpi-value">{numero.format(stats.totalRegistros)}</h2>
-                <p className="kpi-sub">en {stats.totalTalleres} talleres</p>
+                <h2 className="kpi-value">{falloSinDatos ? '—' : numero.format(stats.totalRegistros)}</h2>
+                {!falloSinDatos && <p className="kpi-sub">en {stats.totalTalleres} talleres</p>}
               </div>
             </div>
 
@@ -231,8 +246,8 @@ export default function Dashboard({ registrosHook }) {
               <div className="kpi-icon kpi-icon-blue"><Ticket size={28} /></div>
               <div>
                 <p className="kpi-label">Ocupación Global</p>
-                <h2 className="kpi-value">{stats.porcentajeOcupacion}%</h2>
-                <p className="kpi-sub">{stats.totalOcupados} / {stats.totalCapacidad}</p>
+                <h2 className="kpi-value">{falloSinDatos ? '—' : `${stats.porcentajeOcupacion}%`}</h2>
+                {!falloSinDatos && <p className="kpi-sub">{stats.totalOcupados} / {stats.totalCapacidad}</p>}
               </div>
             </div>
 
@@ -240,10 +255,10 @@ export default function Dashboard({ registrosHook }) {
               <div className="kpi-icon kpi-icon-green"><CheckCircle size={28} /></div>
               <div>
                 <p className="kpi-label">Asistencias</p>
-                <h2 className="kpi-value">{numero.format(stats.asistencia)}</h2>
+                <h2 className="kpi-value">{falloSinDatos ? '—' : numero.format(stats.asistencia)}</h2>
                 {/* Un número de asistencias sin el total contra el que compararlo
                     no dice si el evento fue bien o fue mal. */}
-                <p className="kpi-sub">{stats.porcentajeAsistencia}% del total</p>
+                {!falloSinDatos && <p className="kpi-sub">{stats.porcentajeAsistencia}% del total</p>}
               </div>
             </div>
 
@@ -251,12 +266,12 @@ export default function Dashboard({ registrosHook }) {
               <div className="kpi-icon kpi-icon-purple"><DollarSign size={28} /></div>
               <div>
                 <p className="kpi-label">Pagos Validados</p>
-                <h2 className="kpi-value">{numero.format(stats.pagosConfirmados)}</h2>
+                <h2 className="kpi-value">{falloSinDatos ? '—' : numero.format(stats.pagosConfirmados)}</h2>
                 {/* Lo que se hace después de leer «37 pendientes» es ir a
                     validarlos, y eso eran tres clics: la barra lateral, la
                     tabla y el filtro. La barra lateral ya llevaba el filtro
                     puesto; esta cifra hace lo mismo. */}
-                {stats.pagosPendientes > 0 ? (
+                {falloSinDatos ? null : stats.pagosPendientes > 0 ? (
                   <button
                     className="kpi-enlace"
                     onClick={() => navigate('/participantes', { state: { filtroPago: 'Pendientes' } })}
@@ -277,7 +292,7 @@ export default function Dashboard({ registrosHook }) {
           abrir el panel —cómo va el ritmo y qué se está llenando—. Los donuts
           describen la composición, que se consulta de vez en cuando. */}
       <div className="dashboard-chart-grid-2col">
-        <TarjetaGrafica titulo="Curva de Inscripciones por Día" hayDatos={stats.fechasData.length > 0} retraso="0.25s" ancha alta>
+        <TarjetaGrafica titulo="Curva de Inscripciones por Día" hayDatos={stats.fechasData.length > 0} vacio={vacio} retraso="0.25s" ancha alta>
           <LineChart data={stats.fechasData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--color-grafica-borde)" vertical={false} />
             <XAxis dataKey="name" stroke="var(--color-text-muted)" tick={{ fill: 'var(--color-text-secondary)', fontSize: 12 }} />
@@ -287,7 +302,7 @@ export default function Dashboard({ registrosHook }) {
           </LineChart>
         </TarjetaGrafica>
 
-        <TarjetaGrafica titulo="Top 5 Talleres" hayDatos={stats.top5Talleres.length > 0} retraso="0.3s" alta>
+        <TarjetaGrafica titulo="Top 5 Talleres" hayDatos={stats.top5Talleres.length > 0} vacio={vacio} retraso="0.3s" alta>
           <BarChart data={stats.top5Talleres} layout="vertical" margin={{ top: 5, right: 34, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--color-grafica-borde)" horizontal vertical={false} />
             <XAxis type="number" stroke="var(--color-text-muted)" tick={{ fill: 'var(--color-text-secondary)' }} allowDecimals={false} />
@@ -303,7 +318,7 @@ export default function Dashboard({ registrosHook }) {
           </BarChart>
         </TarjetaGrafica>
 
-        <TarjetaGrafica titulo="Top 3 Menos Solicitados" hayDatos={stats.bottom3Talleres.length > 0} retraso="0.35s" alta>
+        <TarjetaGrafica titulo="Top 3 Menos Solicitados" hayDatos={stats.bottom3Talleres.length > 0} vacio={vacio} retraso="0.35s" alta>
           <BarChart data={stats.bottom3Talleres} layout="vertical" margin={{ top: 5, right: 34, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--color-grafica-borde)" horizontal vertical={false} />
             <XAxis type="number" stroke="var(--color-text-muted)" tick={{ fill: 'var(--color-text-secondary)' }} allowDecimals={false} />
@@ -329,7 +344,7 @@ export default function Dashboard({ registrosHook }) {
         </div>
       ) : (
         <div className="dashboard-chart-grid">
-          <TarjetaGrafica titulo="Estatus de Pagos" hayDatos={hayRegistros} retraso="0.4s">
+          <TarjetaGrafica titulo="Estatus de Pagos" hayDatos={hayRegistros} vacio={vacio} retraso="0.4s">
             <PieChart>
               <Pie data={stats.pagosData} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={5} dataKey="value">
                 <Cell fill="var(--color-success)" />
@@ -340,7 +355,7 @@ export default function Dashboard({ registrosHook }) {
             </PieChart>
           </TarjetaGrafica>
 
-          <TarjetaGrafica titulo="Audiencia Local vs Foránea" hayDatos={hayRegistros} retraso="0.45s">
+          <TarjetaGrafica titulo="Audiencia Local vs Foránea" hayDatos={hayRegistros} vacio={vacio} retraso="0.45s">
             <PieChart>
               <Pie data={stats.audienciaData} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={5} dataKey="value">
                 <Cell fill="var(--color-accent-gold)" />
@@ -351,7 +366,7 @@ export default function Dashboard({ registrosHook }) {
             </PieChart>
           </TarjetaGrafica>
 
-          <TarjetaGrafica titulo="Distribución de Perfiles" hayDatos={stats.perfilesData.length > 0} retraso="0.5s">
+          <TarjetaGrafica titulo="Distribución de Perfiles" hayDatos={stats.perfilesData.length > 0} vacio={vacio} retraso="0.5s">
             <PieChart>
               <Pie data={stats.perfilesData} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={5} dataKey="value">
                 {stats.perfilesData.map((_, index) => (

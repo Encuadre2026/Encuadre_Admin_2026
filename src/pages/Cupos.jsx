@@ -1,8 +1,9 @@
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, AlertTriangle, Ticket } from 'lucide-react';
 import { useToast } from '../context/toast-contexto';
+import EstadoVacio from '../components/EstadoVacio';
 
 export default function Cupos({ registrosHook }) {
-  const { data, loading, fetchRegistros } = registrosHook;
+  const { data, loading, error, fetchRegistros } = registrosHook;
   const { showToast } = useToast();
 
   // El reparto entre UAA y general lo calcula la API con la misma regla que
@@ -33,6 +34,26 @@ export default function Cupos({ registrosHook }) {
       {loading && cupos.length === 0 ? (
         <div className="cupos-cargando">
           <RefreshCw size={32} className="spin" />
+        </div>
+      ) : cupos.length === 0 ? (
+        // Sin talleres, la rejilla se quedaba en blanco: una página vacía y
+        // ninguna explicación, tanto si la API no respondió como si de verdad
+        // no hay ninguno configurado.
+        <div className="card">
+          {error && !error.noAutorizado ? (
+            <EstadoVacio
+              icono={AlertTriangle}
+              titulo="No se pudieron cargar los cupos"
+              accion={{ texto: 'Reintentar', onClick: onRefresh }}
+            />
+          ) : (
+            <EstadoVacio
+              icono={Ticket}
+              titulo="No hay talleres configurados"
+              mensaje="Los talleres los declara la API; en cuanto haya alguno aparecerá aquí."
+              accion={{ texto: 'Actualizar', onClick: onRefresh }}
+            />
+          )}
         </div>
       ) : (
         <div className="cupos-grid">

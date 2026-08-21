@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { createPortal } from 'react-dom';
-import { Search, SearchX, Inbox, Download, RefreshCw, XCircle, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, SearchX, Inbox, AlertTriangle, Download, RefreshCw, XCircle, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToast } from '../context/toast-contexto';
 import ExpandableRow from '../components/ExpandableRow';
 import ConfirmDialog from '../components/ConfirmDialog';
@@ -79,7 +79,7 @@ function GrupoDeFiltro({ rotulo, opciones, valor, onCambio }) {
 }
 
 export default function Participantes({ registrosHook }) {
-  const { data, loading, fetchRegistros, handleAprobarPago, handleEliminarRegistro, handleViewPdf, revokePdfUrl, exportToExcel } = registrosHook;
+  const { data, loading, error, fetchRegistros, handleAprobarPago, handleEliminarRegistro, handleViewPdf, revokePdfUrl, exportToExcel } = registrosHook;
   const { showToast } = useToast();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -184,6 +184,10 @@ export default function Participantes({ registrosHook }) {
   }
   const hayFiltros = filtrosActivos.length > 0;
   const totalRegistros = (data.registros || []).length;
+  // Sin datos y con un fallo detrás, la tabla no está vacía: está incompleta.
+  // Decir «todavía no hay registros» cuando lo que pasó es que el Worker no
+  // respondió es afirmar algo que no se sabe.
+  const falloLaCarga = Boolean(error) && !error.noAutorizado && totalRegistros === 0;
 
   // ── Paginación ──────────────────────────────────────────
   const totalPages = filasPorPagina === Infinity
@@ -506,7 +510,13 @@ export default function Participantes({ registrosHook }) {
                           pasar a ninguno son cosas distintas, y solo una de las
                           dos se arregla desde aquí. */}
                       <td colSpan="8" className="empty-state">
-                        {hayFiltros ? (
+                        {falloLaCarga ? (
+                          <EstadoVacio
+                            icono={AlertTriangle}
+                            titulo="No se pudieron cargar los registros"
+                            accion={{ texto: 'Reintentar', onClick: onRefresh }}
+                          />
+                        ) : hayFiltros ? (
                           <EstadoVacio
                             icono={SearchX}
                             titulo="Ningún registro coincide"
