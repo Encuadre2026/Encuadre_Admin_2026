@@ -1,13 +1,29 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { createPortal } from 'react-dom';
-import { Search, Download, RefreshCw, XCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, SearchX, Inbox, Download, RefreshCw, XCircle, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToast } from '../context/toast-contexto';
 import ExpandableRow from '../components/ExpandableRow';
 import ConfirmDialog from '../components/ConfirmDialog';
+import EstadoVacio from '../components/EstadoVacio';
 import { TableRowSkeleton } from '../components/Skeleton';
 
-const ITEMS_PER_PAGE = 25;
+/**
+ * Cuántas filas caben en una página.
+ *
+ * Eran 25, fijas. En un monitor de escritorio caben más de treinta, así que la
+ * primera página siempre se quedaba corta; y quien revisa el padrón entero
+ * acababa paseando por catorce páginas. `Infinity` es «todas»: son unos cientos
+ * de filas, no un catálogo, y el navegador las pinta sin despeinarse.
+ */
+const OPCIONES_POR_PAGINA = [25, 50, 100, Infinity];
+const CLAVE_FILAS = 'ENCUADRE_ADMIN_FILAS_POR_PAGINA';
+
+/** La preferencia sobrevive a la recarga; si no vale, se usa la de siempre. */
+function leerFilasPorPagina() {
+  const guardado = Number(localStorage.getItem(CLAVE_FILAS));
+  return OPCIONES_POR_PAGINA.includes(guardado) ? guardado : 25;
+}
 
 /**
  * Cabecera de columna ordenable.
@@ -75,8 +91,10 @@ export default function Participantes({ registrosHook }) {
   const [filterPago, setFilterPago] = useState(navegacion?.filtroPago || 'Todos');
   const [filterInstitucion, setFilterInstitucion] = useState('Todos');
   const [currentPage, setCurrentPage] = useState(1);
+  const [filasPorPagina, setFilasPorPagina] = useState(leerFilasPorPagina);
   const [sortField, setSortField] = useState(null);
   const [sortDir, setSortDir] = useState('asc');
+  const campoBusqueda = useRef(null);
 
   // Punto 14: Debounce del buscador (300ms)
   useEffect(() => {
@@ -139,14 +157,44 @@ export default function Participantes({ registrosHook }) {
     return sorted;
   }, [filteredRegistros, sortField, sortDir]);
 
+  // ── Filtros puestos ─────────────────────────────────────
+  //
+  // Eran tres controles en tres sitios distintos de la barra, y para volver al
+  // padrón entero había que acordarse de cuáles se habían tocado. Aquí se ven
+  // los que están puestos, y cada uno se quita solo.
+  const limpiarFiltros = useCallback(() => {
+    setSearchTerm('');
+    setFilterTaller('Todos');
+    setFilterPago('Todos');
+    setFilterInstitucion('Todos');
+  }, []);
+
+  const filtrosActivos = [];
+  if (debouncedSearch) {
+    filtrosActivos.push({ rotulo: 'Búsqueda', valor: `«${debouncedSearch}»`, quitar: () => setSearchTerm('') });
+  }
+  if (filterTaller !== 'Todos') {
+    filtrosActivos.push({ rotulo: 'Taller', valor: filterTaller, quitar: () => setFilterTaller('Todos') });
+  }
+  if (filterPago !== 'Todos') {
+    filtrosActivos.push({ rotulo: 'Pago', valor: filterPago, quitar: () => setFilterPago('Todos') });
+  }
+  if (filterInstitucion !== 'Todos') {
+    filtrosActivos.push({ rotulo: 'Institución', valor: filterInstitucion, quitar: () => setFilterInstitucion('Todos') });
+  }
+  const hayFiltros = filtrosActivos.length > 0;
+  const totalRegistros = (data.registros || []).length;
+
   // ── Paginación ──────────────────────────────────────────
-  const totalPages = Math.max(1, Math.ceil(sortedRegistros.length / ITEMS_PER_PAGE));
+  const totalPages = filasPorPagina === Infinity
+    ? 1
+    : Math.max(1, Math.ceil(sortedRegistros.length / filasPorPagina));
 
   // Al cambiar los filtros se vuelve a la primera página. Se ajusta DURANTE el
   // render en vez de con un efecto: un efecto pintaba primero la página vieja
   // con los resultados nuevos y solo después corregía, provocando un
   // renderizado en cascada visible como parpadeo.
-  const claveFiltros = `${debouncedSearch}|${filterTaller}|${filterPago}|${filterInstitucion}`;
+  const claveFiltros = `${debouncedSearch}|${filterTaller}|${filterPago}|${filterInstitucion}|${filasPorPagina}`;
   const [filtrosPrevios, setFiltrosPrevios] = useState(claveFiltros);
   if (claveFiltros !== filtrosPrevios) {
     setFiltrosPrevios(claveFiltros);
@@ -158,9 +206,16 @@ export default function Participantes({ registrosHook }) {
   const paginaActual = Math.min(currentPage, totalPages);
 
   const paginatedRegistros = useMemo(() => {
-    const start = (paginaActual - 1) * ITEMS_PER_PAGE;
-    return sortedRegistros.slice(start, start + ITEMS_PER_PAGE);
-  }, [sortedRegistros, paginaActual]);
+    if (filasPorPagina === Infinity) return sortedRegistros;
+    const start = (paginaActual - 1) * filasPorPagina;
+    return sortedRegistros.slice(start, start + filasPorPagina);
+  }, [sortedRegistros, paginaActual, filasPorPagina]);
+
+  const cambiarFilasPorPagina = (valor) => {
+    const numero = Number(valor);
+    setFilasPorPagina(numero);
+    localStorage.setItem(CLAVE_FILAS, String(numero));
+  };
 
   const closePdfModal = useCallback(() => {
     setSelectedPdf(null);
@@ -204,6 +259,30 @@ export default function Participantes({ registrosHook }) {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [selectedPdf, closePdfModal]);
+
+  // `/` lleva al buscador desde cualquier sitio de la página.
+  //
+  // Buscar es lo primero que se hace al llegar aquí —se valida un pago concreto,
+  // de una persona concreta— y exigía apuntar y hacer clic cada vez. No se roba
+  // la tecla si ya se está escribiendo en algún campo, ni con una ventana
+  // abierta encima.
+  useEffect(() => {
+    if (selectedPdf || confirmAction) return;
+
+    const alPulsar = (e) => {
+      if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey) return;
+      const activo = document.activeElement;
+      const escribiendo = activo && (
+        ['INPUT', 'TEXTAREA', 'SELECT'].includes(activo.tagName) || activo.isContentEditable
+      );
+      if (escribiendo) return;
+      e.preventDefault();
+      campoBusqueda.current?.focus();
+    };
+
+    document.addEventListener('keydown', alPulsar);
+    return () => document.removeEventListener('keydown', alPulsar);
+  }, [selectedPdf, confirmAction]);
 
   const onAprobarPago = (id) => {
     setConfirmAction({
@@ -282,6 +361,10 @@ export default function Participantes({ registrosHook }) {
 
   // Skeleton state: first load only
   const isFirstLoad = loading && (data.registros || []).length === 0;
+  const primeraFila = filasPorPagina === Infinity ? 1 : (paginaActual - 1) * filasPorPagina + 1;
+  const ultimaFila = filasPorPagina === Infinity
+    ? sortedRegistros.length
+    : Math.min(paginaActual * filasPorPagina, sortedRegistros.length);
 
   return (
     <div className="fade-in-up">
@@ -289,7 +372,11 @@ export default function Participantes({ registrosHook }) {
       <div className="page-header">
         <h1>
           Participantes
-          <span className="count-badge">{filteredRegistros.length}</span>
+          {/* Un número suelto no dice si se está viendo el padrón entero o un
+              trozo. Con filtros puestos, dice de cuántos. */}
+          <span className="count-badge cifra">
+            {hayFiltros ? `${filteredRegistros.length} de ${totalRegistros}` : filteredRegistros.length}
+          </span>
         </h1>
         <div className="header-actions">
           <button onClick={() => exportToExcel(filteredRegistros)} className="btn btn-outline btn-header btn-excel">
@@ -309,12 +396,28 @@ export default function Participantes({ registrosHook }) {
             <Search size={16} className="search-input-icon" />
             <input
               id="search-participantes"
+              ref={campoBusqueda}
               type="text"
-              placeholder="Buscar por ID, nombre, correo..."
+              placeholder="Buscar por ID, nombre, correo…  (/)"
               className="input-field search-input-field"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') {
+                  setSearchTerm('');
+                  e.currentTarget.blur();
+                }
+              }}
             />
+            {searchTerm && (
+              <button
+                className="btn-limpiar-busqueda"
+                onClick={() => { setSearchTerm(''); campoBusqueda.current?.focus(); }}
+                aria-label="Borrar la búsqueda"
+              >
+                <X size={14} />
+              </button>
+            )}
           </div>
 
           <div>
@@ -343,12 +446,38 @@ export default function Participantes({ registrosHook }) {
             onCambio={setFilterInstitucion}
           />
         </div>
+
+        {hayFiltros && (
+          <div className="filtros-activos">
+            {filtrosActivos.map(f => (
+              <button
+                key={f.rotulo}
+                className="chip-filtro"
+                onClick={f.quitar}
+                aria-label={`Quitar el filtro ${f.rotulo}: ${f.valor}`}
+              >
+                <span className="chip-filtro-rotulo">{f.rotulo}</span>
+                <span className="chip-filtro-valor">{f.valor}</span>
+                <X size={12} />
+              </button>
+            ))}
+            <button className="btn-limpiar-filtros" onClick={limpiarFiltros}>
+              Limpiar filtros
+            </button>
+          </div>
+        )}
       </div>
+
+      {/* Cuántos quedan, para quien no ve la tabla cambiar bajo sus manos. */}
+      <p className="sr-only" role="status" aria-live="polite">
+        {sortedRegistros.length} registros
+      </p>
 
       {/* Table */}
       <div className="card fade-in-up card-flush" style={{ animationDelay: '0.1s' }}>
         <div className="table-scroll">
           <table className="data-table">
+            <caption className="sr-only">Padrón de participantes inscritos</caption>
             <thead>
               <tr>
                 <th></th>
@@ -371,8 +500,27 @@ export default function Participantes({ registrosHook }) {
                   ))}
                   {sortedRegistros.length === 0 && (
                     <tr>
+                      {/* «No se encontraron registros» valía para los dos casos
+                          y no distinguía ninguno: que no haya nadie inscrito
+                          todavía y que haya trescientos y los filtros no dejen
+                          pasar a ninguno son cosas distintas, y solo una de las
+                          dos se arregla desde aquí. */}
                       <td colSpan="8" className="empty-state">
-                        No se encontraron registros.
+                        {hayFiltros ? (
+                          <EstadoVacio
+                            icono={SearchX}
+                            titulo="Ningún registro coincide"
+                            mensaje="Hay registros en el padrón, pero ninguno pasa los filtros puestos."
+                            accion={{ texto: 'Limpiar filtros', onClick: limpiarFiltros }}
+                          />
+                        ) : (
+                          <EstadoVacio
+                            icono={Inbox}
+                            titulo="Todavía no hay registros"
+                            mensaje="En cuanto alguien complete su inscripción aparecerá en esta tabla."
+                            accion={{ texto: 'Actualizar', onClick: onRefresh }}
+                          />
+                        )}
                       </td>
                     </tr>
                   )}
@@ -383,52 +531,69 @@ export default function Participantes({ registrosHook }) {
         </div>
 
         {/* Paginación */}
-        {totalPages > 1 && (
+        {sortedRegistros.length > 0 && (
           <div className="pagination-bar">
-            <span className="pagination-info">
-              Mostrando {((paginaActual - 1) * ITEMS_PER_PAGE) + 1}–{Math.min(paginaActual * ITEMS_PER_PAGE, sortedRegistros.length)} de {sortedRegistros.length}
-            </span>
-            <div className="pagination-controls">
-              <button
-                className="btn btn-outline pagination-btn"
-                onClick={() => setCurrentPage(Math.max(1, paginaActual - 1))}
-                disabled={paginaActual === 1}
-                aria-label="Página anterior"
+            <div className="pagination-izquierda">
+              <label htmlFor="filas-por-pagina" className="pagination-info">Filas</label>
+              <select
+                id="filas-por-pagina"
+                className="input-field selector-filas"
+                value={String(filasPorPagina)}
+                onChange={(e) => cambiarFilasPorPagina(e.target.value)}
               >
-                <ChevronLeft size={16} />
-              </button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1)
-                .filter(page => {
-                  // Mostrar: primera, última, y las cercanas a la actual
-                  return page === 1 || page === totalPages || Math.abs(page - paginaActual) <= 1;
-                })
-                .reduce((acc, page, idx, arr) => {
-                  // Agregar puntos suspensivos entre páginas no contiguas
-                  if (idx > 0 && page - arr[idx - 1] > 1) {
-                    acc.push(<span key={`dots-${page}`} className="pagination-dots">…</span>);
-                  }
-                  acc.push(
-                    <button
-                      key={page}
-                      className={`btn pagination-btn${paginaActual === page ? ' pagination-btn-active' : ' btn-outline'}`}
-                      onClick={() => setCurrentPage(page)}
-                      aria-label={`Ir a página ${page}`}
-                      aria-current={paginaActual === page ? 'page' : undefined}
-                    >
-                      {page}
-                    </button>
-                  );
-                  return acc;
-                }, [])}
-              <button
-                className="btn btn-outline pagination-btn"
-                onClick={() => setCurrentPage(Math.min(totalPages, paginaActual + 1))}
-                disabled={paginaActual === totalPages}
-                aria-label="Página siguiente"
-              >
-                <ChevronRight size={16} />
-              </button>
+                {OPCIONES_POR_PAGINA.map(v => (
+                  <option key={String(v)} value={String(v)}>
+                    {v === Infinity ? 'Todas' : v}
+                  </option>
+                ))}
+              </select>
+              <span className="pagination-info">
+                Mostrando {primeraFila}–{ultimaFila} de {sortedRegistros.length}
+              </span>
             </div>
+            {totalPages > 1 && (
+              <div className="pagination-controls">
+                <button
+                  className="btn btn-outline pagination-btn"
+                  onClick={() => setCurrentPage(Math.max(1, paginaActual - 1))}
+                  disabled={paginaActual === 1}
+                  aria-label="Página anterior"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter(page => {
+                    // Mostrar: primera, última, y las cercanas a la actual
+                    return page === 1 || page === totalPages || Math.abs(page - paginaActual) <= 1;
+                  })
+                  .reduce((acc, page, idx, arr) => {
+                    // Agregar puntos suspensivos entre páginas no contiguas
+                    if (idx > 0 && page - arr[idx - 1] > 1) {
+                      acc.push(<span key={`dots-${page}`} className="pagination-dots">…</span>);
+                    }
+                    acc.push(
+                      <button
+                        key={page}
+                        className={`btn pagination-btn${paginaActual === page ? ' pagination-btn-active' : ' btn-outline'}`}
+                        onClick={() => setCurrentPage(page)}
+                        aria-label={`Ir a página ${page}`}
+                        aria-current={paginaActual === page ? 'page' : undefined}
+                      >
+                        {page}
+                      </button>
+                    );
+                    return acc;
+                  }, [])}
+                <button
+                  className="btn btn-outline pagination-btn"
+                  onClick={() => setCurrentPage(Math.min(totalPages, paginaActual + 1))}
+                  disabled={paginaActual === totalPages}
+                  aria-label="Página siguiente"
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
