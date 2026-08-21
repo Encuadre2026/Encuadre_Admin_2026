@@ -119,8 +119,23 @@ El panel utiliza un sistema de autenticación basado en el secreto administrativ
 
 Vista analítica con 4 KPIs principales y 6 gráficas:
 
-- **KPIs**: Total de registros, Ocupación global (%), Asistencias, Pagos validados.
-- **Gráficas**: Estatus de pagos (pie), Audiencia local vs foránea (pie), Distribución de perfiles (pie), Curva de inscripciones por día (línea), Top 5 talleres más solicitados (barras), Top 3 menos solicitados (barras).
+- **KPIs**: Total de registros (y en cuántos talleres), Ocupación global (%),
+  Asistencias (y qué porcentaje del total son), Pagos validados. La cifra de
+  pagos pendientes lleva a Participantes con el filtro «Pendientes» ya puesto:
+  es lo que se hace después de leerla, y eran tres clics.
+- **Primero lo operativo**: la curva de inscripciones por día y los talleres
+  —Top 5 más solicitados y Top 3 menos—, que son las dos preguntas que se hacen
+  al abrir el panel. Debajo, la composición: estatus de pagos, audiencia local
+  frente a foránea y distribución de perfiles, en tres donuts.
+- **Las barras llevan su cifra escrita**, igual que las leyendas de los donuts:
+  estimar la longitud de una barra contra el eje no es leer un dato, y pasar el
+  ratón por encima no ocurre nunca en una tableta. Los talleres sin nadie
+  inscrito llevan su `0`; recharts no dibuja rectángulo para un valor de cero, y
+  sin rectángulo tampoco hay etiqueta, así que el taller vacío desaparecía por
+  completo de la gráfica que existe justamente para enseñarlo.
+- **Sin datos, cada gráfica lo dice.** Recharts no falla cuando no hay nada que
+  dibujar: pinta un lienzo perfectamente vacío, que se ve igual que una gráfica
+  rota. Y el primer día del pre-registro, eso es lo que hay.
 
 ### Participantes (`/participantes`)
 

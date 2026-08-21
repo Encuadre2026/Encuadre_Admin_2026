@@ -830,16 +830,43 @@ a:hover {
   grid-column: 1 / -1;
 }
 
+/* Todos alineados a la izquierda. Convivían dos clases —una centrada y otra no—
+   sin más criterio que el orden en que se fueron añadiendo las gráficas, y en
+   una rejilla de tres tarjetas se nota: los títulos no forman línea. */
 .chart-title {
   margin-bottom: var(--espacio-4);
   font-size: var(--texto-lg);
-  text-align: center;
+  text-align: left;
 }
 
-.chart-title-left {
-  margin-bottom: var(--espacio-4);
-  font-size: var(--texto-lg);
-  text-align: left;
+/* El «sin datos» ocupa el hueco de la gráfica que no se puede dibujar. */
+.chart-container .estado-vacio,
+.chart-container-lg .estado-vacio {
+  height: 100%;
+  justify-content: center;
+  padding: var(--espacio-3);
+}
+
+/* La cifra de pagos pendientes lleva a validarlos. */
+.kpi-enlace {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espacio-1);
+  margin-top: 0.2rem;
+  padding: 0;
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: var(--texto-sm);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-accent-gold);
+  cursor: pointer;
+}
+
+.kpi-enlace:hover {
+  color: var(--color-accent-gold-hover);
+  text-decoration: underline;
 }
 
 .chart-container {
