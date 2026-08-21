@@ -132,14 +132,27 @@ export async function pedir(ruta, { esperaBinario = false, ...opciones } = {}) {
     throw new ErrorApi('Tu sesión expiró. Vuelve a iniciar sesión.', 'NO_AUTORIZADO', 401);
   }
 
-  const res = await fetch(`${API}${ruta}`, {
-    ...opciones,
-    headers: {
-      Authorization: `Bearer ${secreto}`,
-      ...(opciones.body ? { 'Content-Type': 'application/json' } : {}),
-      ...opciones.headers,
-    },
-  });
+  // `fetch` solo rechaza cuando la petición no llega a hacerse: sin red, con el
+  // DNS caído o con el Worker sin responder. Lo que trae entonces es un
+  // TypeError con el texto «Failed to fetch» —en inglés y sin relación con nada
+  // de lo que la persona está mirando—, y ese texto salía tal cual por pantalla.
+  //
+  // `comprobarSecreto` ya distinguía este caso, desde que se separó «la
+  // contraseña no vale» de «no se pudo hablar con el servidor». Aquí no, y es
+  // donde más falta hace: por aquí pasan todas las cargas del panel.
+  let res;
+  try {
+    res = await fetch(`${API}${ruta}`, {
+      ...opciones,
+      headers: {
+        Authorization: `Bearer ${secreto}`,
+        ...(opciones.body ? { 'Content-Type': 'application/json' } : {}),
+        ...opciones.headers,
+      },
+    });
+  } catch {
+    throw new ErrorApi('No se pudo contactar con el servidor.', 'SIN_CONEXION', 0);
+  }
 
   if (res.status === 401) {
     olvidarSesion();

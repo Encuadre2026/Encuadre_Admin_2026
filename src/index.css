@@ -2097,3 +2097,76 @@ select:focus-visible {
     animation: spin 1.5s linear infinite !important;
   }
 }
+
+/* ============================================================
+   AVISO DE DATOS
+   ------------------------------------------------------------
+   `useRegistros` guardaba el error desde siempre y, salvo el de
+   sesión caducada, nadie lo enseñaba: si el Worker no respondía,
+   el panel se quedaba con la tabla vacía y el mensaje «No se
+   encontraron registros». Ante un fallo de red, el panel afirmaba
+   que no hay nadie inscrito.
+
+   Va en rojo cuando el servidor contestó algo malo, y en un tono
+   neutro cuando lo que falta es la red: no es un error del panel
+   ni de quien lo usa, y pintarlo de rojo solo alarma.
+   ============================================================ */
+.aviso-datos {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--espacio-3);
+  padding: var(--espacio-3) var(--espacio-4);
+  margin-bottom: var(--espacio-4);
+  border: 1px solid var(--color-danger);
+  border-left-width: 3px;
+  border-radius: var(--radio-md);
+  background-color: var(--color-danger-dim);
+  box-shadow: var(--sombra-1);
+}
+
+.aviso-datos.conexion {
+  border-color: var(--color-border-light);
+  background-color: var(--color-bg-card);
+}
+
+.aviso-datos-icono {
+  display: flex;
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--color-danger);
+}
+
+.aviso-datos.conexion .aviso-datos-icono {
+  color: var(--color-text-secondary);
+}
+
+.aviso-datos-texto {
+  flex: 1;
+  min-width: 0;
+}
+
+.aviso-datos-titulo {
+  font-size: var(--texto-base);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.aviso-datos-detalle {
+  font-size: var(--texto-md);
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  overflow-wrap: break-word;
+}
+
+.aviso-datos-accion {
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .aviso-datos {
+    flex-wrap: wrap;
+  }
+  .aviso-datos-accion {
+    width: 100%;
+  }
+}

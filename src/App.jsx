@@ -5,6 +5,7 @@ import { ToastProvider } from './context/ToastContext';
 import useRegistros from './hooks/useRegistros';
 import ErrorBoundary from './components/ErrorBoundary';
 import Sidebar from './components/Sidebar';
+import AvisoDeDatos from './components/AvisoDeDatos';
 import Login from './pages/Login';
 import { olvidarSesion } from './api/cliente';
 
@@ -30,7 +31,7 @@ function AuthenticatedLayout() {
 
   // Redirect if unauthorized (dentro de useEffect para evitar side effects en render)
   useEffect(() => {
-    if (registrosHook.error === 'unauthorized') {
+    if (registrosHook.error?.noAutorizado) {
       olvidarSesion();
       navigate('/login');
     }
@@ -59,6 +60,17 @@ function AuthenticatedLayout() {
       </button>
 
       <main className="main-content">
+        {/* Va aquí, fuera de las rutas, porque el fallo no es de ninguna
+            pantalla: es de los datos que las tres comparten. */}
+        <AvisoDeDatos
+          error={registrosHook.error}
+          sinConexion={registrosHook.sinConexion}
+          hayDatos={totalRegistros > 0}
+          ultimaCarga={registrosHook.lastUpdated}
+          cargando={registrosHook.loading}
+          onReintentar={registrosHook.fetchRegistros}
+        />
+
         <Suspense fallback={<PageLoader />}>
           <Routes>
             {/* La raíz no estaba definida, así que caía en el comodín y quien
