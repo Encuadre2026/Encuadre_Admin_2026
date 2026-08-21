@@ -76,13 +76,16 @@ test('el icono de la lupa sigue dentro del campo de búsqueda en móvil', async 
   expect(lupa.y + lupa.height).toBeLessThanOrEqual(campo.y + campo.height + 1);
 });
 
-test('las gráficas de talleres se apilan en móvil en vez de partirse en dos columnas', async ({ page }) => {
+test('las barras de composición se apilan en móvil en vez de partirse en columnas', async ({ page }) => {
+  // Las tres barras de composición son lo único del dashboard que va en
+  // rejilla. En 390 px, tres columnas dejan cada una en 110 px: la barra
+  // desaparece y los rótulos se parten por la mitad.
   await page.setViewportSize({ width: 390, height: 844 });
   await prepararPanel(page);
   await irA(page, 'dashboard');
 
   const columnas = await page
-    .locator('.dashboard-chart-grid-2col')
+    .locator('.composicion-grid')
     .evaluate((el) => getComputedStyle(el).gridTemplateColumns.split(' ').length);
 
   expect(columnas).toBe(1);

@@ -28,16 +28,28 @@ test('el panel se ve con Inter, no con la fuente que toque en cada máquina', as
 
   const fuente = await page.evaluate(async () => {
     await document.fonts.ready;
+    const cargadas = (familia) =>
+      [...document.fonts].filter((cara) => cara.family === familia && cara.status === 'loaded').length;
     return {
       declarada: getComputedStyle(document.body).fontFamily,
-      cargadas: [...document.fonts]
-        .filter((cara) => cara.family === 'Inter Variable' && cara.status === 'loaded')
-        .length,
+      declaradaTitular: getComputedStyle(document.querySelector('h1')).fontFamily,
+      cargadas: cargadas('Inter Variable'),
+      cargadasTitular: cargadas('Bricolage Grotesque Variable'),
     };
   });
 
   expect(fuente.declarada).toContain('Inter Variable');
   expect(fuente.cargadas, 'la fuente se pide pero no llega: el navegador la sustituye').toBeGreaterThan(0);
+
+  // Desde el rediseño hay una segunda familia, solo para titulares y cifras
+  // grandes. Falla igual de callada que la primera: sin ella, los titulares se
+  // dibujan con Inter en negrita y el panel pierde justo lo que lo distingue,
+  // sin que nada en la consola lo diga.
+  expect(fuente.declaradaTitular).toContain('Bricolage Grotesque Variable');
+  expect(
+    fuente.cargadasTitular,
+    'la fuente de los titulares se pide pero no llega: se sustituye por Inter'
+  ).toBeGreaterThan(0);
 });
 
 test('el texto apagado alcanza el contraste mínimo sobre las dos superficies', async ({ page }) => {
@@ -108,8 +120,12 @@ test('la dirección del panel a secas lleva al dashboard, no al 404', async ({ p
   await prepararPanel(page);
   await irA(page, '');
 
-  await expect(page.locator('h1')).toHaveText('Dashboard');
+  // El titular de la pantalla dejó de llamarse «Dashboard» —eso lo dice ahora
+  // el rótulo de encima, que es el que nombra la sección del menú—, así que lo
+  // que se comprueba es a dónde se llegó, no cómo se titula.
   expect(page.url()).toContain('#/dashboard');
+  await expect(page.locator('.page-header .rotulo-seccion')).toHaveText('Panel · Dashboard');
+  await expect(page.locator('.dashboard-kpi-grid .kpi-value').first()).toBeVisible();
 });
 
 test('los avisos se anuncian a quien no ve la pantalla', async ({ page }) => {

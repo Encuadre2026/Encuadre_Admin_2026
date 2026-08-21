@@ -7,8 +7,9 @@ import { irA, prepararPanel } from './apoyo.js';
  * Los mismos cinco colores estaban escritos a mano treinta y una veces en el
  * JSX. `scripts/revisar-color.mjs` vigila que no vuelvan; esto comprueba lo
  * otro: que al pasarlos a tokens los colores sigan siendo los mismos, porque
- * `var()` en un atributo `fill` es de las cosas que fallan en silencio —el
- * relleno se queda vacío y la porción sale negra sin que nadie lo note—.
+ * `var()` en un atributo `stroke` o `fill` es de las cosas que fallan en
+ * silencio —el trazo se queda vacío y la línea sale negra o no sale— y porque
+ * una clase de color mal escrita deja el segmento transparente sin avisar.
  */
 
 const TOKENS = {
@@ -26,15 +27,29 @@ test.beforeEach(async ({ page }) => {
   await page.waitForTimeout(1800);
 });
 
-test('los rellenos resuelven a un color, no se quedan en la cadena var()', async ({ page }) => {
+test('el trazo de la curva resuelve a un color, no se queda en la cadena var()', async ({ page }) => {
+  // Es el único sitio donde un token viaja dentro de un atributo SVG, que es
+  // donde fallaba antes: recharts lo pasa tal cual y el navegador lo resuelve
+  // —o no—, sin decir nada en la consola.
+  const trazo = await page
+    .locator('.recharts-line .recharts-curve')
+    .first()
+    .evaluate((linea) => getComputedStyle(linea).stroke);
+
+  expect(trazo, 'un trazo sin resolver deja la curva invisible').toMatch(/^rgb/);
+  expect(trazo).toBe(TOKENS['--color-accent-gold']);
+});
+
+test('los segmentos de las barras de composición se pintan con su color', async ({ page }) => {
   const rellenos = await page.evaluate(() =>
-    [...document.querySelectorAll('.recharts-pie-sector path')].map((s) => getComputedStyle(s).fill)
+    [...document.querySelectorAll('.proporcion-segmento')].map((s) => getComputedStyle(s).backgroundColor)
   );
 
   expect(rellenos.length).toBeGreaterThan(0);
   for (const relleno of rellenos) {
-    expect(relleno, 'un relleno sin resolver deja la porción en negro').toMatch(/^rgb/);
-    expect(relleno).not.toBe('rgb(0, 0, 0)');
+    expect(relleno, 'un segmento sin color es un hueco en la barra').toMatch(/^rgb/);
+    expect(relleno).not.toBe('rgba(0, 0, 0, 0)');
+    expect(Object.values(TOKENS)).toContain(relleno);
   }
 });
 
@@ -57,23 +72,24 @@ test('cada token vale exactamente lo que valía escrito a mano', async ({ page }
   expect(valores).toEqual(TOKENS);
 });
 
-test('los donuts dicen cuánto vale cada porción', async ({ page }) => {
-  // Solo mostraban color y nombre: para saber que eran 10 confirmados y 37
-  // pendientes había que pasar el ratón por encima, cosa que en una tableta no
-  // ocurre nunca. La cifra estaba en los datos y no se enseñaba.
-  const leyendas = await page.locator('.recharts-legend-item').allTextContents();
+test('cada parte de la composición dice cuánto vale', async ({ page }) => {
+  // Los donuts que había antes solo mostraban color y nombre: para saber que
+  // eran 10 confirmados y 37 pendientes había que pasar el ratón por encima,
+  // cosa que en una tableta no ocurre nunca. Las barras que los sustituyen
+  // heredan la obligación: la cifra y el porcentaje, escritos.
+  const filas = await page.locator('.proporcion-fila').allTextContents();
 
-  expect(leyendas.length).toBeGreaterThanOrEqual(3);
-  for (const texto of leyendas) {
-    expect(texto, `«${texto}» no trae ninguna cifra`).toMatch(/\d+\s*\d+%/);
+  expect(filas.length).toBeGreaterThanOrEqual(7);
+  for (const texto of filas) {
+    expect(texto, `«${texto}» no trae ninguna cifra`).toMatch(/\d+\s*\d+\s*%/);
   }
 });
 
-test('las cifras de la leyenda son las de los datos', async ({ page }) => {
-  const leyendas = await page.locator('.recharts-legend-item').allTextContents();
-  const pagos = leyendas.filter((t) => /Confirmados|Pendientes/.test(t));
+test('las cifras de la composición son las de los datos', async ({ page }) => {
+  const filas = await page.locator('.proporcion-fila').allTextContents();
+  const pagos = filas.filter((t) => /Confirmados|Pendientes/.test(t));
 
   // La fixture trae 47 registros con `pago_aprobado` en uno de cada cinco.
-  expect(pagos.join(' | ')).toContain('Confirmados 10');
-  expect(pagos.join(' | ')).toContain('Pendientes 37');
+  expect(pagos.join(' | ')).toContain('Confirmados10');
+  expect(pagos.join(' | ')).toContain('Pendientes37');
 });

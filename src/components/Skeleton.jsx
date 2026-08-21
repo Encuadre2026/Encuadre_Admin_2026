@@ -39,25 +39,29 @@ export default function Skeleton({ variant = 'text', width, height, count = 1, c
   );
 }
 
-/** Skeleton card for Dashboard KPIs */
+/**
+ * El hueco de una cifra de cabecera mientras carga.
+ *
+ * Dibujaba un círculo de 52 px porque las tarjetas llevaban un icono de color
+ * a la izquierda. Ya no hay icono ni tarjeta: son un rótulo y una cifra, y eso
+ * es lo que hay que prometer mientras llegan los datos.
+ */
 export function KpiSkeleton() {
   return (
-    <div className="card kpi-card">
-      <Skeleton variant="circle" width="52px" height="52px" />
-      <div className="skeleton-kpi-texto">
-        <Skeleton width="80px" height="0.7rem" />
-        <Skeleton width="60px" height="1.5rem" className="skeleton-mt" />
-      </div>
+    <div className="kpi-card">
+      <Skeleton width="90px" height="0.7rem" />
+      <Skeleton width="70px" height="2.25rem" />
     </div>
   );
 }
 
-/** Skeleton card for Dashboard charts */
+/** El hueco de una barra de proporción con su leyenda. */
 export function ChartSkeleton() {
   return (
-    <div className="card">
-      <Skeleton width="50%" height="1rem" className="skeleton-mb" />
-      <Skeleton variant="rect" width="100%" height="200px" />
+    <div className="proporcion">
+      <Skeleton width="45%" height="0.7rem" />
+      <Skeleton variant="rect" width="100%" height="10px" />
+      <Skeleton width="100%" height="0.8rem" count={2} />
     </div>
   );
 }
