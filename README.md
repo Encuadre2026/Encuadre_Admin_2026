@@ -126,12 +126,26 @@ Vista analítica con 4 KPIs principales y 6 gráficas:
 
 Tabla completa de registros con:
 
-- **Búsqueda** por ID, nombre, correo o institución (con debounce de 300ms).
+- **Búsqueda** por ID, nombre, correo o institución (con debounce de 300ms). La
+  tecla `/` lleva el foco al buscador desde cualquier parte de la página, y `Esc`
+  la vacía.
 - **Filtros**: por taller, estado de pago (Pendientes/Confirmados), tipo de institución (UAA/Foráneos).
-- **Paginación**: 25 registros por página con navegación numérica.
+- **Los filtros puestos se ven y se quitan**: una pastilla por cada uno, con su
+  aspa, y un «Limpiar filtros». Eran tres controles en tres sitios distintos de
+  la barra, y para volver al padrón entero había que acordarse de cuáles se
+  habían tocado. El contador de la cabecera dice además de cuántos: «120 de 347».
+- **Paginación**: 25, 50, 100 o todas las filas, con navegación numérica. La
+  elección se recuerda entre sesiones.
+- **Cabecera fija**: se queda a la vista al bajar por el padrón. A partir de la
+  fila veinte la tabla era una cuadrícula de valores sin rótulo, y el «Sí» de la
+  última columna podía ser asistencia o pago.
 - **Filas expandibles**: clic en una fila para ver CURP, teléfono, fecha de registro, etc.
 - **Acciones**: ver comprobante PDF (modal con iframe), aprobar pago.
 - **Exportar a Excel**: descarga un `.xlsx` con los registros filtrados.
+- **Estados vacíos que distinguen**: que no haya nadie inscrito todavía y que
+  haya trescientos y los filtros no dejen pasar a ninguno son cosas distintas, y
+  solo una de las dos se arregla desde la pantalla. Antes las dos decían «No se
+  encontraron registros».
 
 ### Cupos por Taller (`/cupos`)
 
@@ -227,6 +241,10 @@ que es lo que ni el linter ni `vite build` pueden ver. Cubren, entre otras cosas
 - Que con el movimiento reducido el contenido aparezca, en vez de quedarse en el
   `opacity: 0` con el que arranca la animación de entrada.
 - Que la dirección del panel a secas lleve al dashboard y no a la página 404.
+- Que la cabecera de la tabla siga en pantalla al desplazarla, que la elección
+  de filas por página sobreviva a una recarga, que los filtros puestos se puedan
+  quitar uno a uno y que `/` lleve al buscador sin robarle la tecla a quien está
+  escribiendo.
 
 Cada una se verificó mutando el código para comprobar que se pone en rojo: una
 prueba que nunca ha fallado no demuestra nada.

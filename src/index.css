@@ -1058,9 +1058,196 @@ select:focus-visible {
   overflow-x: auto;
 }
 
+/* ------------------------------------------------------------
+   La cabecera se queda quieta
+   ------------------------------------------------------------
+   Al bajar por el padrón se perdían los nombres de las columnas,
+   y a partir de la fila veinte la tabla es una cuadrícula de
+   valores sin rótulo: el «Sí» de la última columna podía ser
+   asistencia o pago, y había que subir a mirar.
+
+   No basta con `position: sticky` en el `<th>`. `.table-scroll`
+   lleva `overflow-x: auto`, lo que convierte también el eje
+   vertical en `auto`, pero sin un alto acotado su ventana de
+   desplazamiento mide lo mismo que su contenido: el que se
+   desplaza es el documento, y la cabecera no tiene contra qué
+   pegarse. Acotando el alto, es la caja la que desplaza —y de
+   paso la barra de filtros y la paginación se quedan siempre a la
+   vista—.
+
+   En el móvil se deja sin acotar a propósito: una caja que se
+   desplaza dentro de una página que también se desplaza es de las
+   cosas que peor se manejan con el dedo. */
+@media (min-width: 769px) {
+  .table-scroll {
+    max-height: calc(100dvh - 18rem);
+    min-height: 12rem;
+    overflow: auto;
+  }
+}
+
+.data-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  /* El fondo lo llevaba la fila, y una fila no se pega: se queda atrás y las
+     celdas fijas se ven transparentes con el contenido pasando por debajo. */
+  background-color: var(--color-bg-hover);
+  /* Con `border-collapse: collapse`, el borde de una celda pegada tampoco viaja
+     con ella. La línea inferior va como sombra interior. */
+  box-shadow: inset 0 -1px 0 var(--color-border);
+}
+
 .card-flush {
   padding: 0;
   overflow: hidden;
+}
+
+/* ------------------------------------------------------------
+   Estado vacío
+   ------------------------------------------------------------
+   «No se encontraron registros» servía para los dos casos y no
+   distinguía ninguno. */
+.estado-vacio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--espacio-2);
+  padding: var(--espacio-5) var(--espacio-4);
+  text-align: center;
+}
+
+.estado-vacio-icono {
+  display: inline-flex;
+  padding: var(--espacio-3);
+  border-radius: 50%;
+  background-color: var(--color-bg-hover);
+  color: var(--color-text-muted);
+  margin-bottom: var(--espacio-1);
+}
+
+.estado-vacio-titulo {
+  font-size: var(--texto-lg);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.estado-vacio-mensaje {
+  font-size: var(--texto-base);
+  color: var(--color-text-secondary);
+  max-width: 42ch;
+  line-height: 1.6;
+}
+
+.estado-vacio-accion {
+  margin-top: var(--espacio-2);
+  font-size: var(--texto-base);
+  padding: var(--espacio-2) var(--espacio-4);
+}
+
+/* ------------------------------------------------------------
+   Los filtros puestos, a la vista y quitables
+   ------------------------------------------------------------
+   Eran tres controles en tres sitios distintos de la barra. Para
+   volver al padrón entero había que acordarse de cuáles se habían
+   tocado, y el buscador ni siquiera se ve si la página está
+   desplazada. */
+.filtros-activos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espacio-2);
+  margin-top: var(--espacio-3);
+  padding-top: var(--espacio-3);
+  border-top: 1px solid var(--color-border);
+}
+
+.chip-filtro {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espacio-1);
+  min-height: 26px;
+  padding: var(--espacio-1) var(--espacio-2);
+  border-radius: var(--radio-pill);
+  border: 1px solid var(--color-accent-gold);
+  background: var(--color-accent-gold-dim);
+  color: var(--color-accent-gold);
+  font-family: inherit;
+  font-size: var(--texto-sm);
+  cursor: pointer;
+  max-width: 100%;
+}
+
+.chip-filtro:hover {
+  background: var(--color-bg-hover);
+}
+
+.chip-filtro-rotulo {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: var(--texto-xs);
+  opacity: 0.75;
+}
+
+.chip-filtro-valor {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 22ch;
+}
+
+.btn-limpiar-filtros {
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  font-family: inherit;
+  font-size: var(--texto-sm);
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: var(--espacio-1) var(--espacio-2);
+  min-height: 26px;
+}
+
+.btn-limpiar-filtros:hover {
+  color: var(--color-text-primary);
+}
+
+/* El aspa que vacía el buscador: estaba solo el teclado para hacerlo. */
+.btn-limpiar-busqueda {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 50%;
+  background: var(--color-bg-hover);
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.btn-limpiar-busqueda:hover {
+  color: var(--color-text-primary);
+}
+
+/* Cuántas filas por página, junto a lo que dice cuántas se están viendo. */
+.pagination-izquierda {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-2);
+  flex-wrap: wrap;
+}
+
+.selector-filas {
+  font-size: var(--texto-md);
+  padding: var(--espacio-1) var(--espacio-2);
+  min-height: 30px;
 }
 
 /* ============================================================
@@ -1168,7 +1355,9 @@ select:focus-visible {
 
 .search-input-field {
   width: 100%;
-  padding: var(--espacio-2) var(--espacio-3) var(--espacio-2) 2.25rem !important;
+  /* Hueco a los dos lados: la lupa a la izquierda y el aspa de borrar a la
+     derecha, para que ninguna de las dos se monte sobre lo que se escribe. */
+  padding: var(--espacio-2) 2.25rem !important;
   font-size: var(--texto-md);
 }
 

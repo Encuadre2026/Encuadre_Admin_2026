@@ -101,6 +101,77 @@ test('la píldora de pagos pendientes llega ya filtrada', async ({ page }) => {
   expect(activa.trim()).toBe('Pendientes');
 });
 
+test('la cabecera sigue a la vista al bajar por el padrón', async ({ page }) => {
+  // A partir de la fila veinte la tabla es una cuadrícula de valores sin
+  // rótulo: el «Sí» de la última columna podía ser asistencia o pago, y había
+  // que subir a mirar. Se comprueba lo que de verdad importa —que la cabecera
+  // siga en pantalla—, no cómo está resuelto.
+  const contenedor = page.locator('.table-scroll');
+  const cabecera = page.locator('.data-table thead th').first();
+
+  const antes = await cabecera.boundingBox();
+  await contenedor.evaluate((el) => el.scrollBy(0, 600));
+  await page.waitForTimeout(200);
+  const despues = await cabecera.boundingBox();
+
+  expect(
+    Math.abs(despues.y - antes.y),
+    `la cabecera se fue de ${antes.y} a ${despues.y} al desplazar la tabla`
+  ).toBeLessThanOrEqual(2);
+  await expect(cabecera).toBeInViewport();
+});
+
+test('se puede elegir cuántas filas caben, y la elección sobrevive a la recarga', async ({ page }) => {
+  // Eran 25 fijas: en un monitor de escritorio la primera página se quedaba
+  // corta, y revisar el padrón entero eran catorce páginas.
+  await expect(page.locator('tbody tr.expandable-row')).toHaveCount(25);
+
+  await page.locator('#filas-por-pagina').selectOption('50');
+  await expect(page.locator('tbody tr.expandable-row')).toHaveCount(47);
+
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.waitForTimeout(400);
+  await expect(page.locator('#filas-por-pagina')).toHaveValue('50');
+});
+
+test('el estado vacío distingue «no hay nadie» de «los filtros no dejan pasar a nadie»', async ({ page }) => {
+  await page.locator('#search-participantes').fill('no-existe-este-participante');
+  await page.waitForTimeout(500);
+
+  const vacio = page.locator('.estado-vacio');
+  await expect(vacio).toContainText('Ningún registro coincide');
+
+  await vacio.locator('button', { hasText: 'Limpiar filtros' }).click();
+  await expect(page.locator('tbody tr.expandable-row')).toHaveCount(25);
+  await expect(page.locator('#search-participantes')).toHaveValue('');
+});
+
+test('los filtros puestos se ven y se quitan uno a uno', async ({ page }) => {
+  // Eran tres controles en tres sitios distintos de la barra, y para volver al
+  // padrón entero había que acordarse de cuáles se habían tocado.
+  await page.locator('.filter-pill', { hasText: 'Pendientes' }).click();
+  await page.locator('.filter-pill', { hasText: 'UAA' }).click();
+
+  const chips = page.locator('.chip-filtro');
+  await expect(chips).toHaveCount(2);
+  await expect(page.locator('.count-badge')).toContainText(' de 47');
+
+  await chips.filter({ hasText: 'Pago' }).click();
+  await expect(chips).toHaveCount(1);
+});
+
+test('la tecla / lleva al buscador desde cualquier parte de la página', async ({ page }) => {
+  await page.locator('h1').click();
+  await page.keyboard.press('/');
+
+  await expect(page.locator('#search-participantes')).toBeFocused();
+
+  // Y no se roba la tecla mientras se escribe: dentro del campo, una barra es
+  // una barra.
+  await page.keyboard.type('a/b');
+  await expect(page.locator('#search-participantes')).toHaveValue('a/b');
+});
+
 test('la columna ordenada se anuncia también a un lector de pantalla', async ({ page }) => {
   const cabecera = page.locator('th.sortable', { hasText: 'Participante' });
   await expect(cabecera).toHaveAttribute('aria-sort', 'none');
