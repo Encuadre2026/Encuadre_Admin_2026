@@ -21,7 +21,11 @@ export default function Toast({ toasts, removeToast }) {
   if (!toasts.length) return null;
 
   return (
-    <div className="toast-container">
+    // Un lector de pantalla no anunciaba nada: quien valida un pago sin ver la
+    // pantalla pulsaba «Aprobar» y no se enteraba de si había salido bien.
+    // `polite` espera a que termine de leer lo que esté leyendo; `atomic` hace
+    // que lea el aviso entero y no solo el trozo que ha cambiado.
+    <div className="toast-container" role="status" aria-live="polite" aria-atomic="true">
       {toasts.map(t => {
         const Icon = iconMap[t.type] || Info;
         const isExiting = exiting.has(t.id);

@@ -32,12 +32,11 @@ export default function ExpandableRow({ registro: r, onAprobarPago, onEliminarRe
         tabIndex={0}
         role="row"
         aria-expanded={expanded}
-        style={{ cursor: 'pointer' }}
       >
-        <td style={{ padding: '0.75rem 0.5rem', width: '30px' }}>
+        <td className="celda-desplegar">
           <ChevronRight size={16} className={`expand-icon${expanded ? ' rotated' : ''}`} />
         </td>
-        <td style={{ padding: '0.75rem', fontWeight: 600, color: 'var(--color-accent-gold)', whiteSpace: 'nowrap' }}>
+        <td className="celda-id">
           {r.id_participante}
         </td>
         <td className="celda-participante">
@@ -48,9 +47,9 @@ export default function ExpandableRow({ registro: r, onAprobarPago, onEliminarRe
         <td className="celda-taller" title={r.taller}>
           <span className="recorte-dos-lineas">{r.taller}</span>
         </td>
-        <td style={{ padding: '0.75rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <span style={{ padding: '0.2rem 0.5rem', backgroundColor: 'var(--color-bg-hover)', borderRadius: '4px', fontSize: '0.7rem', whiteSpace: 'nowrap' }}>
+        <td className="celda-accion">
+          <div className="celda-accion-grupo">
+            <span className="insignia-perfil">
               {r.perfil}
             </span>
             {r.url_comprobante && (
@@ -64,8 +63,8 @@ export default function ExpandableRow({ registro: r, onAprobarPago, onEliminarRe
             )}
           </div>
         </td>
-        <td style={{ padding: '0.75rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+        <td className="celda-accion">
+          <div className="celda-accion-grupo">
             {r.pago_aprobado ? (
               <span className="estado-celda afirmativo">
                 <CheckCircle size={14} /> Confirmado
@@ -89,7 +88,7 @@ export default function ExpandableRow({ registro: r, onAprobarPago, onEliminarRe
             )}
           </div>
         </td>
-        <td style={{ padding: '0.75rem' }}>
+        <td className="celda-accion">
           {r.asistio ? (
             <span className="estado-celda afirmativo">
               <CheckCircle size={14} /> Sí
@@ -104,7 +103,7 @@ export default function ExpandableRow({ registro: r, onAprobarPago, onEliminarRe
 
       {/* Expandable detail */}
       <tr>
-        <td colSpan="8" style={{ padding: 0, border: 'none' }}>
+        <td colSpan="8" className="celda-detalle">
           <div className="row-details" style={{ maxHeight: expanded ? '300px' : '0' }}>
             <div className="row-details-inner">
               <div className="detail-item">
