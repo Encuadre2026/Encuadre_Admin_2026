@@ -34,7 +34,7 @@ export default function ExpandableRow({ registro: r, onAprobarPago, onEliminarRe
         aria-expanded={expanded}
       >
         <td className="celda-desplegar">
-          <ChevronRight size={16} className={`expand-icon${expanded ? ' rotated' : ''}`} />
+          <ChevronRight size={20} className={`expand-icon${expanded ? ' rotated' : ''}`} />
         </td>
         <td className="celda-id">
           {r.id_participante}
@@ -43,38 +43,28 @@ export default function ExpandableRow({ registro: r, onAprobarPago, onEliminarRe
           <div className="participante-nombre">{r.nombre}</div>
           <div className="participante-correo">{r.correo}</div>
         </td>
-        <td className="celda-institucion" title={r.institucion}>{siglaDe(r.institucion)}</td>
+        {/* Quién es esta persona, en una sola celda de dos renglones: la
+            institución y el perfil decían lo mismo desde dos columnas
+            separadas por otras dos. */}
+        <td className="celda-institucion" title={r.institucion}>
+          <div className="institucion-sigla">{siglaDe(r.institucion)}</div>
+          <div className="institucion-perfil">{r.perfil}</div>
+        </td>
         <td className="celda-taller" title={r.taller}>
           <span className="recorte-dos-lineas">{r.taller}</span>
         </td>
-        <td className="celda-accion">
-          <div className="celda-accion-grupo">
-            <span className="insignia-perfil">
-              {r.perfil}
-            </span>
+        {/* Los dos documentos, juntos. Estaban repartidos entre la celda de
+            perfil y la de pago, así que la credencial de un estudiante
+            aparecía en una columna y su comprobante en otra. */}
+        <td className="celda-documentos">
+          <div className="celda-documentos-grupo">
             {r.url_comprobante && (
               <button
                 onClick={(e) => { e.stopPropagation(); onViewPdf(r.url_comprobante); }}
                 className="btn btn-documento credencial"
                 title="Ver la credencial de estudiante"
               >
-                <FileText size={13} /> Credencial
-              </button>
-            )}
-          </div>
-        </td>
-        <td className="celda-accion">
-          <div className="celda-accion-grupo">
-            {r.pago_aprobado ? (
-              <span className="estado-celda afirmativo">
-                <CheckCircle size={14} /> Confirmado
-              </span>
-            ) : (
-              <button
-                onClick={(e) => { e.stopPropagation(); onAprobarPago(r.id_participante); }}
-                className="btn btn-validar-pago"
-              >
-                Validar pago
+                <FileText size={15} /> Credencial
               </button>
             )}
             {r.url_comprobante_pago && (
@@ -83,19 +73,34 @@ export default function ExpandableRow({ registro: r, onAprobarPago, onEliminarRe
                 className="btn btn-documento comprobante"
                 title="Ver el comprobante de pago"
               >
-                <FileText size={13} /> Comprobante
+                <FileText size={15} /> Comprobante
               </button>
             )}
           </div>
         </td>
+        {/* La celda de pago queda para el pago: o el estado, o la acción. */}
+        <td className="celda-accion">
+          {r.pago_aprobado ? (
+            <span className="estado-celda afirmativo">
+              <CheckCircle size={17} /> Confirmado
+            </span>
+          ) : (
+            <button
+              onClick={(e) => { e.stopPropagation(); onAprobarPago(r.id_participante); }}
+              className="btn btn-validar-pago"
+            >
+              Validar pago
+            </button>
+          )}
+        </td>
         <td className="celda-accion">
           {r.asistio ? (
             <span className="estado-celda afirmativo">
-              <CheckCircle size={14} /> Sí
+              <CheckCircle size={17} /> Sí
             </span>
           ) : (
             <span className="estado-celda negativo">
-              <XCircle size={14} /> No
+              <XCircle size={17} /> No
             </span>
           )}
         </td>

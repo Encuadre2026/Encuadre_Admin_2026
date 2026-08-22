@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { createPortal } from 'react-dom';
-import { Search, SearchX, Inbox, AlertTriangle, Download, RefreshCw, XCircle, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, SearchX, Inbox, AlertTriangle, Download, RefreshCw, XCircle, X, ChevronLeft, ChevronRight, ChevronUp } from 'lucide-react';
 import { useToast } from '../context/toast-contexto';
 import ExpandableRow from '../components/ExpandableRow';
 import ConfirmDialog from '../components/ConfirmDialog';
@@ -45,8 +45,11 @@ function SortHeader({ field, sortField, sortDir, onSort, children }) {
       aria-sort={orden}
     >
       {children}
+      {/* Era el carácter «▲». Un glifo se dibuja con la fuente que toque, no
+          se alinea con la línea base del rótulo y no escala con él; a 12 px
+          era una mancha. Dibujado, es un icono como los demás del panel. */}
       <span className={`sort-arrow${activa ? ' active' : ''}${activa && sortDir === 'desc' ? ' desc' : ''}`}>
-        ▲
+        <ChevronUp size={16} aria-hidden="true" />
       </span>
     </th>
   );
@@ -410,7 +413,7 @@ export default function Participantes({ registrosHook }) {
               id="search-participantes"
               ref={campoBusqueda}
               type="text"
-              placeholder="Buscar por ID, nombre, correo…  (/)"
+              placeholder="Buscar por nombre, correo o folio…  (/)"
               className="input-field search-input-field"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -493,11 +496,15 @@ export default function Participantes({ registrosHook }) {
             <thead>
               <tr>
                 <th></th>
-                <SortHeader sortField={sortField} sortDir={sortDir} onSort={handleSort} field="id">ID</SortHeader>
+                <SortHeader sortField={sortField} sortDir={sortDir} onSort={handleSort} field="id">Folio</SortHeader>
                 <SortHeader sortField={sortField} sortDir={sortDir} onSort={handleSort} field="nombre">Participante</SortHeader>
                 <SortHeader sortField={sortField} sortDir={sortDir} onSort={handleSort} field="institucion">Institución</SortHeader>
                 <SortHeader sortField={sortField} sortDir={sortDir} onSort={handleSort} field="taller">Taller</SortHeader>
-                <th>Perfil</th>
+                {/* El perfil se fue a la celda de institución —las dos dicen
+                    quién es esta persona— y esta columna la ocupan ahora los
+                    dos documentos, que estaban repartidos entre aquella y la
+                    de pago. */}
+                <th>Documentos</th>
                 <SortHeader sortField={sortField} sortDir={sortDir} onSort={handleSort} field="pago">Pago</SortHeader>
                 <SortHeader sortField={sortField} sortDir={sortDir} onSort={handleSort} field="asistencia">Asistencia</SortHeader>
               </tr>
