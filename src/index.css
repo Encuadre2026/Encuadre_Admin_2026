@@ -20,12 +20,17 @@
   --color-bg-hover: #212429;
 
   --color-text-primary: #ffffff;
-  --color-text-secondary: #a6adba;
-  /* 4.6:1 sobre la tarjeta y 5:1 sobre la superficie. El #666666
-     de antes se quedaba en 3.4:1, por debajo del mínimo de WCAG
-     para texto pequeño, y con él estaban escritos los rótulos de
-     la fila desplegada y los de cada gráfica. */
-  --color-text-muted: #7d8593;
+  /* 11,9:1 sobre la superficie. El #a6adba de antes daba 8,2:1:
+     suficiente para pasar la prueba, corto para leer un correo de
+     14 px a un metro de distancia y con cincuenta años. */
+  --color-text-secondary: #c8cfdb;
+  /* 6,6:1 sobre la tarjeta y 7,2:1 sobre la superficie —AAA para
+     texto pequeño—. Venía de #7d8593, que cumplía el mínimo de
+     4,5:1 y nada más; y con él están escritos justo los rótulos
+     que hay que leer para entender una cifra: los de las
+     proporciones, los de la fila desplegada y los de los cupos.
+     El #666666 original se quedaba en 3,4:1. */
+  --color-text-muted: #99a2b2;
 
   /* --- Marca -----------------------------------------------
      Estos cinco no se tocan: `pruebas/color-y-graficas.spec.js`
@@ -82,17 +87,40 @@
      y se eligen contra el ancho de la columna, no contra el cuerpo base. */
   --display-sm: 1.375rem;
   --display-md: 1.75rem;
-  --display-lg: 2.5rem;
-  --display-xl: 4.1875rem;
+  --display-lg: 2.75rem;
+  --display-xl: 4.5rem;
 
-  --texto-xs: 0.6875rem;
-  --texto-sm: 0.75rem;
-  --texto-md: 0.8125rem;
-  --texto-base: 0.875rem;
-  --texto-lg: 1rem;
-  --texto-xl: 1.125rem;
+  /* --- Escala de texto -------------------------------------
+     La escala entera sube un escalón. El cuerpo estaba en 14 px
+     y los rótulos en 11: es la densidad de un panel de datos
+     mirado de cerca por quien lo hizo, y este lo usa gente de
+     todas las edades —coordinación, becarios, personal de la
+     facultad— a veces desde una tableta y a un brazo de
+     distancia. 17 px de cuerpo es lo que recomienda cualquier
+     guía de lectura prolongada, y 12 px es el suelo para un
+     rótulo en versalitas, que se lee peor que la minúscula por
+     no tener perfil de palabra.
+
+     La escala se sube aquí y no regla a regla: los tamaños ya
+     estaban todos escritos contra estos ocho tokens, que es
+     justo lo que permite cambiarlos de una vez. */
+  --texto-xs: 0.75rem;
+  --texto-sm: 0.875rem;
+  --texto-md: 0.9375rem;
+  --texto-base: 1.0625rem;
+  --texto-lg: 1.1875rem;
+  --texto-xl: 1.3125rem;
   --texto-2xl: 1.5rem;
   --texto-3xl: 1.75rem;
+
+  /* --- Objetivo táctil --------------------------------------
+     WCAG 2.2 pide 24 px como mínimo absoluto, y en eso estaban
+     los botones de la tabla. 44 px es el tamaño que recomiendan
+     Apple y la propia WCAG en su criterio AAA, y es el que hace
+     falta para acertar con el dedo a la primera sin apuntar: la
+     diferencia entre 24 y 44 no la nota quien tiene veinte años
+     y buena vista. */
+  --objetivo-minimo: 44px;
 
   /* --- Espaciado ------------------------------------------- */
   --espacio-1: 0.25rem;
@@ -146,6 +174,12 @@ body {
   background-color: var(--color-bg-base);
   color: var(--color-text-primary);
   font-family: var(--font-family);
+  /* El cuerpo no fijaba tamaño, así que heredaba los 16 px por defecto del
+     navegador y `--texto-base` solo llegaba a las reglas que lo nombraban a
+     mano: el nombre de cada participante, que no la nombra, se dibujaba a 16
+     px por casualidad y no por decisión. Con esto la escala manda también
+     sobre el texto heredado. */
+  font-size: var(--texto-base);
   -webkit-font-smoothing: antialiased;
   line-height: 1.5;
 }
@@ -236,6 +270,7 @@ a:hover {
   border: 1px solid var(--color-border);
   color: var(--color-text-primary);
   padding: var(--espacio-3) var(--espacio-4);
+  min-height: var(--objetivo-minimo);
   border-radius: var(--radio-md);
   font-size: var(--texto-lg);
   font-family: inherit;
@@ -254,9 +289,14 @@ a:hover {
   justify-content: center;
   gap: var(--espacio-2);
   padding: var(--espacio-3) var(--espacio-5);
+  /* El alto lo fija el objetivo táctil, no el relleno: así un
+     botón de icono suelto —«Actualizar» en Cupos— mide lo mismo
+     que uno con rótulo, en vez de encoger hasta el tamaño de su
+     icono. */
+  min-height: var(--objetivo-minimo);
   border-radius: var(--radio-md);
   font-weight: 600;
-  font-size: var(--texto-lg);
+  font-size: var(--texto-base);
   font-family: inherit;
   cursor: pointer;
   transition: background-color var(--transicion-rapida) var(--curva),
@@ -306,7 +346,7 @@ a:hover {
 }
 
 .sidebar {
-  width: 260px;
+  width: 272px;
   background-color: var(--color-bg-surface);
   border-right: 1px solid var(--color-border);
   flex-shrink: 0;
@@ -370,6 +410,9 @@ a:hover {
   align-items: center;
   gap: var(--espacio-3);
   padding: var(--espacio-3) var(--espacio-4);
+  /* Los tres enlaces del menú son lo que más se pulsa del panel y
+     medían 40 px de alto. */
+  min-height: 56px;
   border-radius: 0 var(--radio-md) var(--radio-md) 0;
   color: var(--color-text-secondary);
   font-size: var(--texto-base);
@@ -389,8 +432,15 @@ a:hover {
 /* El número de orden de cada sección. Es lo que convierte tres botones en una
    lista numerada, y de paso da al menú la misma voz que los «01 / 02 / 03» que
    encabezan las secciones del dashboard. */
+/* Los números de orden —los del menú, los de las secciones del
+   dashboard, los de cada taller— van en la grotesca de los
+   titulares y no en Inter. Es lo que los convierte en un
+   elemento de composición, como la numeración de una revista, en
+   vez de en un dato más de la fila. */
 .sidebar-link-indice {
-  font-size: var(--texto-xs);
+  font-family: var(--font-display);
+  font-size: var(--texto-sm);
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--color-text-muted);
   flex-shrink: 0;
@@ -406,14 +456,20 @@ a:hover {
   color: var(--color-text-primary);
 }
 
+/* El nombre de la sección activa va en blanco y el dorado se
+   queda en el filete y en el número. Escrito entero en dorado
+   competía con el aviso de pagos pendientes, que es lo único de
+   la barra que pide hacer algo. */
 .sidebar-link.active {
   background-color: var(--color-bg-card);
-  color: var(--color-accent-gold);
+  color: var(--color-text-primary);
+  font-weight: 600;
   border-left-color: var(--color-accent-gold);
+  border-left-width: 3px;
 }
 
 .sidebar-link.active .sidebar-link-indice {
-  color: var(--color-text-secondary);
+  color: var(--color-accent-gold);
 }
 
 /* Cuántos hay dentro de esa sección. Era una píldora con fondo propio —una
@@ -448,7 +504,7 @@ a:hover {
      siempre, pero nunca llegaba a actuar. Con esto la tabla vuelve a
      desplazarse por dentro, que es lo que se pretendía. */
   min-width: 0;
-  margin-left: 260px;
+  margin-left: 272px;
   min-height: 100vh;
   transition: margin-left var(--transicion-normal) var(--curva);
   padding: var(--espacio-6);
@@ -690,7 +746,9 @@ a:hover {
 }
 
 .cupo-indice {
+  font-family: var(--font-display);
   font-size: var(--texto-sm);
+  font-weight: 700;
   color: var(--color-text-muted);
   font-variant-numeric: tabular-nums;
 }
@@ -764,7 +822,7 @@ a:hover {
 }
 
 .cupo-progress-bar {
-  height: 8px;
+  height: 10px;
   background: var(--color-bg-card);
   border-radius: var(--radio-pill);
   overflow: hidden;
@@ -840,7 +898,7 @@ a:hover {
 }
 
 .filter-bar .input-field {
-  font-size: var(--texto-md);
+  font-size: var(--texto-base);
   padding: var(--espacio-2) var(--espacio-3);
 }
 
@@ -869,7 +927,7 @@ a:hover {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: var(--espacio-1) var(--espacio-3);
+  padding: var(--espacio-1) var(--espacio-4);
   border-radius: var(--radio-pill);
   font-size: var(--texto-sm);
   font-weight: 600;
@@ -878,19 +936,28 @@ a:hover {
   transition: background-color var(--transicion-rapida) var(--curva),
               border-color var(--transicion-rapida) var(--curva),
               color var(--transicion-rapida) var(--curva);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border-light);
   background: transparent;
   color: var(--color-text-secondary);
-  min-height: 28px;
+  min-height: var(--objetivo-minimo);
 }
 .filter-pill:hover {
   border-color: var(--color-border-light);
   color: var(--color-text-primary);
 }
+/* La pastilla elegida va en dorado macizo. En dorado sobre fondo
+   dorado al 15 % daba 6:1 contra su propio fondo, y a un metro de
+   distancia se distinguía de sus vecinas por poco más que el
+   borde. */
 .filter-pill.active {
-  background: var(--color-accent-gold-dim);
+  background: var(--color-accent-gold);
   border-color: var(--color-accent-gold);
-  color: var(--color-accent-gold);
+  color: #000;
+}
+.filter-pill.active:hover {
+  background: var(--color-accent-gold-hover);
+  border-color: var(--color-accent-gold-hover);
+  color: #000;
 }
 
 /* ============================================================
@@ -979,7 +1046,7 @@ a:hover {
    un total —44 de 140 lugares, 7 de 47 asistencias, 10 de 47 pagos— y ese
    total solo estaba escrito en letra pequeña debajo. */
 .kpi-medida {
-  height: 3px;
+  height: 6px;
   border-radius: var(--radio-pill);
   background-color: var(--color-border);
   overflow: hidden;
@@ -996,6 +1063,7 @@ a:hover {
   display: inline-flex;
   align-items: center;
   gap: var(--espacio-1);
+  min-height: var(--objetivo-minimo);
   padding: 0;
   background: none;
   border: none;
@@ -1003,7 +1071,8 @@ a:hover {
   font-size: var(--texto-sm);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  color: var(--color-danger);
+  /* Como el aviso de la barra lateral: dorado porque lleva a hacer algo. */
+  color: var(--color-accent-gold);
   cursor: pointer;
 }
 
@@ -1041,8 +1110,10 @@ a:hover {
 }
 
 .seccion-indice {
-  font-size: var(--texto-md);
-  color: var(--color-text-muted);
+  font-family: var(--font-display);
+  font-size: var(--texto-sm);
+  font-weight: 700;
+  color: var(--color-accent-gold);
   font-variant-numeric: tabular-nums;
 }
 
@@ -1090,9 +1161,11 @@ a:hover {
 }
 
 .taller-indice {
-  width: 22px;
+  width: 26px;
   flex-shrink: 0;
+  font-family: var(--font-display);
   font-size: var(--texto-sm);
+  font-weight: 700;
   color: var(--color-text-muted);
   font-variant-numeric: tabular-nums;
 }
@@ -1110,7 +1183,11 @@ a:hover {
 .taller-barra {
   flex: 0 1 300px;
   min-width: 90px;
-  height: 8px;
+  /* Las barras del panel suben de 3 y 8 px a 6 y 10. Un filete de
+     tres píxeles desaparece en cuanto la pantalla tiene brillo o
+     el ojo tiene años, y era la única manera de ver de un vistazo
+     cuánto falta. */
+  height: 10px;
   border-radius: var(--radio-pill);
   background-color: var(--color-bg-card);
   overflow: hidden;
@@ -1180,11 +1257,11 @@ a:hover {
   /* Dos píxeles de fondo entre segmentos: pegados, dos colores contiguos
      forman un borde que parece un tercer valor. */
   gap: 2px;
-  height: 10px;
+  height: 12px;
 }
 
 .proporcion-segmento {
-  height: 10px;
+  height: 12px;
   min-width: 2px;
   border-radius: var(--radio-pill);
   transition: width 0.5s var(--curva);
@@ -1464,7 +1541,7 @@ select:focus-visible {
 
 .data-table th:first-child {
   padding: var(--espacio-3) var(--espacio-2);
-  width: 30px;
+  width: 44px;
 }
 
 /* Las filas se separan con una línea tenue: sin ella, con el nombre y el correo
@@ -1592,8 +1669,8 @@ select:focus-visible {
   display: inline-flex;
   align-items: center;
   gap: var(--espacio-1);
-  min-height: 26px;
-  padding: var(--espacio-1) var(--espacio-2);
+  min-height: var(--objetivo-minimo);
+  padding: var(--espacio-1) var(--espacio-3);
   border-radius: var(--radio-pill);
   border: 1px solid var(--color-accent-gold);
   background: var(--color-accent-gold-dim);
@@ -1633,7 +1710,7 @@ select:focus-visible {
   text-decoration: underline;
   cursor: pointer;
   padding: var(--espacio-1) var(--espacio-2);
-  min-height: 26px;
+  min-height: var(--objetivo-minimo);
 }
 
 .btn-limpiar-filtros:hover {
@@ -1649,8 +1726,8 @@ select:focus-visible {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 36px;
+  height: 36px;
   border: none;
   border-radius: 50%;
   background: var(--color-bg-hover);
@@ -1673,7 +1750,7 @@ select:focus-visible {
 .selector-filas {
   font-size: var(--texto-md);
   padding: var(--espacio-1) var(--espacio-2);
-  min-height: 30px;
+  min-height: var(--objetivo-minimo);
 }
 
 /* ============================================================
@@ -1860,25 +1937,30 @@ select:focus-visible {
   gap: var(--espacio-2);
   width: auto;
   margin: 0 var(--espacio-3) var(--espacio-3);
-  padding: var(--espacio-3);
-  border: 1px solid var(--color-danger);
+  padding: var(--espacio-4);
+  /* En dorado, no en rojo. El panel usa el rojo para el estado que va mal
+     —pagos pendientes en la barra de proporción, un taller sin nadie— y el
+     dorado para lo que hay que hacer; este aviso no informa de nada, lleva a
+     validar. En rojo decía «algo está roto», que no es el caso: treinta y
+     siete pagos sin validar en agosto es el curso normal de las cosas. */
+  border: 1px solid var(--color-accent-gold);
   border-left-width: 1px;
   border-radius: var(--radio-md);
-  background-color: var(--color-danger-dim);
+  background-color: var(--color-accent-gold-dim);
 }
 
 .sidebar-aviso:hover,
 .sidebar-aviso.active {
-  background-color: var(--color-danger-dim);
-  border-color: var(--color-danger);
-  border-left-color: var(--color-danger);
+  background-color: var(--color-accent-gold-dim);
+  border-color: var(--color-accent-gold);
+  border-left-color: var(--color-accent-gold);
 }
 
 .sidebar-aviso-rotulo {
   display: flex;
   align-items: center;
   gap: var(--espacio-2);
-  color: var(--color-danger);
+  color: var(--color-accent-gold);
   font-size: var(--texto-xs);
   font-weight: 600;
   letter-spacing: 0.16em;
@@ -1888,26 +1970,26 @@ select:focus-visible {
 /* El punto que late. La píldora entera parpadeaba, texto incluido, y un texto
    que aparece y desaparece es más difícil de leer, no más urgente. */
 .sidebar-aviso-punto {
-  width: 5px;
-  height: 5px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
-  background-color: var(--color-danger);
+  background-color: var(--color-accent-gold);
   animation: pulse-badge 2.4s ease-in-out infinite;
 }
 
 .sidebar-aviso-cifra {
   font-family: var(--font-display);
-  font-size: var(--display-sm);
+  font-size: var(--display-md);
   font-weight: 700;
   letter-spacing: -0.035em;
   line-height: 1;
-  color: var(--color-text-primary);
+  color: var(--color-accent-gold);
   font-variant-numeric: tabular-nums;
 }
 
 .sidebar-aviso-texto {
-  font-size: var(--texto-md);
-  color: var(--color-text-secondary);
+  font-size: var(--texto-base);
+  color: var(--color-text-primary);
   text-align: left;
 }
 
@@ -1915,8 +1997,9 @@ select:focus-visible {
   display: inline-flex;
   align-items: center;
   gap: var(--espacio-1);
-  color: var(--color-danger);
-  font-size: var(--texto-md);
+  min-height: var(--objetivo-minimo);
+  color: var(--color-accent-gold);
+  font-size: var(--texto-sm);
   font-weight: 600;
 }
 
@@ -1993,10 +2076,14 @@ select:focus-visible {
   color: var(--color-accent-gold);
 }
 
+/* La flecha era el carácter «▲». Un glifo tipográfico se dibuja
+   con la fuente que toque, no se alinea con la línea base del
+   rótulo y no escala con él; y a 12 px era una mancha. Ahora es
+   un icono dibujado, como los demás del panel. */
 .sort-arrow {
-  display: inline-block;
+  display: inline-flex;
+  vertical-align: middle;
   margin-left: 4px;
-  font-size: var(--texto-sm);
   opacity: 0.4;
   transition: opacity var(--transicion-rapida) var(--curva),
               transform var(--transicion-rapida) var(--curva);
@@ -2421,11 +2508,29 @@ select:focus-visible {
    suspensivos en todos los anchos.
    ============================================================ */
 
+/* ------------------------------------------------------------
+   La institución y el perfil, en la misma celda
+   ------------------------------------------------------------
+   Eran dos columnas separadas por otras dos —taller y perfil no
+   se tocaban—, y las dos dicen lo mismo: quién es esta persona.
+   Juntas caben en una celda de dos renglones y liberan el ancho
+   que necesitan el nombre y el taller ahora que el cuerpo mide
+   17 px. La columna que queda libre la ocupan los dos
+   documentos, que antes vivían repartidos entre la celda de
+   perfil y la de pago. */
 .celda-institucion {
   padding: 0.6rem var(--espacio-2);
-  font-size: var(--texto-md);
   white-space: nowrap;
-  color: var(--color-text-secondary);
+}
+
+.institucion-sigla {
+  font-size: var(--texto-base);
+  color: var(--color-text-primary);
+}
+
+.institucion-perfil {
+  font-size: var(--texto-sm);
+  color: var(--color-text-muted);
 }
 
 .celda-taller {
@@ -2447,7 +2552,7 @@ select:focus-visible {
    JSX de la fila. */
 .celda-desplegar {
   padding: var(--espacio-3) var(--espacio-2);
-  width: 30px;
+  width: 44px;
 }
 
 .celda-id {
@@ -2476,12 +2581,16 @@ select:focus-visible {
   border: none;
 }
 
-.insignia-perfil {
-  padding: 0.2rem var(--espacio-2);
-  background-color: var(--color-bg-hover);
-  border-radius: var(--radio-sm);
-  font-size: var(--texto-sm);
-  white-space: nowrap;
+/* Los dos documentos, uno al lado del otro y siempre en el mismo
+   sitio de la fila. */
+.celda-documentos {
+  padding: var(--espacio-2);
+}
+
+.celda-documentos-grupo {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-2);
 }
 
 /* ------------------------------------------------------------
@@ -2495,8 +2604,8 @@ select:focus-visible {
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
-  min-height: 26px;
-  padding: var(--espacio-1) var(--espacio-2);
+  min-height: var(--objetivo-minimo);
+  padding: var(--espacio-1) var(--espacio-3);
   border-radius: var(--radio-sm);
   font-size: var(--texto-sm);
   font-weight: 600;
@@ -2557,23 +2666,29 @@ select:focus-visible {
 /* La acción más frecuente de la tabla, y medía 85×20 px: por debajo del mínimo
    de 24 px de WCAG 2.2 en un panel que también se usa desde el teléfono. */
 .btn-validar-pago {
-  min-height: 28px;
-  padding: 0.3rem 0.7rem;
+  min-height: var(--objetivo-minimo);
+  padding: var(--espacio-2) var(--espacio-4);
   font-size: var(--texto-sm);
   font-weight: 600;
   border-radius: var(--radio-sm);
-  background-color: transparent;
   /* En dorado, no en verde. El verde es el color del estado «confirmado», y
      este botón es justamente lo contrario: lo que hay que hacer para que ese
      estado llegue. Además es la acción principal de la pantalla, y el dorado
-     es lo que el panel usa para decirlo. */
+     es lo que el panel usa para decirlo.
+
+     Y macizo, no perfilado: es la única acción de la fila, se repite en
+     treinta y siete de ellas y es lo que se viene a hacer a esta pantalla.
+     Perfilado pesaba lo mismo que los dos botones de documento que tiene al
+     lado. */
+  background-color: var(--color-accent-gold);
   border: 1px solid var(--color-accent-gold);
-  color: var(--color-accent-gold);
+  color: #000;
   white-space: nowrap;
 }
 
 .btn-validar-pago:hover:not(:disabled) {
-  background-color: var(--color-accent-gold);
+  background-color: var(--color-accent-gold-hover);
+  border-color: var(--color-accent-gold-hover);
   color: #000;
 }
 
@@ -2630,9 +2745,9 @@ select:focus-visible {
 
 /* Acciones de la fila desplegada. */
 .btn-detalle {
-  padding: var(--espacio-1) var(--espacio-3);
+  padding: var(--espacio-2) var(--espacio-4);
   font-size: var(--texto-sm);
-  min-height: 30px;
+  min-height: var(--objetivo-minimo);
   border-radius: var(--radio-sm);
   background-color: transparent;
   border: 1px solid;
