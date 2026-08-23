@@ -3,8 +3,6 @@
   "private": true,
   "version": "1.0.0",
   "description": "Panel de administración del 36 FTD Encuadre 2026: padrón de participantes, aprobación de pagos y cupos por taller.",
-  "author": "Universidad Autónoma de Aguascalientes",
-  "license": "UNLICENSED",
   "type": "module",
   "engines": {
     "node": ">=22"
