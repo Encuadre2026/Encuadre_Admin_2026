@@ -7,6 +7,7 @@ import ExpandableRow from '../components/ExpandableRow';
 import ConfirmDialog from '../components/ConfirmDialog';
 import EstadoVacio from '../components/EstadoVacio';
 import { TableRowSkeleton } from '../components/Skeleton';
+import { esDeLaSede } from '../sede';
 
 /**
  * Cuántas filas caben en una página.
@@ -123,8 +124,12 @@ export default function Participantes({ registrosHook }) {
     if (filterTaller !== 'Todos') list = list.filter(r => r.taller === filterTaller);
     if (filterPago === 'Pendientes') list = list.filter(r => !r.pago_aprobado);
     if (filterPago === 'Confirmados') list = list.filter(r => r.pago_aprobado);
-    if (filterInstitucion === 'UAA') list = list.filter(r => (r.institucion || '').includes('UAA'));
-    if (filterInstitucion === 'Foráneos') list = list.filter(r => !(r.institucion || '').includes('UAA'));
+    // Con la misma regla que aplica el alta, no con una comparación parcial:
+    // ver `sede.js`.
+    if (filterInstitucion === 'Sede')
+      list = list.filter(r => esDeLaSede(r.institucion, data.institucion_sede));
+    if (filterInstitucion === 'Foráneos')
+      list = list.filter(r => !esDeLaSede(r.institucion, data.institucion_sede));
     if (debouncedSearch) {
       const term = debouncedSearch.toLowerCase();
       list = list.filter(r =>
@@ -456,7 +461,7 @@ export default function Participantes({ registrosHook }) {
 
           <GrupoDeFiltro
             rotulo="Institución"
-            opciones={['Todos', 'UAA', 'Foráneos']}
+            opciones={['Todos', 'Sede', 'Foráneos']}
             valor={filterInstitucion}
             onCambio={setFilterInstitucion}
           />

@@ -4,6 +4,7 @@ import { RefreshCw, ArrowRight, BarChart3, AlertTriangle } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import { useToast } from '../context/toast-contexto';
 import { estadoDeCupo } from '../cupos';
+import { etiquetaSede, repartirPorSede } from '../sede';
 import EstadoVacio from '../components/EstadoVacio';
 import { KpiSkeleton, ChartSkeleton } from '../components/Skeleton';
 
@@ -160,10 +161,10 @@ export default function Dashboard({ registrosHook }) {
       { nombre: 'Pendientes', valor: pagosPendientes },
     ], ['tono-exito', 'tono-peligro']);
 
-    const uaaCount = regs.filter(r => (r.institucion || '').includes('UAA')).length;
-    const foraneosCount = totalRegistros - uaaCount;
+    // Quién es de la sede lo decide la API, no esta pantalla: ver `sede.js`.
+    const { sede: sedeCount, foraneos: foraneosCount } = repartirPorSede(regs, data.institucion_sede);
     const audienciaData = porciones([
-      { nombre: 'UAA · local', valor: uaaCount },
+      { nombre: etiquetaSede(data.institucion_sede), valor: sedeCount },
       { nombre: 'Otras instituciones', valor: foraneosCount },
     ], ['tono-oro', 'tono-info']);
 

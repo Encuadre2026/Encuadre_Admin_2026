@@ -150,7 +150,9 @@ test('los filtros puestos se ven y se quitan uno a uno', async ({ page }) => {
   // Eran tres controles en tres sitios distintos de la barra, y para volver al
   // padrón entero había que acordarse de cuáles se habían tocado.
   await page.locator('.filter-pill', { hasText: 'Pendientes' }).click();
-  await page.locator('.filter-pill', { hasText: 'UAA' }).click();
+  // El filtro se llamaba «UAA». Ahora es «Sede», porque la institución
+  // anfitriona cambia con cada edición y el nombre lo declara la API.
+  await page.locator('.filter-pill', { hasText: 'Sede' }).click();
 
   const chips = page.locator('.chip-filtro');
   await expect(chips).toHaveCount(2);
