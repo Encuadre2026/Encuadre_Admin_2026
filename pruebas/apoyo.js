@@ -52,15 +52,23 @@ export const CUPOS = TALLERES.map((nombre, i) => ({
   lugares_reservados_uaa: 10,
 }));
 
+/** El nombre exacto de la sede, tal y como lo declara la API. */
+export const INSTITUCION_SEDE = 'UAA · Universidad Autónoma de Aguascalientes';
+
 /** Deja la página con sesión iniciada y la API interceptada. */
-export async function prepararPanel(page, { registros = REGISTROS, cupos = CUPOS } = {}) {
+export async function prepararPanel(
+  page,
+  { registros = REGISTROS, cupos = CUPOS, institucionSede = INSTITUCION_SEDE } = {}
+) {
   await page.addInitScript(() => {
     sessionStorage.setItem('ENCUADRE_ADMIN_SECRET', 'secreto-de-prueba');
     localStorage.setItem('ENCUADRE_ADMIN_TOKEN', 'token-de-prueba');
   });
 
   await page.route('**/api/admin/**', (ruta) =>
-    ruta.fulfill({ json: { ok: true, registros, cupos } })
+    ruta.fulfill({
+      json: { ok: true, registros, cupos, institucion_sede: institucionSede },
+    })
   );
 }
 
