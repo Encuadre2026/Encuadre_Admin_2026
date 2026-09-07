@@ -1,6 +1,27 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { ErrorApi, obtenerSecreto, olvidarSesion, pedir } from '../api/cliente';
 
+
+/**
+ * El perfil de quien representa a una universidad ante la asamblea.
+ *
+ * Se reconoce por el perfil y no por el taller «Sin taller · Asamblea»: el
+ * perfil es lo que la persona es, y el taller centinela solo existe porque
+ * `registros.taller_id` no admite nulos.
+ */
+const PERFIL_ASAMBLEA = 'Asambleísta Encuadre';
+
+/**
+ * Un sí/no que sabe callarse.
+ *
+ * Estas respuestas llegan como 1, 0 o null, y null no es «no»: es «esta
+ * pregunta no se le hizo a esta persona». Escribir «No» ahí afirmaría algo que
+ * nadie contestó, así que la celda se queda vacía.
+ */
+const siNo = (v) => (v === null || v === undefined ? '' : v ? 'Sí' : 'No');
+
+/** Lo mismo para las respuestas de texto: sin dato, celda vacía. */
+const texto = (v) => v ?? '';
 export default function useRegistros() {
   const [data, setData] = useState({ registros: [], cupos: [] });
   const [loading, setLoading] = useState(true);
@@ -93,6 +114,11 @@ export default function useRegistros() {
     if (!filteredRegistros?.length) return;
     // Importación dinámica para no inflar el bundle
     const XLSX = await import('xlsx');
+    // Las ocho columnas del formulario de la asamblea solo se añaden si en lo
+    // exportado hay algún asambleísta. En el padrón general irían las ocho
+    // vacías en todas las filas, y una columna que nunca dice nada estorba a
+    // quien lee la hoja.
+    const hayAsamblea = filteredRegistros.some(r => r.perfil === PERFIL_ASAMBLEA);
     const rows = filteredRegistros.map(r => ({
       'ID Participante': r.id_participante,
       Nombre: r.nombre,
@@ -104,6 +130,22 @@ export default function useRegistros() {
       Taller: r.taller,
       'Pago Aprobado': r.pago_aprobado ? 'Sí' : 'No',
       Asistencia: r.asistio ? 'Sí' : 'No',
+      ...(hayAsamblea
+        ? {
+            'Programa académico': texto(r.programa_academico),
+            Representante: texto(r.tipo_representante),
+            'Asiste al Encuentro': siNo(r.asiste_encuentro),
+            Hotel: texto(r.hotel),
+            'Viaja con alumnos': siNo(r.viaja_con_alumnos),
+            // El número va aparte del sí/no porque «no viaja con alumnos» y
+            // «viaja con 0» son respuestas distintas, igual que en la base.
+            'Número de alumnos': r.numero_alumnos ?? '',
+            'Interés en talleres': siNo(r.interes_talleres),
+            // Preferencia, no inscripción: no ocupa cupo ni sustituye al
+            // taller de la columna «Taller».
+            'Taller de preferencia': texto(r.taller_preferencia),
+          }
+        : {}),
     }));
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
