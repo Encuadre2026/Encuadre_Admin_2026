@@ -671,8 +671,11 @@ a:hover {
   grid-template-rows: 1fr;
 }
 
-/* Sin esto, el contenido impone su alto mínimo y la fila nunca llega a 0fr. */
-.row-details > * {
+/* Sin esto, el contenido impone su alto mínimo y la fila nunca llega a 0fr. El
+   relleno del detalle vive por dentro de este recorte y no aquí: el padding no
+   lo encoge `min-height`, así que puesto en la caja recortada dejaba 33 px de
+   banda vacía debajo de cada fila cerrada. */
+.row-details-clip {
   min-height: 0;
   overflow: hidden;
 }

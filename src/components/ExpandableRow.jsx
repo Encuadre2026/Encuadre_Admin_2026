@@ -147,33 +147,44 @@ export default function ExpandableRow({ registro: r, onAprobarPago, onEliminarRe
       {/* Expandable detail */}
       <tr>
         <td colSpan="8" className="celda-detalle">
-          <div className={`row-details${expanded ? ' abierto' : ''}`}>
-            <div className="row-details-inner">
-              {detalles.map(([rotulo, valor]) => (
-                <div className="detail-item" key={rotulo}>
-                  <label>{rotulo}</label>
-                  <span>{valor}</span>
+          {/* `inert` mientras está cerrado: el detalle sigue en el DOM para
+              poder animarlo, y sin esto sus botones —«Eliminar registro» entre
+              ellos— seguían en el orden de tabulación de la página, invisibles.
+              Con veinticinco filas eran hasta cien paradas a ciegas. */}
+          <div className={`row-details${expanded ? ' abierto' : ''}`} inert={!expanded}>
+            {/* Este div existe para poder recortar: el alto lo anima la fila de
+                rejilla de arriba, y el relleno tiene que quedar dentro de lo
+                recortado. Puesto en `-inner`, sus 32 px de padding eran el alto
+                mínimo del contenido y cada fila cerrada arrastraba una banda
+                vacía de 33 px. */}
+            <div className="row-details-clip">
+              <div className="row-details-inner">
+                {detalles.map(([rotulo, valor]) => (
+                  <div className="detail-item" key={rotulo}>
+                    <label>{rotulo}</label>
+                    <span>{valor}</span>
+                  </div>
+                ))}
+                <div className="detail-actions">
+                  {r.url_comprobante && (
+                    <button onClick={() => onViewPdf(r.url_comprobante)} className="btn btn-detalle credencial">
+                      <FileText size={14} /> Ver credencial
+                    </button>
+                  )}
+                  {r.url_comprobante_pago && (
+                    <button onClick={() => onViewPdf(r.url_comprobante_pago)} className="btn btn-detalle comprobante">
+                      <FileText size={14} /> Ver comprobante
+                    </button>
+                  )}
+                  {!r.pago_aprobado && (
+                    <button onClick={() => onAprobarPago(r.id_participante)} className="btn btn-detalle aprobar">
+                      <CheckCircle size={14} /> Aprobar pago
+                    </button>
+                  )}
+                  <button onClick={() => onEliminarRegistro(r.id_participante)} className="btn btn-detalle eliminar">
+                    <XCircle size={14} /> Eliminar registro
+                  </button>
                 </div>
-              ))}
-              <div className="detail-actions">
-                {r.url_comprobante && (
-                  <button onClick={() => onViewPdf(r.url_comprobante)} className="btn btn-detalle credencial">
-                    <FileText size={14} /> Ver credencial
-                  </button>
-                )}
-                {r.url_comprobante_pago && (
-                  <button onClick={() => onViewPdf(r.url_comprobante_pago)} className="btn btn-detalle comprobante">
-                    <FileText size={14} /> Ver comprobante
-                  </button>
-                )}
-                {!r.pago_aprobado && (
-                  <button onClick={() => onAprobarPago(r.id_participante)} className="btn btn-detalle aprobar">
-                    <CheckCircle size={14} /> Aprobar pago
-                  </button>
-                )}
-                <button onClick={() => onEliminarRegistro(r.id_participante)} className="btn btn-detalle eliminar">
-                  <XCircle size={14} /> Eliminar registro
-                </button>
               </div>
             </div>
           </div>

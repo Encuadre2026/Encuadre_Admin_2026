@@ -71,6 +71,44 @@ test('al resto del padrón no le cambia nada', async ({ page }) => {
   ]);
 });
 
+test('un cero es un dato: viajar con cero alumnos no es no contestar', async ({ page }) => {
+  await page.getByRole('button', { name: 'Asambleísta Encuadre' }).click();
+  await page.locator('tbody tr.expandable-row', { hasText: 'ASA-002' }).click();
+
+  const item = page.locator('.row-details.abierto .detail-item', { hasText: 'Número de alumnos' });
+  await expect(item.locator('span')).toHaveText('0');
+});
+
+test('el detalle cerrado no deja una banda vacía debajo de cada fila', async ({ page }) => {
+  // El alto lo anima una fila de rejilla que va de 0fr a 1fr, y el relleno del
+  // detalle tiene que quedar dentro de lo que se recorta: el padding no lo
+  // encoge `min-height`, así que en la caja recortada dejaba 33 px de banda
+  // vacía debajo de las veinticinco filas de la página.
+  const alto = await page.locator('.row-details').first()
+    .evaluate(el => el.getBoundingClientRect().height);
+
+  // Solo el borde inferior de la fila, que ya estaba antes.
+  expect(alto).toBeLessThanOrEqual(2);
+});
+
+test('los botones del detalle cerrado no están en el orden de tabulación', async ({ page }) => {
+  // Siguen en el DOM para poder animarlos, y sin `inert` seguían siendo
+  // paradas del tabulador: invisibles, y una de ellas es «Eliminar registro».
+  const oculto = page.locator('.row-details:not(.abierto) button').first();
+
+  const seEnfoca = await oculto.evaluate((el) => {
+    el.focus();
+    return document.activeElement === el;
+  });
+  expect(seEnfoca).toBe(false);
+
+  // Y desplegada, la misma fila sí deja usarlos.
+  await page.locator('tbody tr.expandable-row').first().click();
+  const visible = page.locator('.row-details.abierto button').first();
+  await expect(visible).toBeVisible();
+  expect(await visible.evaluate((el) => { el.focus(); return document.activeElement === el; })).toBe(true);
+});
+
 test('el detalle abierto no se corta por abajo', async ({ page }) => {
   // Se abría hasta un `max-height` de 300 px escrito a mano. Con trece campos
   // —o con seis en una sola columna— lo que pasaba de ahí desaparecía sin
