@@ -34,11 +34,14 @@ async function descargar(page) {
     page.waitForEvent('download'),
     page.getByRole('button', { name: /^Excel/ }).click(),
   ]);
-  const libro = XLSX.read(await readFile(await descarga.path()), { type: 'buffer' });
+  // `cellStyles` no es adorno: sin él SheetJS ni siquiera lee el bloque <cols>
+  // del archivo, y los anchos volverían como `undefined` estén o no puestos.
+  const libro = XLSX.read(await readFile(await descarga.path()), { type: 'buffer', cellStyles: true });
   const hoja = libro.Sheets[libro.SheetNames[0]];
   return {
     archivo: descarga.suggestedFilename(),
     pestaña: libro.SheetNames[0],
+    anchos: hoja['!cols'],
     // La fila 1 tal cual, sin pasar por el mapeo a objetos: así se comprueba
     // también que no sobre ninguna columna, no solo que estén las esperadas.
     encabezados: XLSX.utils.sheet_to_json(hoja, { header: 1 })[0],
@@ -64,11 +67,11 @@ test('filtrando a la asamblea, la hoja lleva sus ocho respuestas', async ({ page
 
   const { archivo, pestaña, encabezados, filas } = await descargar(page);
 
-  // Las ocho están, y la CURP y el teléfono no: ese formulario no los pide y
-  // el Worker los guarda vacíos, así que en una hoja solo de asamblea serían
-  // dos columnas vacías de arriba abajo.
+  // Las ocho están. Y no están las cuatro que en esta hoja no dicen nada: la
+  // CURP y el teléfono, que su formulario no pide; el taller, que en todas las
+  // filas es el centinela «Sin taller · Asamblea»; y el folio.
   expect(encabezados).toEqual([
-    'ID Participante', 'Nombre', 'Correo', 'Institución', 'Perfil', 'Taller',
+    'Nombre', 'Correo', 'Institución', 'Perfil',
     'Pago Aprobado', 'Asistencia', ...DE_LA_ASAMBLEA,
   ]);
   expect(pestaña).toBe('Asamblea');
@@ -77,8 +80,9 @@ test('filtrando a la asamblea, la hoja lleva sus ocho respuestas', async ({ page
   // Solo la asamblea, y toda la asamblea.
   expect(filas).toHaveLength(ASAMBLEA.length);
 
+  // Sin folio en esta hoja, el correo es lo que ordena: representante1, 2 y 3.
   const [titular, conCeroAlumnos, queNoAsiste] = filas.sort((a, b) =>
-    a['ID Participante'].localeCompare(b['ID Participante'])
+    a.Correo.localeCompare(b.Correo)
   );
 
   expect(titular).toMatchObject({
@@ -126,4 +130,27 @@ test('con la asamblea dentro del padrón entero, nadie pierde columnas', async (
   const ajenas = filas.find(f => f.Perfil === 'Estudiante');
   expect(ajenas.Representante).toBe('');
   expect(ajenas['Programa académico']).toBe('');
+});
+
+test('las columnas bajan a la anchura de lo que llevan', async ({ page }) => {
+  await prepararPanel(page, { registros: REGISTROS_CON_ASAMBLEA });
+  await irA(page, 'participantes');
+
+  const { encabezados, anchos } = await descargar(page);
+  const anchoDe = (columna) => anchos[encabezados.indexOf(columna)].wch;
+
+  // Un .xlsx no guarda «ajustar al contenido», guarda un número por columna. Sin
+  // él Excel pinta las suyas de 8,43 caracteres y «Programa académico» llega
+  // recortado a «Programa ac».
+  expect(anchos).toHaveLength(encabezados.length);
+  expect(Math.min(...anchos.map(c => c.wch))).toBeGreaterThan(9);
+
+  // Manda lo que hay debajo, no el rótulo: «Correo» es corto y sus direcciones
+  // largas; «Asistencia» es al revés.
+  expect(anchoDe('Correo')).toBeGreaterThan(anchoDe('Asistencia'));
+
+  // Y hay tope: los nombres de taller pasan de cien caracteres, y una columna
+  // así de ancha empuja a las demás fuera de la pantalla.
+  expect(anchoDe('Taller')).toBe(45);
+  expect(Math.max(...anchos.map(c => c.wch))).toBeLessThanOrEqual(45);
 });

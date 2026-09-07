@@ -14,6 +14,33 @@ const siNo = (v) => (v === null || v === undefined ? '' : v ? 'Sí' : 'No');
 /** Lo mismo para las respuestas de texto: sin dato, celda vacía. */
 const texto = (v) => v ?? '';
 
+/**
+ * El ancho de cada columna, en caracteres.
+ *
+ * Un .xlsx no guarda «ajustar al contenido»: guarda un número, y sin él Excel
+ * pinta las suyas de 8,43 caracteres. Con eso «Programa académico» llegaba
+ * recortado a «Programa ac» y había que ensanchar doce columnas a mano cada vez
+ * que se baja la hoja.
+ *
+ * Se mide el rótulo y lo que hay debajo, y se le suman dos caracteres de aire.
+ * El tope de 45 es por los nombres de taller, que pasan de cien caracteres: una
+ * columna así de ancha empuja a las demás fuera de la pantalla, y se lee mejor
+ * envuelta. El suelo de 10 es por las de «Sí»/«No», donde el rótulo cabe justo
+ * y el desplegable del filtro de Excel se le monta encima.
+ */
+const ANCHO_MINIMO = 10;
+const ANCHO_MAXIMO = 45;
+
+function anchosDe(rows) {
+  return Object.keys(rows[0]).map((columna) => {
+    const largo = rows.reduce(
+      (mayor, fila) => Math.max(mayor, String(fila[columna] ?? '').length),
+      columna.length
+    );
+    return { wch: Math.min(ANCHO_MAXIMO, Math.max(ANCHO_MINIMO, largo + 2)) };
+  });
+}
+
 export default function useRegistros() {
   const [data, setData] = useState({ registros: [], cupos: [] });
   const [loading, setLoading] = useState(true);
@@ -108,19 +135,26 @@ export default function useRegistros() {
     const XLSX = await import('xlsx');
     // Una columna que nunca dice nada estorba a quien lee la hoja, así que las
     // columnas dependen de a quién se esté exportando. Las ocho del formulario
-    // de la asamblea solo aparecen si hay algún asambleísta; y la CURP y el
-    // teléfono desaparecen si NO hay nadie más, porque ese formulario no los
-    // pide y el Worker los guarda vacíos.
+    // de la asamblea solo aparecen si hay algún asambleísta. Y en una hoja que
+    // es SOLO de asamblea se caen cuatro:
+    //
+    // - la CURP y el teléfono, que su formulario no pide y el Worker guarda
+    //   vacíos;
+    // - el taller, que en todas sus filas dice «Sin taller · Asamblea», el
+    //   centinela que la migración 0005 inventó porque `taller_id` no admite
+    //   nulos; el que esta gente sí eligió va en «Taller de preferencia»;
+    // - el folio, que en su caso no se usa para nada de lo que se hace con
+    //   esta hoja.
     const hayAsamblea = filteredRegistros.some(esAsamblea);
     const soloAsamblea = filteredRegistros.every(esAsamblea);
     const rows = filteredRegistros.map(r => ({
-      'ID Participante': r.id_participante,
+      ...(soloAsamblea ? {} : { 'ID Participante': r.id_participante }),
       Nombre: r.nombre,
       Correo: r.correo,
       ...(soloAsamblea ? {} : { CURP: r.curp, Teléfono: r.telefono }),
       Institución: r.institucion,
       Perfil: r.perfil,
-      Taller: r.taller,
+      ...(soloAsamblea ? {} : { Taller: r.taller }),
       'Pago Aprobado': r.pago_aprobado ? 'Sí' : 'No',
       Asistencia: r.asistio ? 'Sí' : 'No',
       ...(hayAsamblea
@@ -141,6 +175,7 @@ export default function useRegistros() {
         : {}),
     }));
     const ws = XLSX.utils.json_to_sheet(rows);
+    ws['!cols'] = anchosDe(rows);
     const wb = XLSX.utils.book_new();
     // El nombre y la pestaña dicen qué llevan dentro. Con el nombre único, la
     // hoja del padrón y la de la asamblea se distinguían en la carpeta de
