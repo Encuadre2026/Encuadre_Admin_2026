@@ -1,6 +1,30 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { ErrorApi, obtenerSecreto, olvidarSesion, pedir } from '../api/cliente';
 
+/**
+ * El perfil de quien representa a una universidad ante la asamblea.
+ *
+ * Se reconoce por el perfil y no por el taller «Sin taller · Asamblea»: hoy
+ * los dos señalan a la misma gente, pero el perfil es lo que la persona es y
+ * el taller centinela solo existe porque `registros.taller_id` no admite
+ * nulos. La cadena tiene que decir lo mismo que `PERFIL_ASAMBLEA` en
+ * `backend/src/validacion.ts`, que es quien la escribe en la base.
+ */
+const PERFIL_ASAMBLEA = 'Asambleísta Encuadre';
+const esAsamblea = (r) => r.perfil === PERFIL_ASAMBLEA;
+
+/**
+ * Un sí/no que sabe callarse.
+ *
+ * Estas respuestas llegan como 1, 0 o null, y null no es «no»: es «esta
+ * pregunta no se le hizo a esta persona». Escribir «No» ahí afirmaría algo que
+ * nadie contestó, así que la celda se queda vacía.
+ */
+const siNo = (v) => (v === null || v === undefined ? '' : v ? 'Sí' : 'No');
+
+/** Lo mismo para las respuestas de texto: sin dato, celda vacía. */
+const texto = (v) => v ?? '';
+
 export default function useRegistros() {
   const [data, setData] = useState({ registros: [], cupos: [] });
   const [loading, setLoading] = useState(true);
@@ -93,22 +117,48 @@ export default function useRegistros() {
     if (!filteredRegistros?.length) return;
     // Importación dinámica para no inflar el bundle
     const XLSX = await import('xlsx');
+    // Una columna que nunca dice nada estorba a quien lee la hoja, así que las
+    // columnas dependen de a quién se esté exportando. Las ocho del formulario
+    // de la asamblea solo aparecen si hay algún asambleísta; y la CURP y el
+    // teléfono desaparecen si NO hay nadie más, porque ese formulario no los
+    // pide y el Worker los guarda vacíos.
+    const hayAsamblea = filteredRegistros.some(esAsamblea);
+    const soloAsamblea = filteredRegistros.every(esAsamblea);
     const rows = filteredRegistros.map(r => ({
       'ID Participante': r.id_participante,
       Nombre: r.nombre,
       Correo: r.correo,
-      CURP: r.curp,
-      Teléfono: r.telefono,
+      ...(soloAsamblea ? {} : { CURP: r.curp, Teléfono: r.telefono }),
       Institución: r.institucion,
       Perfil: r.perfil,
       Taller: r.taller,
       'Pago Aprobado': r.pago_aprobado ? 'Sí' : 'No',
       Asistencia: r.asistio ? 'Sí' : 'No',
+      ...(hayAsamblea
+        ? {
+            'Programa académico': texto(r.programa_academico),
+            Representante: texto(r.tipo_representante),
+            'Asiste al Encuentro': siNo(r.asiste_encuentro),
+            Hotel: texto(r.hotel),
+            'Viaja con alumnos': siNo(r.viaja_con_alumnos),
+            // El número va aparte del sí/no porque «no viaja con alumnos» y
+            // «viaja con 0» son respuestas distintas, igual que en la base.
+            'Número de alumnos': r.numero_alumnos ?? '',
+            'Interés en talleres': siNo(r.interes_talleres),
+            // Preferencia, no inscripción: no ocupa cupo ni sustituye al
+            // taller de la columna «Taller».
+            'Taller de preferencia': texto(r.taller_preferencia),
+          }
+        : {}),
     }));
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Registros');
-    XLSX.writeFile(wb, `Registros_Encuadre_${new Date().toISOString().split('T')[0]}.xlsx`);
+    // El nombre y la pestaña dicen qué llevan dentro. Con el nombre único, la
+    // hoja del padrón y la de la asamblea se distinguían en la carpeta de
+    // descargas solo por el «(1)» que les pone el navegador.
+    const que = soloAsamblea ? 'Asamblea' : 'Registros';
+    XLSX.utils.book_append_sheet(wb, ws, que);
+    XLSX.writeFile(wb, `${que}_Encuadre_${new Date().toISOString().split('T')[0]}.xlsx`);
   }, []);
 
   // Carga inicial.

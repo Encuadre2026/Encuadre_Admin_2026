@@ -43,6 +43,96 @@ export const REGISTROS = Array.from({ length: 47 }, (_, i) => ({
   fecha_asistencia: i % 7 === 0 ? '2026-10-29 09:15:00' : null,
 }));
 
+/**
+ * La asamblea de ENCUADRE.
+ *
+ * Su alta entra por `POST /api/asamblea` y se guarda en la misma tabla que
+ * todo el mundo, con el taller centinela y ocho campos que no se le preguntan
+ * a nadie más. La CURP y el teléfono nacen vacíos: su formulario no los pide.
+ *
+ * Los tres casos están elegidos, no son relleno: uno que asiste y viaja con
+ * alumnos, uno que viaja con CERO alumnos —que no es lo mismo que no viajar
+ * con alumnos— y uno que ni siquiera asiste al Encuentro, con casi todo en
+ * null porque a esa altura el formulario deja de preguntar.
+ */
+export const ASAMBLEA = [
+  {
+    id_participante: 'ASA-001',
+    fecha_registro: '2026-08-10 10:00:00',
+    nombre: 'María de los Ángeles Fernández Ocampo',
+    correo: 'representante1@ejemplo.com',
+    curp: '',
+    telefono: '',
+    institucion: 'ANAHUAC · Universidad Anáhuac Cancún',
+    perfil: 'Asambleísta Encuadre',
+    taller: 'Sin taller · Asamblea',
+    url_comprobante: 'comprobantes/17863417871_ASA.pdf',
+    url_comprobante_pago: '',
+    pago_aprobado: 1,
+    asistio: 0,
+    fecha_asistencia: null,
+    programa_academico: 'Diseño Gráfico',
+    tipo_representante: 'Titular',
+    asiste_encuentro: 1,
+    hotel: 'Hotel Francia Aguascalientes',
+    viaja_con_alumnos: 1,
+    numero_alumnos: 12,
+    interes_talleres: 1,
+    taller_preferencia: 'Futurología aplicada al diseño',
+  },
+  {
+    id_participante: 'ASA-002',
+    fecha_registro: '2026-08-11 11:00:00',
+    nombre: 'José Guadalupe Herrera Villalobos',
+    correo: 'representante2@ejemplo.com',
+    curp: '',
+    telefono: '',
+    institucion: 'ITESM · Tecnológico de Monterrey',
+    perfil: 'Asambleísta Encuadre',
+    taller: 'Sin taller · Asamblea',
+    url_comprobante: 'comprobantes/17863417872_ASA.pdf',
+    url_comprobante_pago: '',
+    pago_aprobado: 0,
+    asistio: 0,
+    fecha_asistencia: null,
+    programa_academico: 'Diseño Industrial',
+    tipo_representante: 'Suplente',
+    asiste_encuentro: 1,
+    hotel: 'Hotel Quinta Real',
+    viaja_con_alumnos: 1,
+    numero_alumnos: 0,
+    interes_talleres: 0,
+    taller_preferencia: null,
+  },
+  {
+    id_participante: 'ASA-003',
+    fecha_registro: '2026-08-12 12:00:00',
+    nombre: 'Ana Victoria de la Rosa García',
+    correo: 'representante3@ejemplo.com',
+    curp: '',
+    telefono: '',
+    institucion: 'UAA · Universidad Autónoma de Aguascalientes',
+    perfil: 'Asambleísta Encuadre',
+    taller: 'Sin taller · Asamblea',
+    url_comprobante: 'comprobantes/17863417873_ASA.pdf',
+    url_comprobante_pago: '',
+    pago_aprobado: 1,
+    asistio: 0,
+    fecha_asistencia: null,
+    programa_academico: 'Diseño de Interiores',
+    tipo_representante: 'Titular',
+    asiste_encuentro: 0,
+    hotel: null,
+    viaja_con_alumnos: null,
+    numero_alumnos: null,
+    interes_talleres: null,
+    taller_preferencia: null,
+  },
+];
+
+/** El padrón con la asamblea dentro, que es como llega de la API. */
+export const REGISTROS_CON_ASAMBLEA = [...REGISTROS, ...ASAMBLEA];
+
 export const CUPOS = TALLERES.map((nombre, i) => ({
   nombre,
   cupo_maximo: 18,

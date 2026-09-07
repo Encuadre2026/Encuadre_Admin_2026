@@ -1,10 +1,14 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * Solo hay pruebas de disposición: el panel no tiene suite de integración y
- * añadirla no era el objetivo. Lo que sí hacía falta era una red que atrapase
- * las regresiones que ni el linter ni `vite build` pueden ver, porque no son
- * errores de código sino de ancho.
+ * Casi todas son pruebas de disposición: el panel no tiene suite de
+ * integración y añadirla no era el objetivo. Lo que hacía falta era una red
+ * que atrapase las regresiones que ni el linter ni `vite build` pueden ver,
+ * porque no son errores de código sino de ancho.
+ *
+ * La excepción es `excel-de-la-asamblea.spec.js`, que abre el archivo
+ * descargado. Está aquí por el mismo motivo, porque ese fallo tampoco
+ * se ve: la hoja baja igual, solo que sin las columnas.
  */
 export default defineConfig({
   testDir: './pruebas',
