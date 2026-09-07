@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ChevronRight, FileText, CheckCircle, XCircle } from 'lucide-react';
+import { esAsamblea, siNo } from '../asamblea';
 
 /**
  * Sigla de la institución.
@@ -22,6 +23,43 @@ export default function ExpandableRow({ registro: r, onAprobarPago, onEliminarRe
   const fechaReg = r.fecha_registro
     ? new Date(r.fecha_registro).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
     : '—';
+
+  // Qué se enseña al desplegar la fila.
+  //
+  // Los campos eran seis, fijos, y se pintaban aunque no tuvieran nada dentro:
+  // a un asambleísta le salían la CURP y el teléfono en blanco, que su
+  // formulario ni siquiera le pide. Un rótulo sin dato debajo no informa de
+  // nada; solo obliga a leerlo para descubrir que no dice nada.
+  //
+  // Y al revés: sus ocho respuestas —las únicas que se le preguntan a él y a
+  // nadie más— no aparecían en ninguna pantalla del panel. Ahora esta es la
+  // pantalla donde están.
+  //
+  // El taller se cambia por el de preferencia porque para la asamblea el suyo
+  // es «Sin taller · Asamblea», un centinela de la base de datos; y lo que sí
+  // dijo esta persona es qué taller le gustaría, que es una preferencia y no
+  // una inscripción.
+  const detalles = [
+    ['CURP', r.curp],
+    ['Teléfono', r.telefono],
+    ['Correo', r.correo],
+    ['Fecha de Registro', fechaReg],
+    ['Institución', r.institucion],
+    ...(esAsamblea(r)
+      ? [
+          ['Programa académico', r.programa_academico],
+          ['Representante', r.tipo_representante],
+          ['Asiste al Encuentro', siNo(r.asiste_encuentro)],
+          ['Hotel', r.hotel],
+          ['Viaja con alumnos', siNo(r.viaja_con_alumnos)],
+          // Va aparte del sí/no: «no viaja con alumnos» y «viaja con 0» son
+          // respuestas distintas, igual que en la base.
+          ['Número de alumnos', r.numero_alumnos],
+          ['Interés en talleres', siNo(r.interes_talleres)],
+          ['Taller de preferencia', r.taller_preferencia],
+        ]
+      : [['Taller', r.taller]]),
+  ].filter(([, valor]) => valor !== null && valor !== undefined && valor !== '');
 
   return (
     <>
@@ -109,32 +147,14 @@ export default function ExpandableRow({ registro: r, onAprobarPago, onEliminarRe
       {/* Expandable detail */}
       <tr>
         <td colSpan="8" className="celda-detalle">
-          <div className="row-details" style={{ maxHeight: expanded ? '300px' : '0' }}>
+          <div className={`row-details${expanded ? ' abierto' : ''}`}>
             <div className="row-details-inner">
-              <div className="detail-item">
-                <label>CURP</label>
-                <span>{r.curp}</span>
-              </div>
-              <div className="detail-item">
-                <label>Teléfono</label>
-                <span>{r.telefono}</span>
-              </div>
-              <div className="detail-item">
-                <label>Correo</label>
-                <span>{r.correo}</span>
-              </div>
-              <div className="detail-item">
-                <label>Fecha de Registro</label>
-                <span>{fechaReg}</span>
-              </div>
-              <div className="detail-item">
-                <label>Institución</label>
-                <span>{r.institucion}</span>
-              </div>
-              <div className="detail-item">
-                <label>Taller</label>
-                <span>{r.taller}</span>
-              </div>
+              {detalles.map(([rotulo, valor]) => (
+                <div className="detail-item" key={rotulo}>
+                  <label>{rotulo}</label>
+                  <span>{valor}</span>
+                </div>
+              ))}
               <div className="detail-actions">
                 {r.url_comprobante && (
                   <button onClick={() => onViewPdf(r.url_comprobante)} className="btn btn-detalle credencial">

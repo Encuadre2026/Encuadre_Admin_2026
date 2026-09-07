@@ -23,3 +23,16 @@ export const PERFIL_ASAMBLEA = 'Asambleísta Encuadre';
 export function esAsamblea(registro) {
   return registro?.perfil === PERFIL_ASAMBLEA;
 }
+
+/**
+ * Un sí/no que sabe callarse.
+ *
+ * Las respuestas del formulario de la asamblea llegan como 1, 0 o null, y null
+ * no es «no»: es «esta pregunta no se le hizo a esta persona». Escribir «No»
+ * ahí afirmaría algo que nadie contestó, así que devuelve vacío y quien pinta
+ * decide si eso se enseña o se calla.
+ */
+export function siNo(valor) {
+  if (valor === null || valor === undefined) return '';
+  return valor ? 'Sí' : 'No';
+}

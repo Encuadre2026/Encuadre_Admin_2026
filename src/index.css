@@ -653,11 +653,28 @@ a:hover {
 }
 .expand-icon.rotated { transform: rotate(90deg); }
 
+/* El detalle se abría hasta un `max-height` de 300 px escrito a mano, y lo que
+   pasara de ahí se quedaba cortado sin avisar: en una columna —el móvil— ya se
+   cortaba con seis campos, y la asamblea trae hasta trece. La fila de rejilla
+   que pasa de 0fr a 1fr anima exactamente el alto del contenido, sea el que
+   sea, sin número mágico que revisar cada vez que se añade un campo. */
 .row-details {
+  display: grid;
+  grid-template-rows: 0fr;
   overflow: hidden;
-  transition: max-height 0.35s var(--curva);
+  transition: grid-template-rows 0.35s var(--curva);
   background: rgba(244, 208, 63, 0.03);
   border-bottom: 1px solid var(--color-border);
+}
+
+.row-details.abierto {
+  grid-template-rows: 1fr;
+}
+
+/* Sin esto, el contenido impone su alto mínimo y la fila nunca llega a 0fr. */
+.row-details > * {
+  min-height: 0;
+  overflow: hidden;
 }
 
 .row-details-inner {

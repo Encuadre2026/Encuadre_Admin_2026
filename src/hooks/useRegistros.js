@@ -1,17 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { ErrorApi, obtenerSecreto, olvidarSesion, pedir } from '../api/cliente';
-import { esAsamblea } from '../asamblea';
+import { esAsamblea, siNo } from '../asamblea';
 
-/**
- * Un sí/no que sabe callarse.
- *
- * Estas respuestas llegan como 1, 0 o null, y null no es «no»: es «esta
- * pregunta no se le hizo a esta persona». Escribir «No» ahí afirmaría algo que
- * nadie contestó, así que la celda se queda vacía.
- */
-const siNo = (v) => (v === null || v === undefined ? '' : v ? 'Sí' : 'No');
-
-/** Lo mismo para las respuestas de texto: sin dato, celda vacía. */
+/** Sin dato, celda vacía. */
 const texto = (v) => v ?? '';
 
 export default function useRegistros() {
