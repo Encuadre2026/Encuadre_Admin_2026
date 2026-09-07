@@ -1,17 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { ErrorApi, obtenerSecreto, olvidarSesion, pedir } from '../api/cliente';
-
-/**
- * El perfil de quien representa a una universidad ante la asamblea.
- *
- * Se reconoce por el perfil y no por el taller «Sin taller · Asamblea»: hoy
- * los dos señalan a la misma gente, pero el perfil es lo que la persona es y
- * el taller centinela solo existe porque `registros.taller_id` no admite
- * nulos. La cadena tiene que decir lo mismo que `PERFIL_ASAMBLEA` en
- * `backend/src/validacion.ts`, que es quien la escribe en la base.
- */
-const PERFIL_ASAMBLEA = 'Asambleísta Encuadre';
-const esAsamblea = (r) => r.perfil === PERFIL_ASAMBLEA;
+import { esAsamblea } from '../asamblea';
 
 /**
  * Un sí/no que sabe callarse.

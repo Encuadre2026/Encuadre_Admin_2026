@@ -918,8 +918,11 @@ a:hover {
   max-width: 100%;
 }
 
+/* Los perfiles son cinco pastillas y sus nombres son largos: sin envolver,
+   el grupo empujaba la barra a lo ancho en cuanto la tarjeta se estrechaba. */
 .filter-pills {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--espacio-1);
 }
 
