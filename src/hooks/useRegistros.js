@@ -170,7 +170,13 @@ export default function useRegistros() {
             'Interés en talleres': siNo(r.interes_talleres),
             // Preferencia, no inscripción: no ocupa cupo ni sustituye al
             // taller de la columna «Taller».
-            'Taller de preferencia': texto(r.taller_preferencia),
+            //
+            // Sin taller elegido va un «No», y no la celda en blanco: en una
+            // rejilla de cientos de celdas, un hueco no se distingue de un dato
+            // que se quedó por el camino. Solo para la asamblea, que es a quien
+            // se le preguntó; en el resto del padrón la columna sigue vacía,
+            // porque un «No» ahí sería una respuesta que nadie dio.
+            'Taller de preferencia': esAsamblea(r) ? texto(r.taller_preferencia) || 'No' : '',
           }
         : {}),
     }));

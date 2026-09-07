@@ -101,6 +101,10 @@ test('filtrando a la asamblea, la hoja lleva sus ocho respuestas', async ({ page
   expect(conCeroAlumnos['Viaja con alumnos']).toBe('Sí');
   expect(conCeroAlumnos['Número de alumnos']).toBe(0);
   expect(conCeroAlumnos['Interés en talleres']).toBe('No');
+  // Sin taller elegido, un «No» y no un hueco: en una rejilla de cientos de
+  // celdas, una en blanco no se distingue de un dato que se quedó por el
+  // camino.
+  expect(conCeroAlumnos['Taller de preferencia']).toBe('No');
 
   // Y lo que nadie contestó se queda en blanco. Un «No» ahí afirmaría algo que
   // esta persona no dijo: el formulario dejó de preguntárselo.
@@ -130,6 +134,9 @@ test('con la asamblea dentro del padrón entero, nadie pierde columnas', async (
   const ajenas = filas.find(f => f.Perfil === 'Estudiante');
   expect(ajenas.Representante).toBe('');
   expect(ajenas['Programa académico']).toBe('');
+  // Y el «No» del taller es solo para quien fue preguntado: a un estudiante
+  // nadie le preguntó qué taller preferiría, porque eligió uno de verdad.
+  expect(ajenas['Taller de preferencia']).toBe('');
 });
 
 test('las columnas bajan a la anchura de lo que llevan', async ({ page }) => {
