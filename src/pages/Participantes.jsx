@@ -331,7 +331,9 @@ export default function Participantes({ registrosHook }) {
       message: deLaAsamblea
         ? `¿Confirmas aprobar la acreditación del participante ${id}?`
         : `¿Confirmas aprobar el pago del participante ${id}?`,
-      confirmText: deLaAsamblea ? 'Aprobar acreditación' : 'Aprobar Pago',
+      // En minúsculas las dos: el resto del panel escribe «Limpiar filtros» y
+      // «Eliminar registro», y el español no va en mayúsculas iniciales.
+      confirmText: deLaAsamblea ? 'Aprobar acreditación' : 'Aprobar pago',
       variant: 'warning',
     });
   };

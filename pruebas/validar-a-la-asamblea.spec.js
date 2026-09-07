@@ -29,13 +29,17 @@ test('a quien no paga se le ofrece «Validar» a secas', async ({ page }) => {
 
   const boton = fila(page, PENDIENTE).locator('.btn-validar-pago');
   await expect(boton).toHaveText('Validar');
+  // «Validar» a secas no dice qué se valida, y ahí el tooltip sí añade algo.
   await expect(boton).toHaveAttribute('title', 'Validar la acreditación');
 });
 
 test('a quien sí paga se le sigue ofreciendo «Validar pago»', async ({ page }) => {
   await page.getByRole('button', { name: 'Estudiante' }).click();
 
-  await expect(page.locator('.btn-validar-pago').first()).toHaveText('Validar pago');
+  const boton = page.locator('.btn-validar-pago').first();
+  await expect(boton).toHaveText('Validar pago');
+  // Y aquí no hay tooltip, porque repetiría el rótulo.
+  await expect(boton).not.toHaveAttribute('title', /./);
 });
 
 test('la confirmación no habla de un pago que nadie hizo', async ({ page }) => {
@@ -45,7 +49,9 @@ test('la confirmación no habla de un pago que nadie hizo', async ({ page }) => 
   const dialogo = page.getByRole('dialog');
   await expect(dialogo.locator('.confirm-title')).toHaveText('Aprobar acreditación');
   await expect(dialogo.locator('.confirm-message')).toContainText('la acreditación del participante ASA-002');
-  await expect(dialogo).not.toContainText('pago');
+  // Sin distinguir mayúsculas: «Pago» con mayúscula también sería un pago que
+  // esta persona no hizo.
+  await expect(dialogo).not.toContainText(/pago/i);
 
   // Y lo que se anuncia al terminar tampoco.
   await dialogo.getByRole('button', { name: 'Aprobar acreditación' }).click();

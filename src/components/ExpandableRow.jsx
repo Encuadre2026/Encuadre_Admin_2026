@@ -133,7 +133,10 @@ export default function ExpandableRow({ registro: r, onAprobarPago, onEliminarRe
             <button
               onClick={(e) => { e.stopPropagation(); onAprobarPago(r.id_participante, deLaAsamblea); }}
               className="btn btn-validar-pago"
-              title={deLaAsamblea ? 'Validar la acreditación' : 'Validar el pago'}
+              /* El título solo cuando añade algo: «Validar» a secas no dice qué
+                 se valida, mientras que «Validar pago» ya lo lleva escrito y un
+                 tooltip que repite el rótulo es ruido. */
+              title={deLaAsamblea ? 'Validar la acreditación' : undefined}
             >
               {deLaAsamblea ? 'Validar' : 'Validar pago'}
             </button>
