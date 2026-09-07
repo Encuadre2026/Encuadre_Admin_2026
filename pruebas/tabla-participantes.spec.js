@@ -40,11 +40,12 @@ test('los dos documentos se distinguen por su nombre, no solo por el color', asy
 });
 
 test('cada grupo de filtros dice a qué se refiere', async ({ page }) => {
-  // Los dos grupos iban seguidos y ambos empezaban por «Todos»: con las dos
-  // pastillas activas en amarillo se leían como un solo grupo con dos
-  // selecciones a la vez.
+  // Los grupos van seguidos y todos empiezan por «Todos»: con sus pastillas
+  // activas en amarillo se leían como un solo grupo con varias selecciones a
+  // la vez. Ahora son tres, desde que el perfil dejó de buscarse en el
+  // desplegable de talleres.
   const rotulos = await page.locator('.filter-group-label').allTextContents();
-  expect(rotulos).toEqual(['Pago', 'Institución']);
+  expect(rotulos).toEqual(['Perfil', 'Pago', 'Institución']);
 });
 
 test('el taller se lee sin depender del tooltip', async ({ page }) => {

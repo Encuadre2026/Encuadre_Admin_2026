@@ -60,7 +60,7 @@ test('el padrón sin asambleístas se exporta con las columnas de siempre', asyn
 test('filtrando a la asamblea, la hoja lleva sus ocho respuestas', async ({ page }) => {
   await prepararPanel(page, { registros: REGISTROS_CON_ASAMBLEA });
   await irA(page, 'participantes');
-  await page.locator('#filter-taller').selectOption('Sin taller · Asamblea');
+  await page.getByRole('button', { name: 'Asambleísta Encuadre' }).click();
 
   const { archivo, pestaña, encabezados, filas } = await descargar(page);
 

@@ -8,6 +8,7 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import EstadoVacio from '../components/EstadoVacio';
 import { TableRowSkeleton } from '../components/Skeleton';
 import { esDeLaSede } from '../sede';
+import { esAsamblea } from '../asamblea';
 
 /**
  * Cuántas filas caben en una página.
@@ -94,6 +95,7 @@ export default function Participantes({ registrosHook }) {
   const { state: navegacion } = useLocation();
   const [filterPago, setFilterPago] = useState(navegacion?.filtroPago || 'Todos');
   const [filterInstitucion, setFilterInstitucion] = useState('Todos');
+  const [filterPerfil, setFilterPerfil] = useState('Todos');
   const [currentPage, setCurrentPage] = useState(1);
   const [filasPorPagina, setFilasPorPagina] = useState(leerFilasPorPagina);
   const [sortField, setSortField] = useState(null);
@@ -114,14 +116,30 @@ export default function Participantes({ registrosHook }) {
   const modalRef = useRef(null);
   const closeButtonRef = useRef(null);
 
+  // El taller de la asamblea no entra en esta lista.
+  //
+  // «Sin taller · Asamblea» aparecía entre los talleres del congreso, con lo
+  // que el desplegable ofrecía un taller que no existe y a la vez era el único
+  // sitio desde donde ver a la asamblea: quien la buscaba tenía que saber que
+  // se esconde detrás de un taller inventado. Ahora se filtra por perfil, que
+  // es lo que esa gente es, y aquí quedan solo talleres de verdad.
   const talleresUnicos = useMemo(() => {
-    const t = new Set((data.registros || []).map(r => r.taller));
+    const t = new Set((data.registros || []).filter(r => !esAsamblea(r)).map(r => r.taller));
     return ['Todos', ...Array.from(t).sort()];
+  }, [data]);
+
+  // Los perfiles salen del padrón, no de una lista escrita aquí: el catálogo
+  // lo decide el formulario público, y una copia a mano se quedaría vieja el
+  // día que añadan uno.
+  const perfilesUnicos = useMemo(() => {
+    const p = new Set((data.registros || []).map(r => r.perfil).filter(Boolean));
+    return ['Todos', ...Array.from(p).sort((a, b) => a.localeCompare(b, 'es'))];
   }, [data]);
 
   const filteredRegistros = useMemo(() => {
     let list = data.registros || [];
     if (filterTaller !== 'Todos') list = list.filter(r => r.taller === filterTaller);
+    if (filterPerfil !== 'Todos') list = list.filter(r => r.perfil === filterPerfil);
     if (filterPago === 'Pendientes') list = list.filter(r => !r.pago_aprobado);
     if (filterPago === 'Confirmados') list = list.filter(r => r.pago_aprobado);
     // Con la misma regla que aplica el alta, no con una comparación parcial:
@@ -140,7 +158,7 @@ export default function Participantes({ registrosHook }) {
       );
     }
     return list;
-  }, [data, debouncedSearch, filterTaller, filterPago, filterInstitucion]);
+  }, [data, debouncedSearch, filterTaller, filterPerfil, filterPago, filterInstitucion]);
 
   // Sorting
   const sortedRegistros = useMemo(() => {
@@ -173,6 +191,7 @@ export default function Participantes({ registrosHook }) {
   const limpiarFiltros = useCallback(() => {
     setSearchTerm('');
     setFilterTaller('Todos');
+    setFilterPerfil('Todos');
     setFilterPago('Todos');
     setFilterInstitucion('Todos');
   }, []);
@@ -183,6 +202,9 @@ export default function Participantes({ registrosHook }) {
   }
   if (filterTaller !== 'Todos') {
     filtrosActivos.push({ rotulo: 'Taller', valor: filterTaller, quitar: () => setFilterTaller('Todos') });
+  }
+  if (filterPerfil !== 'Todos') {
+    filtrosActivos.push({ rotulo: 'Perfil', valor: filterPerfil, quitar: () => setFilterPerfil('Todos') });
   }
   if (filterPago !== 'Todos') {
     filtrosActivos.push({ rotulo: 'Pago', valor: filterPago, quitar: () => setFilterPago('Todos') });
@@ -206,7 +228,7 @@ export default function Participantes({ registrosHook }) {
   // render en vez de con un efecto: un efecto pintaba primero la página vieja
   // con los resultados nuevos y solo después corregía, provocando un
   // renderizado en cascada visible como parpadeo.
-  const claveFiltros = `${debouncedSearch}|${filterTaller}|${filterPago}|${filterInstitucion}|${filasPorPagina}`;
+  const claveFiltros = `${debouncedSearch}|${filterTaller}|${filterPerfil}|${filterPago}|${filterInstitucion}|${filasPorPagina}`;
   const [filtrosPrevios, setFiltrosPrevios] = useState(claveFiltros);
   if (claveFiltros !== filtrosPrevios) {
     setFiltrosPrevios(claveFiltros);
@@ -452,6 +474,13 @@ export default function Participantes({ registrosHook }) {
               como un solo grupo con dos selecciones. Los `aria-label` estaban
               bien puestos, pero un rótulo que solo existe para el lector de
               pantalla no ayuda a quien mira. */}
+          <GrupoDeFiltro
+            rotulo="Perfil"
+            opciones={perfilesUnicos}
+            valor={filterPerfil}
+            onCambio={setFilterPerfil}
+          />
+
           <GrupoDeFiltro
             rotulo="Pago"
             opciones={['Todos', 'Pendientes', 'Confirmados']}
