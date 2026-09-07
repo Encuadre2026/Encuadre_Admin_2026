@@ -318,13 +318,20 @@ export default function Participantes({ registrosHook }) {
     return () => document.removeEventListener('keydown', alPulsar);
   }, [selectedPdf, confirmAction]);
 
-  const onAprobarPago = (id) => {
+  // La asamblea no paga cuota: lo que se aprueba en su caso es el oficio que la
+  // acredita como representante de su universidad. Preguntarle a quien valida
+  // si confirma «el pago» de alguien que no paga le hace dudar de si está en la
+  // fila correcta.
+  const onAprobarPago = (id, deLaAsamblea) => {
     setConfirmAction({
       type: 'aprobar',
       id,
-      title: 'Aprobar pago',
-      message: `¿Confirmas aprobar el pago del participante ${id}?`,
-      confirmText: 'Aprobar Pago',
+      deLaAsamblea,
+      title: deLaAsamblea ? 'Aprobar acreditación' : 'Aprobar pago',
+      message: deLaAsamblea
+        ? `¿Confirmas aprobar la acreditación del participante ${id}?`
+        : `¿Confirmas aprobar el pago del participante ${id}?`,
+      confirmText: deLaAsamblea ? 'Aprobar acreditación' : 'Aprobar Pago',
       variant: 'warning',
     });
   };
@@ -342,11 +349,16 @@ export default function Participantes({ registrosHook }) {
 
   const executeConfirmAction = async () => {
     if (!confirmAction) return;
-    const { type, id } = confirmAction;
+    const { type, id, deLaAsamblea } = confirmAction;
     try {
       if (type === 'aprobar') {
         await handleAprobarPago(id);
-        showToast(`Pago de ${id} aprobado correctamente`, 'success');
+        showToast(
+          deLaAsamblea
+            ? `Acreditación de ${id} aprobada correctamente`
+            : `Pago de ${id} aprobado correctamente`,
+          'success'
+        );
         setSelectedPdf(null);
         revokePdfUrl();
       } else if (type === 'eliminar') {

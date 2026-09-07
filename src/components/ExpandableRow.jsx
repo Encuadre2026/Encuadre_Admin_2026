@@ -20,6 +20,13 @@ function siglaDe(institucion) {
 export default function ExpandableRow({ registro: r, onAprobarPago, onEliminarRegistro, onViewPdf }) {
   const [expanded, setExpanded] = useState(false);
 
+  // Quien representa a una universidad ante la asamblea no paga cuota, así que
+  // en su fila no hay nada que validar que sea un pago: lo que la organización
+  // revisa y aprueba es el oficio que la acredita. El Worker ya lo trata así
+  // —le manda otro correo y responde «Acreditación aprobada»—; lo que faltaba
+  // era que el panel lo dijera con las mismas palabras.
+  const deLaAsamblea = esAsamblea(r);
+
   const fechaReg = r.fecha_registro
     ? new Date(r.fecha_registro).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
     : '—';
@@ -100,9 +107,9 @@ export default function ExpandableRow({ registro: r, onAprobarPago, onEliminarRe
               <button
                 onClick={(e) => { e.stopPropagation(); onViewPdf(r.url_comprobante); }}
                 className="btn btn-documento credencial"
-                title="Ver la credencial de estudiante"
+                title={deLaAsamblea ? 'Ver el oficio de acreditación' : 'Ver la credencial de estudiante'}
               >
-                <FileText size={15} /> Credencial
+                <FileText size={15} /> {deLaAsamblea ? 'Oficio' : 'Credencial'}
               </button>
             )}
             {r.url_comprobante_pago && (
@@ -124,10 +131,11 @@ export default function ExpandableRow({ registro: r, onAprobarPago, onEliminarRe
             </span>
           ) : (
             <button
-              onClick={(e) => { e.stopPropagation(); onAprobarPago(r.id_participante); }}
+              onClick={(e) => { e.stopPropagation(); onAprobarPago(r.id_participante, deLaAsamblea); }}
               className="btn btn-validar-pago"
+              title={deLaAsamblea ? 'Validar la acreditación' : 'Validar el pago'}
             >
-              Validar pago
+              {deLaAsamblea ? 'Validar' : 'Validar pago'}
             </button>
           )}
         </td>
@@ -177,8 +185,8 @@ export default function ExpandableRow({ registro: r, onAprobarPago, onEliminarRe
                     </button>
                   )}
                   {!r.pago_aprobado && (
-                    <button onClick={() => onAprobarPago(r.id_participante)} className="btn btn-detalle aprobar">
-                      <CheckCircle size={14} /> Aprobar pago
+                    <button onClick={() => onAprobarPago(r.id_participante, deLaAsamblea)} className="btn btn-detalle aprobar">
+                      <CheckCircle size={14} /> {deLaAsamblea ? 'Aprobar acreditación' : 'Aprobar pago'}
                     </button>
                   )}
                   <button onClick={() => onEliminarRegistro(r.id_participante)} className="btn btn-detalle eliminar">
