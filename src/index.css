@@ -2841,6 +2841,17 @@ select:focus-visible {
   }
 
   .fade-in-up {
+    /* `animation: none` y no solo la opacidad. Mientras la animación siga
+       declarada, el estilo que produce manda sobre esta regla, así que el
+       elemento nacía en el `opacity: 0` de su regla base y solo aparecía al
+       correr la animación —ya acortada a 0,01 ms— en el frame siguiente. Con
+       el movimiento reducido activado, media pantalla llegaba invisible al
+       primer pintado de cada navegación, que es justo lo que este bloque
+       existe para evitar.
+
+       La prueba que lo vigila daba verde porque medía después de ese frame;
+       corriendo sola, sin la lentitud del resto de la suite, se ponía roja. */
+    animation: none;
     opacity: 1;
     transform: none;
   }
