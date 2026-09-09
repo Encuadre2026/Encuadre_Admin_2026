@@ -86,6 +86,9 @@ test('el texto apagado alcanza el contraste mínimo sobre las dos superficies', 
       apagadoSobreSuperficie: contraste(token('--color-text-muted'), token('--color-bg-surface')),
       apagadoSobreTarjeta: contraste(token('--color-text-muted'), token('--color-bg-card')),
       secundarioSobreSuperficie: contraste(token('--color-text-secondary'), token('--color-bg-surface')),
+      // La insignia del perfil de consulta: texto de 12 px, así que le toca el
+      // mismo mínimo de 4,5:1 que a los demás rótulos pequeños.
+      perfilSobreSuperficie: contraste(token('--color-info'), token('--color-bg-surface')),
     };
     sonda.remove();
     return salida;
@@ -94,6 +97,7 @@ test('el texto apagado alcanza el contraste mínimo sobre las dos superficies', 
   expect(contrastes.apagadoSobreSuperficie).toBeGreaterThanOrEqual(4.5);
   expect(contrastes.apagadoSobreTarjeta).toBeGreaterThanOrEqual(4.5);
   expect(contrastes.secundarioSobreSuperficie).toBeGreaterThanOrEqual(4.5);
+  expect(contrastes.perfilSobreSuperficie).toBeGreaterThanOrEqual(4.5);
 });
 
 test('con el movimiento reducido, el contenido aparece en vez de animarse', async ({ page }) => {
@@ -102,7 +106,15 @@ test('con el movimiento reducido, el contenido aparece en vez de animarse', asyn
   // tarda medio segundo en existir, en cada navegación.
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await prepararPanel(page);
-  await irA(page, 'participantes');
+
+  // Se mide en el PRIMER pintado, sin las esperas de `irA`. Con ellas, la
+  // animación —acortada a 0,01 ms— ya había corrido y dejado la opacidad en 1,
+  // así que la prueba daba verde aunque el contenido naciera invisible: el
+  // defecto que vigila dura exactamente un frame, y ese frame es el que ve
+  // quien navega. Corriendo sola, sin la lentitud del resto de la suite, se
+  // ponía roja; en la suite completa pasaba por azar.
+  await page.goto('#/participantes');
+  await page.locator('.fade-in-up').first().waitFor({ state: 'attached' });
 
   const medida = await page.locator('.fade-in-up').first().evaluate((el) => {
     const estilo = getComputedStyle(el);
