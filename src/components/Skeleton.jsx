@@ -66,8 +66,21 @@ export function ChartSkeleton() {
   );
 }
 
-/** Skeleton rows for the Participantes table */
-export function TableRowSkeleton({ columns = 8, rows = 5 }) {
+/**
+ * Skeleton rows for the Participantes table.
+ *
+ * `conFlecha` dice si la tabla lleva su primera columna, la de desplegar: el
+ * perfil que solo consulta no la tiene, y sin saberlo el esqueleto pintaba la
+ * raya de 16 px de la flecha encima del folio y la ancha del participante una
+ * columna corrida.
+ */
+export function TableRowSkeleton({ columns = 8, rows = 5, conFlecha = true }) {
+  // El ancho depende de la columna de la TABLA, no del índice de la celda.
+  const anchoDe = (j) => {
+    if (conFlecha && j === 0) return '16px';
+    return (conFlecha ? j : j + 1) === 2 ? '100%' : '70%';
+  };
+
   return (
     <>
       {Array.from({ length: rows }, (_, i) => (
@@ -76,10 +89,7 @@ export function TableRowSkeleton({ columns = 8, rows = 5 }) {
             // El relleno lo pone `.skeleton-row td`, que ya existía en el CSS y
             // decía exactamente lo mismo que este `style`.
             <td key={j}>
-              <Skeleton
-                width={j === 0 ? '16px' : j === 2 ? '100%' : '70%'}
-                height="0.8rem"
-              />
+              <Skeleton width={anchoDe(j)} height="0.8rem" />
             </td>
           ))}
         </tr>

@@ -1,5 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { ErrorApi, obtenerSecreto, olvidarSesion, pedir } from '../api/cliente';
+import {
+  ErrorApi,
+  esSoloLectura,
+  obtenerSecreto,
+  olvidarSesion,
+  pedir,
+  recordarSoloLectura,
+} from '../api/cliente';
 import { esAsamblea, siNo } from '../asamblea';
 
 /** Sin dato, celda vacía. */
@@ -41,6 +48,14 @@ export default function useRegistros() {
   // App.jsx— tenía que comparar contra esa cadena mágica. Como objeto, la
   // pantalla puede decidir qué enseñar según el código sin adivinar nada.
   const [error, setError] = useState(null);
+  /**
+   * Si esta sesión es la del perfil que solo consulta.
+   *
+   * Arranca con lo apuntado al iniciar sesión para que la primera pintada ya sea
+   * la correcta —sin esperar al padrón— y se corrige con lo que responda la API,
+   * que es quien decide qué permite cada contraseña.
+   */
+  const [soloLectura, setSoloLectura] = useState(esSoloLectura);
   const [sinConexion, setSinConexion] = useState(() => !navigator.onLine);
   const [lastUpdated, setLastUpdated] = useState(null);
   const blobUrlRef = useRef(null);
@@ -56,7 +71,13 @@ export default function useRegistros() {
     setLoading(true);
     setError(null);
     try {
-      setData(await pedir('/api/admin/registros'));
+      const padron = await pedir('/api/admin/registros');
+      setData(padron);
+      // El perfil viaja en cada respuesta del padrón, no solo en la del login:
+      // la contraseña puede rotarse con la sesión abierta, y entonces lo que
+      // valía al entrar ya no describe lo que la API permite ahora.
+      setSoloLectura(Boolean(padron.solo_lectura));
+      recordarSoloLectura(padron.solo_lectura);
       setLastUpdated(new Date());
       setError(null);
       return true;
@@ -235,5 +256,5 @@ export default function useRegistros() {
     };
   }, []);
 
-  return { data, loading, error, sinConexion, lastUpdated, fetchRegistros, handleAprobarPago, handleEliminarRegistro, handleViewPdf, revokePdfUrl, exportToExcel };
+  return { data, loading, error, sinConexion, lastUpdated, soloLectura, fetchRegistros, handleAprobarPago, handleEliminarRegistro, handleViewPdf, revokePdfUrl, exportToExcel };
 }

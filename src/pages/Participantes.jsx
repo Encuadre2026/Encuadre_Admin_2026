@@ -84,7 +84,7 @@ function GrupoDeFiltro({ rotulo, opciones, valor, onCambio }) {
 }
 
 export default function Participantes({ registrosHook }) {
-  const { data, loading, error, fetchRegistros, handleAprobarPago, handleEliminarRegistro, handleViewPdf, revokePdfUrl, exportToExcel } = registrosHook;
+  const { data, loading, error, soloLectura, fetchRegistros, handleAprobarPago, handleEliminarRegistro, handleViewPdf, revokePdfUrl, exportToExcel } = registrosHook;
   const { showToast } = useToast();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -409,6 +409,9 @@ export default function Participantes({ registrosHook }) {
 
   // Skeleton state: first load only
   const isFirstLoad = loading && (data.registros || []).length === 0;
+  // Ocho columnas, o siete sin la de la flecha. Lo usan el estado vacío y el
+  // esqueleto de carga, que tienen que cruzar la tabla entera.
+  const columnas = soloLectura ? 7 : 8;
   const primeraFila = filasPorPagina === Infinity ? 1 : (paginaActual - 1) * filasPorPagina + 1;
   const ultimaFila = filasPorPagina === Infinity
     ? sortedRegistros.length
@@ -543,7 +546,10 @@ export default function Participantes({ registrosHook }) {
             <caption className="sr-only">Padrón de participantes inscritos</caption>
             <thead>
               <tr>
-                <th></th>
+                {/* La columna de la flecha solo existe si las filas se
+                    despliegan; el perfil que solo consulta no las despliega.
+                    Ver ExpandableRow. */}
+                {!soloLectura && <th></th>}
                 <SortHeader sortField={sortField} sortDir={sortDir} onSort={handleSort} field="id">Folio</SortHeader>
                 <SortHeader sortField={sortField} sortDir={sortDir} onSort={handleSort} field="nombre">Participante</SortHeader>
                 <SortHeader sortField={sortField} sortDir={sortDir} onSort={handleSort} field="institucion">Institución</SortHeader>
@@ -559,11 +565,11 @@ export default function Participantes({ registrosHook }) {
             </thead>
             <tbody>
               {isFirstLoad ? (
-                <TableRowSkeleton />
+                <TableRowSkeleton columns={columnas} conFlecha={!soloLectura} />
               ) : (
                 <>
                   {paginatedRegistros.map((r, i) => (
-                    <ExpandableRow key={r.id_participante || i} registro={r} onAprobarPago={onAprobarPago} onEliminarRegistro={onEliminarRegistro} onViewPdf={onViewPdf} />
+                    <ExpandableRow key={r.id_participante || i} registro={r} soloLectura={soloLectura} onAprobarPago={onAprobarPago} onEliminarRegistro={onEliminarRegistro} onViewPdf={onViewPdf} />
                   ))}
                   {sortedRegistros.length === 0 && (
                     <tr>
@@ -572,7 +578,7 @@ export default function Participantes({ registrosHook }) {
                           todavía y que haya trescientos y los filtros no dejen
                           pasar a ninguno son cosas distintas, y solo una de las
                           dos se arregla desde aquí. */}
-                      <td colSpan="8" className="empty-state">
+                      <td colSpan={columnas} className="empty-state">
                         {falloLaCarga ? (
                           <EstadoVacio
                             icono={AlertTriangle}

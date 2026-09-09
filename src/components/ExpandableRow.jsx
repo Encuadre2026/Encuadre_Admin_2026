@@ -17,8 +17,21 @@ function siglaDe(institucion) {
   return sigla.trim() || institucion;
 }
 
-export default function ExpandableRow({ registro: r, onAprobarPago, onEliminarRegistro, onViewPdf }) {
+/**
+ * Una fila del padrón.
+ *
+ * `soloLectura` es el perfil que entra con la segunda contraseña del panel. Para
+ * él la fila no se despliega y no hay nada que pulsar salvo los documentos: ni
+ * el botón de validar ni el detalle con su «Eliminar registro». La API le niega
+ * esas dos rutas de todos modos —responde 403—, así que esconderlas no es la
+ * defensa, es no ofrecer lo que va a ser rechazado.
+ */
+export default function ExpandableRow({ registro: r, soloLectura = false, onAprobarPago, onEliminarRegistro, onViewPdf }) {
   const [expanded, setExpanded] = useState(false);
+  // Cuando no se puede desplegar, la fila deja de ser un control: sin `onClick`,
+  // sin `tabIndex` y sin `aria-expanded`, porque anunciar que algo se despliega
+  // y que no se despliegue es peor que no anunciarlo.
+  const desplegable = !soloLectura;
 
   // Quien representa a una universidad ante la asamblea no paga cuota, así que
   // en su fila no hay nada que validar que sea un pago: lo que la organización
@@ -71,16 +84,21 @@ export default function ExpandableRow({ registro: r, onAprobarPago, onEliminarRe
   return (
     <>
       <tr
-        className={`expandable-row${expanded ? ' expanded' : ''}`}
-        onClick={() => setExpanded(!expanded)}
-        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpanded(!expanded); } }}
-        tabIndex={0}
+        className={`expandable-row${expanded ? ' expanded' : ''}${desplegable ? '' : ' sin-desplegar'}`}
+        onClick={desplegable ? () => setExpanded(!expanded) : undefined}
+        onKeyDown={desplegable ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpanded(!expanded); } } : undefined}
+        tabIndex={desplegable ? 0 : undefined}
         role="row"
-        aria-expanded={expanded}
+        aria-expanded={desplegable ? expanded : undefined}
       >
-        <td className="celda-desplegar">
-          <ChevronRight size={20} className={`expand-icon${expanded ? ' rotated' : ''}`} />
-        </td>
+        {/* La columna de la flecha desaparece entera en vez de quedarse vacía:
+            una columna de 40 px sin nada dentro se lee como un desperfecto. La
+            cabecera de la tabla se la salta a la vez. */}
+        {desplegable && (
+          <td className="celda-desplegar">
+            <ChevronRight size={20} className={`expand-icon${expanded ? ' rotated' : ''}`} />
+          </td>
+        )}
         <td className="celda-id">
           {r.id_participante}
         </td>
@@ -129,6 +147,12 @@ export default function ExpandableRow({ registro: r, onAprobarPago, onEliminarRe
             <span className="estado-celda afirmativo">
               <CheckCircle size={17} /> Confirmado
             </span>
+          ) : soloLectura ? (
+            /* El estado, ya que no la acción: la celda vacía no distinguiría un
+               pago pendiente de un dato que no llegó. */
+            <span className="estado-celda negativo">
+              <XCircle size={17} /> Pendiente
+            </span>
           ) : (
             <button
               onClick={(e) => { e.stopPropagation(); onAprobarPago(r.id_participante, deLaAsamblea); }}
@@ -156,51 +180,53 @@ export default function ExpandableRow({ registro: r, onAprobarPago, onEliminarRe
       </tr>
 
       {/* Expandable detail */}
-      <tr>
-        <td colSpan="8" className="celda-detalle">
-          {/* `inert` mientras está cerrado: el detalle sigue en el DOM para
-              poder animarlo, y sin esto sus botones —«Eliminar registro» entre
-              ellos— seguían en el orden de tabulación de la página, invisibles.
-              Con veinticinco filas eran hasta cien paradas a ciegas. */}
-          <div className={`row-details${expanded ? ' abierto' : ''}`} inert={!expanded}>
-            {/* Este div existe para poder recortar: el alto lo anima la fila de
-                rejilla de arriba, y el relleno tiene que quedar dentro de lo
-                recortado. Puesto en `-inner`, sus 32 px de padding eran el alto
-                mínimo del contenido y cada fila cerrada arrastraba una banda
-                vacía de 33 px. */}
-            <div className="row-details-clip">
-              <div className="row-details-inner">
-                {detalles.map(([rotulo, valor]) => (
-                  <div className="detail-item" key={rotulo}>
-                    <label>{rotulo}</label>
-                    <span>{valor}</span>
+      {desplegable && (
+        <tr>
+          <td colSpan="8" className="celda-detalle">
+            {/* `inert` mientras está cerrado: el detalle sigue en el DOM para
+                poder animarlo, y sin esto sus botones —«Eliminar registro» entre
+                ellos— seguían en el orden de tabulación de la página, invisibles.
+                Con veinticinco filas eran hasta cien paradas a ciegas. */}
+            <div className={`row-details${expanded ? ' abierto' : ''}`} inert={!expanded}>
+              {/* Este div existe para poder recortar: el alto lo anima la fila de
+                  rejilla de arriba, y el relleno tiene que quedar dentro de lo
+                  recortado. Puesto en `-inner`, sus 32 px de padding eran el alto
+                  mínimo del contenido y cada fila cerrada arrastraba una banda
+                  vacía de 33 px. */}
+              <div className="row-details-clip">
+                <div className="row-details-inner">
+                  {detalles.map(([rotulo, valor]) => (
+                    <div className="detail-item" key={rotulo}>
+                      <label>{rotulo}</label>
+                      <span>{valor}</span>
+                    </div>
+                  ))}
+                  <div className="detail-actions">
+                    {r.url_comprobante && (
+                      <button onClick={() => onViewPdf(r.url_comprobante)} className="btn btn-detalle credencial">
+                        <FileText size={14} /> Ver credencial
+                      </button>
+                    )}
+                    {r.url_comprobante_pago && (
+                      <button onClick={() => onViewPdf(r.url_comprobante_pago)} className="btn btn-detalle comprobante">
+                        <FileText size={14} /> Ver comprobante
+                      </button>
+                    )}
+                    {!r.pago_aprobado && (
+                      <button onClick={() => onAprobarPago(r.id_participante, deLaAsamblea)} className="btn btn-detalle aprobar">
+                        <CheckCircle size={14} /> {deLaAsamblea ? 'Aprobar acreditación' : 'Aprobar pago'}
+                      </button>
+                    )}
+                    <button onClick={() => onEliminarRegistro(r.id_participante)} className="btn btn-detalle eliminar">
+                      <XCircle size={14} /> Eliminar registro
+                    </button>
                   </div>
-                ))}
-                <div className="detail-actions">
-                  {r.url_comprobante && (
-                    <button onClick={() => onViewPdf(r.url_comprobante)} className="btn btn-detalle credencial">
-                      <FileText size={14} /> Ver credencial
-                    </button>
-                  )}
-                  {r.url_comprobante_pago && (
-                    <button onClick={() => onViewPdf(r.url_comprobante_pago)} className="btn btn-detalle comprobante">
-                      <FileText size={14} /> Ver comprobante
-                    </button>
-                  )}
-                  {!r.pago_aprobado && (
-                    <button onClick={() => onAprobarPago(r.id_participante, deLaAsamblea)} className="btn btn-detalle aprobar">
-                      <CheckCircle size={14} /> {deLaAsamblea ? 'Aprobar acreditación' : 'Aprobar pago'}
-                    </button>
-                  )}
-                  <button onClick={() => onEliminarRegistro(r.id_participante)} className="btn btn-detalle eliminar">
-                    <XCircle size={14} /> Eliminar registro
-                  </button>
                 </div>
               </div>
             </div>
-          </div>
-        </td>
-      </tr>
+          </td>
+        </tr>
+      )}
     </>
   );
 }

@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LogOut, Clock, ArrowRight } from 'lucide-react';
+import { LogOut, Clock, ArrowRight, Eye } from 'lucide-react';
 import { olvidarSesion } from '../api/cliente';
 import { hace } from '../fecha';
 
@@ -30,7 +30,7 @@ function MarcaEncuadre() {
   );
 }
 
-export default function Sidebar({ totalRegistros = 0, pagosPendientes = 0, lastUpdated, isOpen, onClose }) {
+export default function Sidebar({ totalRegistros = 0, pagosPendientes = 0, soloLectura = false, lastUpdated, isOpen, onClose }) {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -62,6 +62,15 @@ export default function Sidebar({ totalRegistros = 0, pagosPendientes = 0, lastU
           <span className="sidebar-title">Encuadre</span>
         </div>
         <div className="rotulo-seccion">36 FTD · Panel admin</div>
+        {/* Con qué perfil se entró, dicho una vez y donde no estorba.
+            Sin esto, a quien solo consulta el panel se le ve «incompleto» —le
+            faltan botones que otra persona sí tiene en su pantalla— y no hay
+            nada que explique por qué. */}
+        {soloLectura && (
+          <span className="sidebar-perfil">
+            <Eye size={13} /> Solo consulta
+          </span>
+        )}
       </div>
 
       <nav className="sidebar-nav">
@@ -92,16 +101,19 @@ export default function Sidebar({ totalRegistros = 0, pagosPendientes = 0, lastU
           className="sidebar-link sidebar-aviso"
           onClick={() => handleNav('/participantes', { filtroPago: 'Pendientes' })}
         >
+          {/* La cifra sigue siendo útil para quien solo consulta —es lo que se
+              viene a mirar—, pero no le pide nada ni le promete un botón que no
+              va a encontrar al llegar. */}
           <span className="sidebar-aviso-rotulo">
             <span className="sidebar-aviso-punto" aria-hidden="true" />
-            Requiere acción
+            {soloLectura ? 'Por validar' : 'Requiere acción'}
           </span>
           <span className="sidebar-aviso-texto">
             <span className="sidebar-aviso-cifra">{pagosPendientes}</span>{' '}
             pago{pagosPendientes !== 1 ? 's' : ''} pendiente{pagosPendientes !== 1 ? 's' : ''}
           </span>
           <span className="sidebar-aviso-accion">
-            Validar ahora <ArrowRight size={13} />
+            {soloLectura ? 'Ver cuáles' : 'Validar ahora'} <ArrowRight size={13} />
           </span>
         </button>
       )}
