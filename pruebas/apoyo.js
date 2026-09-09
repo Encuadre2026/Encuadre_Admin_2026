@@ -145,10 +145,22 @@ export const CUPOS = TALLERES.map((nombre, i) => ({
 /** El nombre exacto de la sede, tal y como lo declara la API. */
 export const INSTITUCION_SEDE = 'UAA · Universidad Autónoma de Aguascalientes';
 
-/** Deja la página con sesión iniciada y la API interceptada. */
+/**
+ * Deja la página con sesión iniciada y la API interceptada.
+ *
+ * `soloLectura` simula la segunda contraseña del panel. Quien decide el perfil es
+ * la API —responde `solo_lectura` en el padrón—, así que aquí se simula igual:
+ * en la respuesta, no escribiendo a mano la marca de sessionStorage, que es solo
+ * donde el panel apunta lo que le dijeron.
+ */
 export async function prepararPanel(
   page,
-  { registros = REGISTROS, cupos = CUPOS, institucionSede = INSTITUCION_SEDE } = {}
+  {
+    registros = REGISTROS,
+    cupos = CUPOS,
+    institucionSede = INSTITUCION_SEDE,
+    soloLectura = false,
+  } = {}
 ) {
   await page.addInitScript(() => {
     sessionStorage.setItem('ENCUADRE_ADMIN_SECRET', 'secreto-de-prueba');
@@ -157,7 +169,13 @@ export async function prepararPanel(
 
   await page.route('**/api/admin/**', (ruta) =>
     ruta.fulfill({
-      json: { ok: true, registros, cupos, institucion_sede: institucionSede },
+      json: {
+        ok: true,
+        registros,
+        cupos,
+        institucion_sede: institucionSede,
+        solo_lectura: soloLectura,
+      },
     })
   );
 }

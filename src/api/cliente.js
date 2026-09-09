@@ -41,6 +41,18 @@ export class ErrorApi extends Error {
  */
 const CLAVE_TOKEN = 'ENCUADRE_ADMIN_TOKEN';
 
+/**
+ * Con cuál de las dos contraseñas del panel se entró.
+ *
+ * Va junto al secreto y en sessionStorage, no en localStorage, porque es una
+ * propiedad de ESTA sesión: guardarlo donde sobrevive al navegador dejaría el
+ * panel recordando el perfil de la última persona que entró.
+ *
+ * Quien manda es la API, que responde `solo_lectura` en el padrón; esto es solo
+ * dónde se apunta su respuesta para no volver a preguntarla en cada renderizado.
+ */
+const CLAVE_LECTURA = 'ENCUADRE_ADMIN_SOLO_LECTURA';
+
 export function obtenerSecreto() {
   return sessionStorage.getItem(CLAVE_SECRETO);
 }
@@ -50,13 +62,39 @@ export function haySesion() {
   return Boolean(localStorage.getItem(CLAVE_TOKEN) && sessionStorage.getItem(CLAVE_SECRETO));
 }
 
-export function guardarSesion(secreto) {
+/**
+ * Si la sesión es del perfil que solo consulta.
+ *
+ * Ante la duda dice que sí: se lee al montar, antes de que llegue la primera
+ * respuesta del padrón, y de esto depende esconder los botones de validar. Un
+ * `false` por defecto los enseñaría durante ese instante a quien la API va a
+ * rechazar; equivocarse hacia el lado de esconderlos solo cuesta que aparezcan
+ * un momento después.
+ */
+export function esSoloLectura() {
+  return sessionStorage.getItem(CLAVE_LECTURA) !== 'false';
+}
+
+export function guardarSesion(secreto, soloLectura) {
   localStorage.setItem(CLAVE_TOKEN, crypto.randomUUID());
   sessionStorage.setItem(CLAVE_SECRETO, secreto);
+  recordarSoloLectura(soloLectura);
+}
+
+/**
+ * Apunta el perfil que acaba de declarar la API.
+ *
+ * Se llama en cada carga del padrón y no solo al entrar: la contraseña puede
+ * rotarse con la sesión abierta, y entonces lo que valía al iniciarla ya no
+ * describe lo que la API permite ahora.
+ */
+export function recordarSoloLectura(soloLectura) {
+  sessionStorage.setItem(CLAVE_LECTURA, String(Boolean(soloLectura)));
 }
 
 export function olvidarSesion() {
   sessionStorage.removeItem(CLAVE_SECRETO);
+  sessionStorage.removeItem(CLAVE_LECTURA);
   localStorage.removeItem(CLAVE_TOKEN);
 }
 
@@ -103,7 +141,12 @@ export async function comprobarSecreto(secreto) {
       headers: { Authorization: `Bearer ${secreto}` },
     });
 
-    if (res.ok) return { valido: true };
+    // La misma respuesta que valida la contraseña dice ya con qué perfil se
+    // entra, así que no hace falta una segunda petición para averiguarlo.
+    if (res.ok) {
+      const cuerpo = await res.json().catch(() => ({}));
+      return { valido: true, soloLectura: Boolean(cuerpo.solo_lectura) };
+    }
 
     if (res.status === 401) {
       return { valido: false, error: new ErrorApi('Contraseña incorrecta.', 'NO_AUTORIZADO', 401) };

@@ -46,6 +46,7 @@ function AuthenticatedLayout() {
       <Sidebar
         totalRegistros={totalRegistros}
         pagosPendientes={pagosPendientes}
+        soloLectura={registrosHook.soloLectura}
         lastUpdated={registrosHook.lastUpdated}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}

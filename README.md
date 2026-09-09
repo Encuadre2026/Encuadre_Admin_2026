@@ -111,7 +111,37 @@ El panel utiliza un sistema de autenticación basado en el secreto administrativ
 3. Si la respuesta es exitosa (200), se almacena:
    - Un token codificado en `localStorage` (persiste entre sesiones para detección rápida).
    - El secreto real en `sessionStorage` (se borra al cerrar el navegador por seguridad).
+   - Si la sesión es la del perfil de consulta, en `sessionStorage` también, porque
+     es una propiedad de esa sesión y no de ese navegador.
 4. Si el token expira o es inválido, el panel redirige automáticamente al Login.
+
+### Los dos perfiles
+
+Hay **dos contraseñas** y un solo campo donde teclearlas. La segunda,
+`ADMIN_SECRET_LECTURA`, es la de quien necesita mirar el padrón sin poder
+cambiarlo, y el panel se le adapta:
+
+| | Administración | Solo consulta |
+| --- | --- | --- |
+| Padrón, filtros, dashboard y cupos | Sí | Sí |
+| Documentos (credencial, oficio, comprobante) | Sí | Sí |
+| Exportar a Excel | Sí | Sí |
+| «Validar pago» / «Validar» | Sí | **No** |
+| Desplegar la fila (CURP, teléfono, «Eliminar registro») | Sí | **No** |
+
+**Quién decide es la API, no esta pantalla.** `GET /api/admin/registros` responde
+`solo_lectura`, y el panel se limita a obedecer. Si lo dedujera por su cuenta
+podría ofrecer botones que la ruta va a rechazar, y el fallo aparecería al
+pulsarlos.
+
+Y esconderlos **no es la defensa**: un botón oculto sigue siendo una ruta abierta
+para quien sepa llamarla con la contraseña que tiene. Las dos rutas que cambian
+algo —aprobar un pago y borrar un registro— exigen el `ADMIN_SECRET` en el
+Worker, y a la de consulta le responden 403.
+
+Mientras no llega la primera respuesta, el panel supone que la sesión es de
+consulta: equivocarse hacia ese lado solo hace que los botones aparezcan un
+instante después; al revés, se los ofrecería a quien la API va a rechazar.
 
 ## Páginas
 
@@ -154,7 +184,9 @@ Tabla completa de registros con:
 - **Cabecera fija**: se queda a la vista al bajar por el padrón. A partir de la
   fila veinte la tabla era una cuadrícula de valores sin rótulo, y el «Sí» de la
   última columna podía ser asistencia o pago.
-- **Filas expandibles**: clic en una fila para ver CURP, teléfono, fecha de registro, etc.
+- **Filas expandibles**: clic en una fila para ver CURP, teléfono, fecha de
+  registro, etc. El perfil de consulta no las despliega, y entonces la columna de
+  la flecha desaparece entera en vez de quedarse vacía.
 - **Acciones**: ver comprobante PDF (modal con iframe), aprobar pago.
 - **Exportar a Excel**: descarga un `.xlsx` con los registros filtrados.
 - **Estados vacíos que distinguen**: que no haya nadie inscrito todavía y que
@@ -203,7 +235,11 @@ el nombre.
 | DELETE | `/api/admin/registro`     | Borrar un registro (envía correo)       |
 | GET    | `/api/admin/comprobante`  | Descargar el PDF de un comprobante      |
 
-Todos requieren `Authorization: Bearer <ADMIN_SECRET>`.
+Todos requieren `Authorization: Bearer <secreto>`. Los dos primeros aceptan las
+dos contraseñas del panel; `aprobar_pago` y `registro` solo el `ADMIN_SECRET`, y
+a la de consulta le responden **403 `PROHIBIDO`** —no 401, que el panel
+interpreta como sesión caducada y le costaría la sesión a quien tiene la
+contraseña correcta—.
 
 ### El contrato
 
@@ -315,6 +351,8 @@ prueba que nunca ha fallado no demuestra nada.
 - **Sin secretos en el código fuente**: la contraseña nunca se almacena en código; se ingresa en tiempo de ejecución.
 - **sessionStorage para el secreto**: se borra automáticamente al cerrar la pestaña/navegador.
 - **Validación server-side**: toda operación sensible (aprobar pagos, ver PDFs) se valida en el Worker con `timingSafeEqual`.
+- **Los permisos también son del servidor**: el perfil de consulta no se define
+  escondiendo botones sino en el Worker, que le niega las dos rutas que escriben.
 - **ErrorBoundary**: captura errores de React para evitar pantallas en blanco.
 - **CORS**: la API solo acepta peticiones desde dominios autorizados.
 

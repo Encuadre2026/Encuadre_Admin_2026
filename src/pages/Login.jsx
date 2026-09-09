@@ -44,7 +44,7 @@ export default function Login() {
     // contraseña incorrecta de un problema de conexión: antes ambos casos
     // decían «contraseña incorrecta», lo que mandaba a probar contraseñas
     // cuando el fallo estaba en otro sitio.
-    const { valido, error: fallo } = await comprobarSecreto(secret.trim());
+    const { valido, soloLectura, error: fallo } = await comprobarSecreto(secret.trim());
 
     if (!valido) {
       setError(fallo.message);
@@ -55,7 +55,12 @@ export default function Login() {
     // Un identificador aleatorio como señal de sesión. No contiene el secreto:
     // solo indica que alguien se autenticó. El secreto real va en
     // sessionStorage, que se vacía al cerrar el navegador.
-    guardarSesion(secret.trim());
+    //
+    // El panel tiene dos contraseñas y el mismo campo sirve para las dos: quien
+    // solo consulta teclea la suya aquí y entra a un panel sin los botones que
+    // no le corresponden. Cuál de las dos es lo dice la API en la respuesta que
+    // acaba de validarla, no la pantalla.
+    guardarSesion(secret.trim(), soloLectura);
     setLoading(false);
     navigate('/dashboard');
   };
