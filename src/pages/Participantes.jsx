@@ -407,6 +407,24 @@ export default function Participantes({ registrosHook }) {
     }
   };
 
+  /**
+   * Qué se lleva el botón de Excel.
+   *
+   * El perfil que solo consulta descarga únicamente a la asamblea, y no el
+   * padrón entero. Se filtra sobre lo que ya hay en pantalla, así que los
+   * filtros puestos siguen contando: lo que baja es siempre un subconjunto de
+   * lo que se está viendo, nunca algo distinto.
+   *
+   * Al quedar solo asambleístas, `exportToExcel` reconoce la hoja como suya:
+   * la nombra «Asamblea», deja fuera las cuatro columnas que en su caso no
+   * dicen nada y añade sus ocho respuestas. Ese camino ya existía —lo usa
+   * cualquiera que filtre por ese perfil—; aquí solo se toma siempre.
+   */
+  const registrosDelExcel = useMemo(
+    () => (soloLectura ? filteredRegistros.filter(esAsamblea) : filteredRegistros),
+    [filteredRegistros, soloLectura]
+  );
+
   // Skeleton state: first load only
   const isFirstLoad = loading && (data.registros || []).length === 0;
   // Ocho columnas, o siete sin la de la flecha. Lo usan el estado vacío y el
@@ -438,8 +456,22 @@ export default function Participantes({ registrosHook }) {
           </p>
         </div>
         <div className="header-actions">
-          <button onClick={() => exportToExcel(filteredRegistros)} className="btn btn-outline btn-header btn-excel">
-            <Download size={15} /> Excel ({filteredRegistros.length})
+          {/* El rótulo dice qué baja, no solo que baja algo: un botón que
+              promete «Excel (47)» y entrega tres filas se lee como un fallo.
+              Y con ninguna, se deshabilita en vez de no hacer nada al
+              pulsarlo, que es lo que ocurría antes en silencio. */}
+          <button
+            onClick={() => exportToExcel(registrosDelExcel)}
+            className="btn btn-outline btn-header btn-excel"
+            disabled={registrosDelExcel.length === 0}
+            title={
+              soloLectura
+                ? 'Este perfil descarga solo los registros de la asamblea'
+                : undefined
+            }
+          >
+            <Download size={15} />{' '}
+            {soloLectura ? 'Excel de la asamblea' : 'Excel'} ({registrosDelExcel.length})
           </button>
           <button onClick={onRefresh} className="btn btn-outline btn-header" disabled={loading} aria-label="Actualizar datos">
             <RefreshCw size={15} className={loading ? 'spin' : ''} />

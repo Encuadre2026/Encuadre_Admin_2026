@@ -125,9 +125,21 @@ cambiarlo, y el panel se le adapta:
 | --- | --- | --- |
 | Padrón, filtros, dashboard y cupos | Sí | Sí |
 | Documentos (credencial, oficio, comprobante) | Sí | Sí |
-| Exportar a Excel | Sí | Sí |
+| Exportar a Excel | El padrón filtrado | **Solo la asamblea** |
 | «Validar pago» / «Validar» | Sí | **No** |
 | Desplegar la fila (CURP, teléfono, «Eliminar registro») | Sí | **No** |
+
+El Excel del perfil de consulta se filtra sobre lo que ya hay en pantalla, así
+que los filtros puestos siguen contando: lo que baja es siempre un subconjunto
+de lo que se está viendo. Al quedar solo asambleístas, la hoja se reconoce como
+suya —pestaña «Asamblea», sin las cuatro columnas que en su caso no dicen nada
+y con sus ocho respuestas—, que es el mismo camino que toma cualquiera que
+filtre por ese perfil.
+
+Es una restricción **de la descarga, no de la vista**: ese perfil sigue viendo
+el padrón completo en la tabla, porque `GET /api/admin/registros` se lo envía
+entero. Si algún día hiciera falta que tampoco lo vea, el sitio donde
+arreglarlo es el Worker, no esta pantalla.
 
 **Quién decide es la API, no esta pantalla.** `GET /api/admin/registros` responde
 `solo_lectura`, y el panel se limita a obedecer. Si lo dedujera por su cuenta
