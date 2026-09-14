@@ -178,6 +178,15 @@ Vista analítica con 4 KPIs principales y 6 gráficas:
 - **Sin datos, cada gráfica lo dice.** Recharts no falla cuando no hay nada que
   dibujar: pinta un lienzo perfectamente vacío, que se ve igual que una gráfica
   rota. Y el primer día del pre-registro, eso es lo que hay.
+- **Las altas se fechan en el día de aquí, no en el de UTC.** D1 guarda
+  `fecha_registro` con `CURRENT_TIMESTAMP`, que escribe «2026-09-14 18:00:00»:
+  UTC, con un espacio en medio y sin marca de zona. Esa cadena no es ISO, así que
+  el navegador la leía con su analizador indulgente y la tomaba por hora local, y
+  la curva agrupaba además por el día en UTC. Los dos errores sumaban seis horas
+  cada uno y todo lo registrado a partir del mediodía aparecía fechado al día
+  siguiente: con el padrón al 14, la gráfica ya estrenaba una columna del 15.
+  `desdeLaApi` y `claveDelDia`, en `src/fecha.js`, son el único sitio donde se
+  interpreta una marca de la API.
 
 ### Participantes (`/participantes`)
 

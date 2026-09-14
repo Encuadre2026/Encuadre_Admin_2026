@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ChevronRight, FileText, CheckCircle, XCircle } from 'lucide-react';
 import { esAsamblea, siNo } from '../asamblea';
+import { desdeLaApi } from '../fecha';
 
 /**
  * Sigla de la institución.
@@ -40,8 +41,11 @@ export default function ExpandableRow({ registro: r, soloLectura = false, onApro
   // era que el panel lo dijera con las mismas palabras.
   const deLaAsamblea = esAsamblea(r);
 
-  const fechaReg = r.fecha_registro
-    ? new Date(r.fecha_registro).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+  // La marca viene de D1 en UTC y sin decirlo; leerla en crudo adelantaba seis
+  // horas la hora de alta de todo el padrón.
+  const fecha = desdeLaApi(r.fecha_registro);
+  const fechaReg = fecha
+    ? fecha.toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
     : '—';
 
   // Qué se enseña al desplegar la fila.
