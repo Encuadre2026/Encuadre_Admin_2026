@@ -5,6 +5,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsToolti
 import { useToast } from '../context/toast-contexto';
 import { estadoDeCupo } from '../cupos';
 import { etiquetaSede, repartirPorSede } from '../sede';
+import { desdeLaApi, claveDelDia } from '../fecha';
 import EstadoVacio from '../components/EstadoVacio';
 import { KpiSkeleton, ChartSkeleton } from '../components/Skeleton';
 
@@ -168,18 +169,23 @@ export default function Dashboard({ registrosHook }) {
       { nombre: 'Otras instituciones', valor: foraneosCount },
     ], ['tono-oro', 'tono-info']);
 
+    // Cada alta se apunta en el día LOCAL en que ocurrió. Antes se agrupaba por
+    // el día en UTC de una marca que además se leía como si fuera hora de aquí,
+    // y los dos errores se sumaban: todo lo registrado a partir del mediodía
+    // aparecía fechado al día siguiente.
     const fechasMap = {};
     regs.forEach(r => {
-      if (!r.fecha_registro) return;
-      const d = new Date(r.fecha_registro);
-      if (isNaN(d.getTime())) return;
-      const dateStr = d.toISOString().split('T')[0];
+      const d = desdeLaApi(r.fecha_registro);
+      if (!d) return;
+      const dateStr = claveDelDia(d);
       fechasMap[dateStr] = (fechasMap[dateStr] || 0) + 1;
     });
     const fechasData = Object.entries(fechasMap)
       .sort((a, b) => a[0].localeCompare(b[0]))
       .map(([dateStr, count]) => {
-        const d = new Date(dateStr + 'T12:00:00Z');
+        // Mediodía y sin «Z»: la etiqueta se arma en la misma zona en que se
+        // agrupó, y ninguna hora del día la empuja a la casilla vecina.
+        const d = new Date(`${dateStr}T12:00:00`);
         return { name: d.toLocaleDateString('es-MX', { month: 'short', day: 'numeric' }), Inscripciones: count };
       });
 

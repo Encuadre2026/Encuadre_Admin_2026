@@ -8,6 +8,7 @@ import {
   recordarSoloLectura,
 } from '../api/cliente';
 import { esAsamblea, siNo } from '../asamblea';
+import { claveDelDia } from '../fecha';
 
 /** Sin dato, celda vacía. */
 const texto = (v) => v ?? '';
@@ -200,7 +201,9 @@ export default function useRegistros() {
     // descargas solo por el «(1)» que les pone el navegador.
     const que = soloAsamblea ? 'Asamblea' : 'Registros';
     XLSX.utils.book_append_sheet(wb, ws, que);
-    XLSX.writeFile(wb, `${que}_Encuadre_${new Date().toISOString().split('T')[0]}.xlsx`);
+    // El día local, no el de UTC: descargar el padrón por la tarde dejaba en la
+    // carpeta un archivo fechado mañana.
+    XLSX.writeFile(wb, `${que}_Encuadre_${claveDelDia(new Date())}.xlsx`);
   }, []);
 
   // Carga inicial.
