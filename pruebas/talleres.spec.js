@@ -255,3 +255,43 @@ test('un nombre largo se lee entero en la casilla, en tres renglones', async ({ 
   expect(medida.alto).toBeLessThan(120);
   expect(medida.contenido).toBeLessThanOrEqual(medida.visible + 1);
 });
+
+test('con un solo taller, la cabecera dice «1 taller»', async ({ page }) => {
+  await prepararPanel(page, { cupos: [CUPOS[0]] });
+  await irA(page, 'cupos');
+  await expect(page.locator('.page-header-contexto')).toContainText(/^1 taller ·/);
+});
+
+// La fila se va con el taller, y con ella el botón que abrió la confirmación.
+test('tras eliminar, el foco queda en el titular y no al principio del documento', async ({ page }) => {
+  let cupos = CUPOS;
+  await prepararPanel(page, {
+    cupos: () => cupos,
+    alTaller: ({ cuerpo }) => {
+      cupos = CUPOS.filter((c) => c.id !== cuerpo.id);
+      return { status: 200, json: { ok: true, id: cuerpo.id } };
+    },
+  });
+  await irA(page, 'cupos');
+
+  await fila(page, 'Expedición').getByRole('button', { name: /^Eliminar/ }).click();
+  await dialogo(page).getByRole('button', { name: 'Eliminar taller' }).click();
+
+  await expect(fila(page, 'Expedición')).toHaveCount(0);
+  await expect(page.locator('.page-header h1')).toBeFocused();
+});
+
+// Si la contraseña se cambió con el panel abierto, guardar responde 401: el
+// panel tiene que llevar al login, no quedarse en un formulario que ya no puede
+// guardar nada.
+test('una sesión caducada al guardar lleva al login', async ({ page }) => {
+  await prepararPanel(page, {
+    alTaller: () => ({ status: 401, json: { ok: false, codigo: 'NO_AUTORIZADO', mensaje: 'No autorizado.' } }),
+  });
+  await irA(page, 'cupos');
+
+  await fila(page, 'Futurología').getByRole('button', { name: /^Editar/ }).click();
+  await page.getByRole('button', { name: 'Guardar cambios' }).click();
+
+  await expect(page).toHaveURL(/#\/login/);
+});
