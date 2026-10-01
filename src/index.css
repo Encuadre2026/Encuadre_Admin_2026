@@ -574,6 +574,13 @@ a:hover {
   gap: var(--espacio-3);
 }
 
+/* El titular recibe el foco cuando lo que lo tenía desaparece —al eliminar un
+   taller—. No es un control, así que no lleva el anillo de los botones: el
+   lector de pantalla lo lee y el siguiente Tab sigue desde ahí. */
+.page-header h1:focus {
+  outline: none;
+}
+
 /* Qué evento y cuándo. El panel no lo decía en ninguna parte: quien lo abre en
    octubre de 2026 no tiene por qué acordarse de las fechas del festival. */
 .page-header-contexto {

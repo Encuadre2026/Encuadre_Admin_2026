@@ -189,7 +189,9 @@ export default function FormularioTaller({
               // Un salto de línea en el nombre no significa nada —el Worker lo
               // convierte en espacio—, así que Enter guarda, como en una casilla.
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
+                // Mientras se compone una letra con un teclado que lo necesita, Enter
+                // confirma esa letra, no el formulario.
+                if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
                   e.preventDefault();
                   e.currentTarget.form?.requestSubmit();
                 }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { RefreshCw, AlertTriangle, Ticket, Plus, Pencil, Trash2 } from 'lucide-react';
 import { useToast } from '../context/toast-contexto';
 import { estadoDeCupo } from '../cupos';
@@ -90,9 +90,22 @@ export default function Cupos({ registrosHook }) {
     uaa: masFrecuente(cupos.map((c) => c.lugares_reservados_uaa), 10),
   };
 
+  // Una sesión caducada a mitad de guardar: el cliente ya la olvidó, y pedir el
+  // padrón es lo que manda al login. Sin esto el formulario decía «Tu sesión
+  // expiró» y se quedaba ahí, con un botón de guardar que ya no podía funcionar.
+  const siCaducoLaSesion = (err) => {
+    if (err?.esNoAutorizado) fetchRegistros();
+  };
+
   const guardar = async (taller) => {
     // Si falla, lanza y el formulario enseña el motivo sin cerrarse.
-    const guardado = await handleGuardarTaller(taller);
+    let guardado;
+    try {
+      guardado = await handleGuardarTaller(taller);
+    } catch (err) {
+      siCaducoLaSesion(err);
+      throw err;
+    }
     const nombre = guardado?.nombre ?? taller.nombre;
     showToast(taller.id === undefined ? `Taller «${nombre}» agregado` : `Taller «${nombre}» guardado`, 'success');
     setFormulario(undefined);
@@ -104,13 +117,29 @@ export default function Cupos({ registrosHook }) {
     try {
       await handleEliminarTaller(porEliminar.id);
       showToast(`Taller «${porEliminar.nombre}» eliminado`, 'success');
+      enfocarTitulo.current = true;
     } catch (e) {
       showToast(e.message, 'error');
+      siCaducoLaSesion(e);
     } finally {
       setEliminando(false);
       setPorEliminar(null);
     }
   };
+
+  // Después de eliminar, el botón que abrió la confirmación ya no existe —se fue
+  // con su fila— y el foco caía al principio del documento: quien usa teclado
+  // tenía que recorrer la página otra vez desde arriba. Se lleva al titular. Va
+  // en un efecto y no justo después de eliminar porque la ventana tiene que
+  // estar cerrada antes, y React cierra la ventana antes de correr esto.
+  const tituloRef = useRef(null);
+  const enfocarTitulo = useRef(false);
+  useEffect(() => {
+    if (!porEliminar && enfocarTitulo.current) {
+      enfocarTitulo.current = false;
+      tituloRef.current?.focus();
+    }
+  }, [porEliminar]);
 
   const inscritosDe = (c) => estadoDeCupo(c).inscritos;
   const bloqueado = porEliminar ? inscritosDe(porEliminar) > 0 : false;
@@ -120,10 +149,10 @@ export default function Cupos({ registrosHook }) {
       <div className="page-header">
         <div className="page-header-titulo">
           <div className="rotulo-seccion">Panel · Talleres</div>
-          <h1>Talleres y cupos</h1>
+          <h1 ref={tituloRef} tabIndex={-1}>Talleres y cupos</h1>
           <p className="page-header-contexto">
             {cupos.length > 0
-              ? `${cupos.length} talleres · ${numero.format(totales.inscritos)} de ${numero.format(totales.capacidad)} lugares ocupados · ${totales.conBolsaAgotada} con una bolsa agotada · ${totales.vacios} sin inscritos`
+              ? `${cupos.length} ${cupos.length === 1 ? 'taller' : 'talleres'} ·${numero.format(totales.inscritos)} de ${numero.format(totales.capacidad)} lugares ocupados · ${totales.conBolsaAgotada} con una bolsa agotada · ${totales.vacios} sin inscritos`
               : 'Cada taller son dos bolsas independientes: la general y la reservada a la UAA.'}
           </p>
         </div>
