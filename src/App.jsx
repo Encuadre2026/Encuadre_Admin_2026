@@ -82,6 +82,9 @@ function AuthenticatedLayout() {
             <Route path="/dashboard" element={<Dashboard registrosHook={registrosHook} />} />
             <Route path="/participantes" element={<Participantes registrosHook={registrosHook} />} />
             <Route path="/cupos" element={<Cupos registrosHook={registrosHook} />} />
+            {/* La sección se llama «Talleres y cupos»: quien teclee la dirección
+                por el nombre nuevo llega al mismo sitio. */}
+            <Route path="/talleres" element={<Navigate to="/cupos" replace />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>

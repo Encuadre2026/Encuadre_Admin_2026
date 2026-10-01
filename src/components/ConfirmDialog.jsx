@@ -13,8 +13,12 @@ import { AlertTriangle } from 'lucide-react';
  *   cancelText  — Texto del botón de cancelar (default: "Cancelar").
  *   variant     — "danger" | "warning" (cambia el color del botón).
  *   loading     — Deshabilita los botones durante la acción.
- *   onConfirm   — Callback al confirmar.
+ *   onConfirm   — Callback al confirmar. Sin él es un aviso: solo queda el
+ *                 botón de cancelar, con `cancelText` («Entendido», por ejemplo).
  *   onCancel    — Callback al cancelar.
+ *   volverA     — El botón que lo abrió, para devolverle el foco al cerrar. Sin
+ *                 él se usa el elemento enfocado al abrir, que en Safari no es
+ *                 el botón pulsado con el ratón.
  */
 export default function ConfirmDialog({
   open,
@@ -26,9 +30,22 @@ export default function ConfirmDialog({
   loading = false,
   onConfirm,
   onCancel,
+  volverA,
 }) {
   const overlayRef = useRef(null);
   const cancelBtnRef = useRef(null);
+
+  // Al cerrarse, el foco vuelve a donde estaba: el botón que abrió el diálogo.
+  // Sin esto caía al principio de la página, y quien usa teclado tenía que
+  // recorrerla entera para volver a la fila en la que estaba. Si ese botón ya no
+  // existe —la fila se eliminó—, el navegador decide.
+  useEffect(() => {
+    if (!open) return;
+    const previo = volverA ?? document.activeElement;
+    return () => {
+      if (previo instanceof HTMLElement && previo.isConnected) previo.focus();
+    };
+  }, [open, volverA]);
 
   // Focus trap + Escape to close
   useEffect(() => {
@@ -101,14 +118,16 @@ export default function ConfirmDialog({
           >
             {cancelText}
           </button>
-          <button
-            className="btn confirm-btn-action"
-            style={{ backgroundColor: confirmColor, color: variant === 'danger' ? '#fff' : '#000' }}
-            onClick={onConfirm}
-            disabled={loading}
-          >
-            {loading ? 'Procesando...' : confirmText}
-          </button>
+          {onConfirm && (
+            <button
+              className="btn confirm-btn-action"
+              style={{ backgroundColor: confirmColor, color: variant === 'danger' ? '#fff' : '#000' }}
+              onClick={onConfirm}
+              disabled={loading}
+            >
+              {loading ? 'Procesando...' : confirmText}
+            </button>
+          )}
         </div>
       </div>
     </div>,

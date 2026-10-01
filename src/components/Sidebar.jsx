@@ -41,7 +41,7 @@ export default function Sidebar({ totalRegistros = 0, pagosPendientes = 0, soloL
   const links = [
     { path: '/dashboard', label: 'Dashboard' },
     { path: '/participantes', label: 'Participantes', count: totalRegistros },
-    { path: '/cupos', label: 'Cupos por taller' },
+    { path: '/cupos', label: 'Talleres y cupos' },
   ];
 
   const handleNav = (path, state) => {
