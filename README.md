@@ -8,7 +8,7 @@ Panel de control interno para la gestión de registros, pagos y asistencia del *
 - **Conexión segura** a la API central (Cloudflare Worker) mediante token Bearer (`ADMIN_SECRET`).
 - **Dashboard analítico** con gráficas interactivas (Recharts) de KPIs, pagos, ocupación y tendencias.
 - **Gestión de participantes** con búsqueda, filtros, paginación, visualización de comprobantes PDF y aprobación de pagos.
-- **Monitoreo de cupos** en tiempo real por taller, con indicadores de disponibilidad.
+- **Talleres y cupos**: disponibilidad en tiempo real por taller, y **edición de los talleres** —nombre, quién lo imparte, color, cursivas y lugares; agregar y eliminar— que llega al formulario de registro, al portal y a la app de QR sin desplegar nada.
 
 ## Arquitectura
 
@@ -128,6 +128,7 @@ cambiarlo, y el panel se le adapta:
 | Exportar a Excel | El padrón filtrado | **Solo la asamblea** |
 | «Validar pago» / «Validar» | Sí | **No** |
 | Desplegar la fila (CURP, teléfono, «Eliminar registro») | Sí | **No** |
+| Agregar, editar y eliminar talleres | Sí | **No** |
 
 El Excel del perfil de consulta se filtra sobre lo que ya hay en pantalla, así
 que los filtros puestos siguen contando: lo que baja es siempre un subconjunto
@@ -215,12 +216,13 @@ Tabla completa de registros con:
   solo una de las dos se arregla desde la pantalla. Antes las dos decían «No se
   encontraron registros».
 
-### Cupos por Taller (`/cupos`)
+### Talleres y cupos (`/cupos`, también `/talleres`)
 
-Tarjetas visuales para cada uno de los 21 talleres:
+Una fila por taller, numerada con el mismo número que ve la gente en el
+formulario de registro (el id más uno):
 
-- Barras de progreso separadas para cupos **General** (18 lugares) y **UAA**
-  (10 reservados), con la bolsa agotada marcada en rojo.
+- Barras de progreso separadas para cupos **General** y **UAA**, cada una contra
+  la bolsa de ese taller, con la bolsa agotada marcada en rojo.
 - Insignias de estado: `Disponible`, `Solo general` (se agotó la reserva UAA),
   `Solo UAA` (se agotó la general), `Casi lleno` (≥80 % sin agotar ninguna) y
   `Lleno`.
@@ -231,14 +233,28 @@ miraba el total, así que un taller con la reserva UAA agotada y hueco general s
 anunciaba en verde como «Disponible» y ningún estudiante de la UAA podía
 inscribirse en él.
 
+**Editar talleres.** Con la contraseña de administración, «Agregar taller» y los
+botones «Editar» y «Eliminar» de cada fila. El formulario pide el nombre, quién
+lo imparte, el color del renglón, las partes del nombre en cursiva y las dos
+bolsas, y enseña cómo va a quedar en el formulario de registro. Lo guardado llega
+solo a todo lo que lee talleres: el formulario de registro en su siguiente carga,
+y el portal, la app de QR, este panel y los correos al leer el nombre de la base.
+
+- Ninguna bolsa puede quedar por debajo de quienes ya están dentro: el
+  formulario lo avisa en el campo, y la API lo rechaza igual si llegara.
+- Solo se elimina un taller **sin inscritos**. Con gente dentro, «Eliminar»
+  explica por qué no y no ofrece confirmar.
+- Dos talleres no pueden llamarse igual, sin distinguir mayúsculas ni tildes.
+- El PDF de la oferta de talleres del sitio es aparte: si cambia la lista, hay
+  que reemplazarlo a mano.
+
 ## Reglas de negocio
 
-| Concepto                   | Valor                  |
-| -------------------------- | ---------------------- |
-| Cupo máximo por taller     | 18 (público general)   |
-| Lugares reservados UAA     | 10 por taller          |
-| Capacidad total por taller | 28 (18 + 10)           |
-| Total de talleres          | 21                     |
+| Concepto                   | Valor                                         |
+| -------------------------- | --------------------------------------------- |
+| Bolsa general por taller   | La de cada taller; hoy 18 en casi todos       |
+| Lugares reservados UAA     | Los de cada taller; hoy 10 en casi todos      |
+| Talleres                   | Los que haya: se agregan y eliminan aquí      |
 
 **El panel no decide, muestra.** El reparto entre UAA y general lo calcula la
 API con la misma regla que aplica el alta —igualdad con el nombre completo de la
@@ -254,10 +270,14 @@ el nombre.
 | GET    | `/api/admin/registros`    | Registros y cupos                       |
 | POST   | `/api/admin/aprobar_pago` | Aprobar el pago de un participante      |
 | DELETE | `/api/admin/registro`     | Borrar un registro (envía correo)       |
+| POST   | `/api/admin/taller`       | Agregar un taller                       |
+| PUT    | `/api/admin/taller`       | Editar un taller                        |
+| DELETE | `/api/admin/taller`       | Eliminar un taller vacío                |
 | GET    | `/api/admin/comprobante`  | Descargar el PDF de un comprobante      |
 
-Todos requieren `Authorization: Bearer <secreto>`. Los dos primeros aceptan las
-dos contraseñas del panel; `aprobar_pago` y `registro` solo el `ADMIN_SECRET`, y
+Todos requieren `Authorization: Bearer <secreto>`. Los dos que solo leen,
+`registros` y `comprobante`, aceptan las dos contraseñas del panel;
+`aprobar_pago`, `registro` y `taller` solo el `ADMIN_SECRET`, y
 a la de consulta le responden **403 `PROHIBIDO`** —no 401, que el panel
 interpreta como sesión caducada y le costaría la sesión a quien tiene la
 contraseña correcta—.

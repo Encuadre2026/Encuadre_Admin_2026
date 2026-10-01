@@ -57,6 +57,14 @@
   --color-info-dim: rgba(52, 152, 219, 0.15);
   --color-accent-purple-dim: rgba(142, 68, 173, 0.18);
 
+  /* Los colores del renglón «Imparte» en el formulario de registro del sitio.
+     Son los suyos, no los del panel: el formulario de edición de talleres los
+     enseña para que se elija viendo cómo va a quedar allí. */
+  --color-taller-verde: #4ade80;
+  --color-taller-morado: #c084fc;
+  --color-taller-azul: #60a5fa;
+  --color-taller-rojo: #f87171;
+
   --color-border: #272a30;
   --color-border-light: #343841;
 
@@ -929,6 +937,246 @@ a:hover {
   justify-content: center;
   padding: var(--espacio-7);
   color: var(--color-text-muted);
+}
+
+/* Quién lo imparte, bajo el nombre. Secundario al nombre y a la nota. */
+.cupo-imparte {
+  font-size: var(--texto-md);
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+/* Editar y Eliminar, al final de la fila. En pantallas estrechas bajan a su
+   propio renglón con la fila entera, como el resto de bloques. */
+.cupo-acciones {
+  /* Puede encoger —y entonces parte los dos botones en dos renglones—: con
+     `0 0 auto` medía siempre lo que los dos juntos, y a 240 px se salían de
+     la pantalla por la derecha. */
+  flex: 0 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espacio-2);
+}
+
+.cupo-accion {
+  font-size: var(--texto-md);
+  padding: var(--espacio-2) var(--espacio-4);
+}
+
+.cupo-accion--eliminar {
+  color: var(--color-danger);
+}
+
+.cupo-accion--eliminar:hover:not(:disabled) {
+  border-color: var(--color-danger);
+  background-color: var(--color-danger-dim);
+}
+
+/* ============================================================
+   FORMULARIO DE TALLER
+   Una ventana como la de confirmar, pero con formulario: se
+   desplaza por dentro cuando no cabe, para que en una pantalla
+   baja o con la letra ampliada no se queden fuera los botones.
+   ============================================================ */
+.taller-overlay {
+  align-items: flex-start;
+  overflow-y: auto;
+}
+
+.taller-dialogo {
+  width: 100%;
+  max-width: 38rem;
+  margin: auto;
+  padding: var(--espacio-5);
+  box-shadow: var(--sombra-3);
+  animation: confirm-slide-up 0.25s ease-out;
+}
+
+.taller-dialogo-cabecera {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--espacio-3);
+  margin-bottom: var(--espacio-4);
+}
+
+.taller-dialogo-titulo {
+  font-size: var(--display-sm);
+  overflow-wrap: anywhere;
+}
+
+.taller-formulario {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-4);
+}
+
+.taller-campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-2);
+  min-width: 0;
+}
+
+/* El nombre puede pasar de cien caracteres: en tres renglones se lee entero,
+   cosa que en una casilla de una sola línea no se puede. */
+.taller-campo-nombre {
+  resize: vertical;
+  line-height: 1.4;
+}
+
+.taller-opcional {
+  font-weight: 400;
+  color: var(--color-text-muted);
+}
+
+.taller-ayuda {
+  font-size: var(--texto-md);
+  color: var(--color-text-muted);
+}
+
+.taller-campo-error {
+  font-size: var(--texto-md);
+  font-weight: 600;
+  color: var(--color-danger);
+}
+
+.taller-campo .input-field[aria-invalid='true'] {
+  border-color: var(--color-danger);
+}
+
+.taller-error-servidor {
+  padding: var(--espacio-3) var(--espacio-4);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radio-md);
+  background-color: var(--color-danger-dim);
+  color: var(--color-text-primary);
+  font-size: var(--texto-base);
+}
+
+/* Cuatro opciones de color, con su nombre escrito: el color solo no basta
+   para distinguirlas. */
+.taller-colores {
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+
+.taller-colores legend {
+  margin-bottom: var(--espacio-2);
+}
+
+.taller-colores-opciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espacio-2);
+}
+
+.taller-color {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espacio-2);
+  min-height: var(--objetivo-minimo);
+  padding: var(--espacio-2) var(--espacio-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radio-md);
+  cursor: pointer;
+  font-size: var(--texto-md);
+}
+
+.taller-color:has(input:checked) {
+  border-color: var(--color-accent-gold);
+  background-color: var(--color-accent-gold-dim);
+}
+
+.taller-color input {
+  accent-color: var(--color-accent-gold);
+  width: 1.1rem;
+  height: 1.1rem;
+  margin: 0;
+}
+
+.taller-muestra {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.taller-muestra--verde { background-color: var(--color-taller-verde); }
+.taller-muestra--morado { background-color: var(--color-taller-morado); }
+.taller-muestra--azul { background-color: var(--color-taller-azul); }
+.taller-muestra--rojo { background-color: var(--color-taller-rojo); }
+
+.taller-muestra-texto--verde { color: var(--color-taller-verde); }
+.taller-muestra-texto--morado { color: var(--color-taller-morado); }
+.taller-muestra-texto--azul { color: var(--color-taller-azul); }
+.taller-muestra-texto--rojo { color: var(--color-taller-rojo); }
+
+/* Las dos bolsas, lado a lado cuando caben. */
+.taller-lugares {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: var(--espacio-4);
+}
+
+.taller-total {
+  font-size: var(--texto-base);
+  color: var(--color-text-secondary);
+}
+
+/* Cómo queda en el formulario de registro: el mismo fondo negro y la misma
+   letra que el sitio, para que se reconozca de un vistazo. */
+.taller-vista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-2);
+}
+
+.taller-vista-renglon {
+  padding: var(--espacio-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radio-md);
+  background-color: #000;
+  color: var(--color-text-secondary);
+  font-size: var(--texto-md);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.taller-vista-imparte {
+  display: block;
+  margin-top: var(--espacio-1);
+  font-size: var(--texto-sm);
+  letter-spacing: 0.05em;
+}
+
+.taller-vista-vacio {
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+.taller-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--espacio-3);
+  padding-top: var(--espacio-2);
+}
+
+@media (max-width: 480px) {
+  .taller-overlay {
+    padding: var(--espacio-2);
+  }
+
+  .taller-dialogo {
+    padding: var(--espacio-4);
+  }
+
+  .taller-acciones .btn {
+    flex: 1 1 auto;
+  }
 }
 
 /* ============================================================

@@ -133,7 +133,21 @@ export const ASAMBLEA = [
 /** El padrón con la asamblea dentro, que es como llega de la API. */
 export const REGISTROS_CON_ASAMBLEA = [...REGISTROS, ...ASAMBLEA];
 
+/**
+ * Los talleres con su catálogo, como los manda la API desde que se editan en el
+ * panel. Los ids no son contiguos a propósito —0, 8, 9, 13 y 17—: son los de
+ * producción, y el número que enseña el panel es el id más uno, no la posición.
+ */
+const CATALOGO = [
+  { id: 0, imparte: 'Mtro. Luis Antonio Rivera Díaz', color: 'verde', cursivas: [] },
+  { id: 8, imparte: 'Fabián Bautista Saucedo', color: 'azul', cursivas: [] },
+  { id: 9, imparte: 'Fernanda Romo, EdgeHub Neouniversidad', color: 'morado', cursivas: ['Disruptive Design Method'] },
+  { id: 13, imparte: 'Dr. Edy Yuvoniel Orta, Atelier 1123', color: 'morado', cursivas: [] },
+  { id: 17, imparte: 'Dra. A. S. Mónica Susana de la Barrera Medina', color: 'morado', cursivas: [] },
+];
+
 export const CUPOS = TALLERES.map((nombre, i) => ({
+  ...CATALOGO[i],
   nombre,
   cupo_maximo: 18,
   inscritos: [18, 14, 9, 3, 0][i],
@@ -160,6 +174,7 @@ export async function prepararPanel(
     cupos = CUPOS,
     institucionSede = INSTITUCION_SEDE,
     soloLectura = false,
+    alTaller = () => ({ status: 200, json: { ok: true } }),
   } = {}
 ) {
   await page.addInitScript(() => {
@@ -167,17 +182,30 @@ export async function prepararPanel(
     localStorage.setItem('ENCUADRE_ADMIN_TOKEN', 'token-de-prueba');
   });
 
+  // `cupos` puede ser una función para que una prueba cambie los talleres
+  // después de guardar, igual que los cambiaría la API.
   await page.route('**/api/admin/**', (ruta) =>
     ruta.fulfill({
       json: {
         ok: true,
         registros,
-        cupos,
+        cupos: typeof cupos === 'function' ? cupos() : cupos,
         institucion_sede: institucionSede,
         solo_lectura: soloLectura,
       },
     })
   );
+
+  // Agregar, editar y eliminar talleres. Va después de la anterior porque
+  // Playwright prueba primero la última ruta registrada.
+  const peticiones = [];
+  await page.route('**/api/admin/taller', async (ruta) => {
+    const peticion = { metodo: ruta.request().method(), cuerpo: ruta.request().postDataJSON() };
+    peticiones.push(peticion);
+    const { status, json } = alTaller(peticion);
+    await ruta.fulfill({ status, json });
+  });
+  return { peticiones };
 }
 
 /** El panel usa HashRouter, así que la ruta va después de la almohadilla. */

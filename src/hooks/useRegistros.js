@@ -117,6 +117,29 @@ export default function useRegistros() {
     return { success: true };
   }, [fetchRegistros]);
 
+  /**
+   * Agrega un taller o guarda los cambios de uno. Con `id` edita; sin él, agrega.
+   *
+   * Después vuelve a pedir el padrón entero y no solo el taller: los cupos, el
+   * dashboard y el nombre que ven los participantes en su fila salen de ahí.
+   */
+  const handleGuardarTaller = useCallback(async (taller) => {
+    const respuesta = await pedir('/api/admin/taller', {
+      method: taller.id === undefined ? 'POST' : 'PUT',
+      body: JSON.stringify(taller),
+    });
+    await fetchRegistros();
+    return respuesta.taller;
+  }, [fetchRegistros]);
+
+  const handleEliminarTaller = useCallback(async (id) => {
+    await pedir('/api/admin/taller', {
+      method: 'DELETE',
+      body: JSON.stringify({ id }),
+    });
+    await fetchRegistros();
+  }, [fetchRegistros]);
+
   const handleViewPdf = useCallback(async (url_comprobante) => {
     // Liberar blob URL anterior para evitar memory leaks
     if (blobUrlRef.current) {
@@ -259,5 +282,5 @@ export default function useRegistros() {
     };
   }, []);
 
-  return { data, loading, error, sinConexion, lastUpdated, soloLectura, fetchRegistros, handleAprobarPago, handleEliminarRegistro, handleViewPdf, revokePdfUrl, exportToExcel };
+  return { data, loading, error, sinConexion, lastUpdated, soloLectura, fetchRegistros, handleAprobarPago, handleEliminarRegistro, handleGuardarTaller, handleEliminarTaller, handleViewPdf, revokePdfUrl, exportToExcel };
 }
