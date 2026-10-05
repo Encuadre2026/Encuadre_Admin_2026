@@ -2378,6 +2378,30 @@ select:focus-visible {
   color: var(--color-accent-gold);
 }
 
+/* El botón que hace la cabecera alcanzable con el teclado. Hereda todo de la
+   celda para que la cabecera se vea exactamente como antes de tenerlo. */
+.data-table th.sortable .boton-orden {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  background: none;
+  border: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: inherit;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.data-table th.sortable .boton-orden:focus-visible {
+  outline: 2px solid var(--color-accent-gold);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
 /* La flecha era el carácter «▲». Un glifo tipográfico se dibuja
    con la fuente que toque, no se alinea con la línea base del
    rótulo y no escala con él; y a 12 px era una mancha. Ahora es

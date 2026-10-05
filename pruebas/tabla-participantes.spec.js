@@ -185,3 +185,20 @@ test('la columna ordenada se anuncia también a un lector de pantalla', async ({
   await cabecera.click();
   await expect(cabecera).toHaveAttribute('aria-sort', 'descending');
 });
+
+// Las cabeceras eran `th` con un manejador de clic, que no reciben el foco: con
+// teclado no se podía ordenar la tabla.
+test('la tabla se ordena también con el teclado', async ({ page }) => {
+  const cabecera = page.locator('th.sortable', { hasText: 'Participante' });
+  const boton = cabecera.locator('button');
+
+  await boton.focus();
+  await expect(boton).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(cabecera).toHaveAttribute('aria-sort', 'ascending');
+
+  // Una sola vez por pulsación: el clic que dispara el botón no puede contar
+  // dos veces al subir hasta la celda.
+  await page.keyboard.press(' ');
+  await expect(cabecera).toHaveAttribute('aria-sort', 'descending');
+});
