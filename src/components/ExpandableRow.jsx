@@ -208,7 +208,9 @@ export default function ExpandableRow({ registro: r, soloLectura = false, onApro
                   <div className="detail-actions">
                     {r.url_comprobante && (
                       <button onClick={() => onViewPdf(r.url_comprobante)} className="btn btn-detalle credencial">
-                        <FileText size={14} /> Ver credencial
+                        {/* El mismo nombre que en la fila: a la asamblea se le
+                            revisa el oficio, no una credencial. */}
+                        <FileText size={14} /> {deLaAsamblea ? 'Ver oficio' : 'Ver credencial'}
                       </button>
                     )}
                     {r.url_comprobante_pago && (

@@ -40,19 +40,26 @@ function SortHeader({ field, sortField, sortDir, onSort, children }) {
   // `aria-sort` es lo que anuncia el orden a un lector de pantalla. La flecha ya
   // distinguía la columna activa y la dirección, pero solo para quien la ve.
   const orden = activa ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none';
+  // El rótulo va dentro de un botón: un `th` con `onClick` no recibe el foco, y
+  // con teclado no había forma de ordenar la tabla. El clic se sigue
+  // escuchando en la celda entera —que es donde apunta el ratón—, y Enter o
+  // Espacio sobre el botón llegan a ese mismo escucha, porque activar un botón
+  // dispara un clic que sube hasta la celda.
   return (
     <th
       className={`sortable${activa ? ' sorted' : ''}`}
       onClick={() => onSort(field)}
       aria-sort={orden}
     >
-      {children}
-      {/* Era el carácter «▲». Un glifo se dibuja con la fuente que toque, no
-          se alinea con la línea base del rótulo y no escala con él; a 12 px
-          era una mancha. Dibujado, es un icono como los demás del panel. */}
-      <span className={`sort-arrow${activa ? ' active' : ''}${activa && sortDir === 'desc' ? ' desc' : ''}`}>
-        <ChevronUp size={16} aria-hidden="true" />
-      </span>
+      <button type="button" className="boton-orden">
+        {children}
+        {/* Era el carácter «▲». Un glifo se dibuja con la fuente que toque, no
+            se alinea con la línea base del rótulo y no escala con él; a 12 px
+            era una mancha. Dibujado, es un icono como los demás del panel. */}
+        <span className={`sort-arrow${activa ? ' active' : ''}${activa && sortDir === 'desc' ? ' desc' : ''}`}>
+          <ChevronUp size={16} aria-hidden="true" />
+        </span>
+      </button>
     </th>
   );
 }
