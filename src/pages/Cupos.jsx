@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { RefreshCw, AlertTriangle, Ticket, Plus, Pencil, Trash2 } from 'lucide-react';
+import { RefreshCw, AlertTriangle, Ticket, Plus, Pencil, Trash2, Lock, LockOpen } from 'lucide-react';
 import { useToast } from '../context/toast-contexto';
 import { estadoDeCupo } from '../cupos';
 import { masFrecuente, numeroDeTaller } from '../talleres';
@@ -20,6 +20,7 @@ const NOTAS = {
   'Solo general': 'La reserva de la UAA está agotada: hoy solo puede inscribirse público general.',
   'Solo UAA': 'La bolsa general está agotada: hoy solo pueden inscribirse personas de la UAA.',
   'Lleno': 'Las dos bolsas están agotadas.',
+  'Registro cerrado': 'No acepta inscripciones nuevas. Quienes ya están inscritos conservan su lugar.',
 };
 
 const numero = new Intl.NumberFormat('es-MX');
@@ -30,8 +31,16 @@ function siglasDe(institucionSede) {
 }
 
 export default function Cupos({ registrosHook }) {
-  const { data, loading, error, soloLectura, fetchRegistros, handleGuardarTaller, handleEliminarTaller } =
-    registrosHook;
+  const {
+    data,
+    loading,
+    error,
+    soloLectura,
+    fetchRegistros,
+    handleGuardarTaller,
+    handleEliminarTaller,
+    handleRegistroTaller,
+  } = registrosHook;
   const { showToast } = useToast();
 
   // Qué ventana está abierta: el formulario —con el taller que se edita, o
@@ -53,6 +62,13 @@ export default function Cupos({ registrosHook }) {
     setPorEliminar(taller);
   };
   const [eliminando, setEliminando] = useState(false);
+  // El taller cuyo registro se va a abrir o cerrar, mientras se confirma.
+  const [porCambiarRegistro, setPorCambiarRegistro] = useState(null);
+  const pedirCambioDeRegistro = (taller) => (e) => {
+    setDisparador(e.currentTarget);
+    setPorCambiarRegistro(taller);
+  };
+  const [cambiandoRegistro, setCambiandoRegistro] = useState(false);
 
   // El reparto entre UAA y general lo calcula la API con la misma regla que
   // aplica el alta. Aquí se recalculaba desde `registros` usando
@@ -76,9 +92,10 @@ export default function Cupos({ registrosHook }) {
         capacidad: suma.capacidad + estado.capacidad,
         conBolsaAgotada: suma.conBolsaAgotada + (estado.generalLleno || estado.uaaLleno ? 1 : 0),
         vacios: suma.vacios + (estado.inscritos === 0 ? 1 : 0),
+        cerrados: suma.cerrados + (estado.registroCerrado ? 1 : 0),
       };
     },
-    { inscritos: 0, capacidad: 0, conBolsaAgotada: 0, vacios: 0 }
+    { inscritos: 0, capacidad: 0, conBolsaAgotada: 0, vacios: 0, cerrados: 0 }
   );
 
   // Con la API anterior a los talleres editables no llegaba el id: la fila se
@@ -109,6 +126,25 @@ export default function Cupos({ registrosHook }) {
     const nombre = guardado?.nombre ?? taller.nombre;
     showToast(taller.id === undefined ? `Taller «${nombre}» agregado` : `Taller «${nombre}» guardado`, 'success');
     setFormulario(undefined);
+  };
+
+  // Abrir o cerrar no cambia nada más del taller ni de sus inscritos, así que
+  // se confirma con una frase y no con el formulario.
+  const cambiarRegistro = async () => {
+    if (!porCambiarRegistro) return;
+    const { id, nombre } = porCambiarRegistro;
+    const cerrar = !porCambiarRegistro.registro_cerrado;
+    setCambiandoRegistro(true);
+    try {
+      await handleRegistroTaller(id, cerrar);
+      showToast(`Registro de «${nombre}» ${cerrar ? 'cerrado' : 'abierto'}`, 'success');
+    } catch (e) {
+      showToast(e.message, 'error');
+      siCaducoLaSesion(e);
+    } finally {
+      setCambiandoRegistro(false);
+      setPorCambiarRegistro(null);
+    }
   };
 
   const eliminar = async () => {
@@ -152,7 +188,7 @@ export default function Cupos({ registrosHook }) {
           <h1 ref={tituloRef} tabIndex={-1}>Talleres y cupos</h1>
           <p className="page-header-contexto">
             {cupos.length > 0
-              ? `${cupos.length} ${cupos.length === 1 ? 'taller' : 'talleres'} ·${numero.format(totales.inscritos)} de ${numero.format(totales.capacidad)} lugares ocupados · ${totales.conBolsaAgotada} con una bolsa agotada · ${totales.vacios} sin inscritos`
+              ? `${cupos.length} ${cupos.length === 1 ? 'taller' : 'talleres'} ·${numero.format(totales.inscritos)} de ${numero.format(totales.capacidad)} lugares ocupados · ${totales.conBolsaAgotada} con una bolsa agotada · ${totales.vacios} sin inscritos${totales.cerrados > 0 ? ` · ${totales.cerrados} con el registro cerrado` : ''}`
               : 'Cada taller son dos bolsas independientes: la general y la reservada a la UAA.'}
           </p>
         </div>
@@ -257,6 +293,22 @@ export default function Cupos({ registrosHook }) {
                     el lector de pantalla no diga veinte veces «Editar». */}
                 {editables && (
                   <div className="cupo-acciones">
+                    {/* Solo si la API ya dice si está cerrado: con la anterior
+                        el botón no sabría qué hacer, y la ruta no existiría. */}
+                    {typeof c.registro_cerrado === 'boolean' && (
+                      <button
+                        className="btn btn-outline cupo-accion"
+                        onClick={pedirCambioDeRegistro(c)}
+                        aria-label={`${c.registro_cerrado ? 'Abrir' : 'Cerrar'} el registro del taller ${numeroDeTaller(c.id)}, ${c.nombre}`}
+                      >
+                        {c.registro_cerrado ? (
+                          <LockOpen size={16} aria-hidden="true" />
+                        ) : (
+                          <Lock size={16} aria-hidden="true" />
+                        )}{' '}
+                        {c.registro_cerrado ? 'Abrir registro' : 'Cerrar registro'}
+                      </button>
+                    )}
                     <button
                       className="btn btn-outline cupo-accion"
                       onClick={abrirFormulario(c)}
@@ -291,6 +343,23 @@ export default function Cupos({ registrosHook }) {
           onCerrar={() => setFormulario(undefined)}
         />
       )}
+
+      <ConfirmDialog
+        open={Boolean(porCambiarRegistro)}
+        title={porCambiarRegistro?.registro_cerrado ? 'Abrir el registro' : 'Cerrar el registro'}
+        message={
+          porCambiarRegistro &&
+          (porCambiarRegistro.registro_cerrado
+            ? `«${porCambiarRegistro.nombre}» volverá a aceptar inscripciones con los lugares que le quedan.`
+            : `«${porCambiarRegistro.nombre}» dejará de aceptar inscripciones nuevas. Quienes ya están inscritos conservan su lugar.`)
+        }
+        confirmText={porCambiarRegistro?.registro_cerrado ? 'Abrir registro' : 'Cerrar registro'}
+        variant="warning"
+        loading={cambiandoRegistro}
+        onConfirm={cambiarRegistro}
+        volverA={disparador}
+        onCancel={() => setPorCambiarRegistro(null)}
+      />
 
       {/* Un taller con gente inscrita no se puede eliminar —el Worker lo
           rechazaría—, así que no se pregunta si se quiere: se explica por qué

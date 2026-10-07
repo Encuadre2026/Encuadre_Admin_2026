@@ -137,13 +137,14 @@ export const REGISTROS_CON_ASAMBLEA = [...REGISTROS, ...ASAMBLEA];
  * Los talleres con su catálogo, como los manda la API desde que se editan en el
  * panel. Los ids no son contiguos a propósito —0, 8, 9, 13 y 17—: son los de
  * producción, y el número que enseña el panel es el id más uno, no la posición.
+ * Todos con el registro abierto; la prueba que necesita uno cerrado lo cierra.
  */
 const CATALOGO = [
-  { id: 0, imparte: 'Mtro. Luis Antonio Rivera Díaz', color: 'verde', cursivas: [] },
-  { id: 8, imparte: 'Fabián Bautista Saucedo', color: 'azul', cursivas: [] },
-  { id: 9, imparte: 'Fernanda Romo, EdgeHub Neouniversidad', color: 'morado', cursivas: ['Disruptive Design Method'] },
-  { id: 13, imparte: 'Dr. Edy Yuvoniel Orta, Atelier 1123', color: 'morado', cursivas: [] },
-  { id: 17, imparte: 'Dra. A. S. Mónica Susana de la Barrera Medina', color: 'morado', cursivas: [] },
+  { id: 0, imparte: 'Mtro. Luis Antonio Rivera Díaz', color: 'verde', cursivas: [], registro_cerrado: false },
+  { id: 8, imparte: 'Fabián Bautista Saucedo', color: 'azul', cursivas: [], registro_cerrado: false },
+  { id: 9, imparte: 'Fernanda Romo, EdgeHub Neouniversidad', color: 'morado', cursivas: ['Disruptive Design Method'], registro_cerrado: false },
+  { id: 13, imparte: 'Dr. Edy Yuvoniel Orta, Atelier 1123', color: 'morado', cursivas: [], registro_cerrado: false },
+  { id: 17, imparte: 'Dra. A. S. Mónica Susana de la Barrera Medina', color: 'morado', cursivas: [], registro_cerrado: false },
 ];
 
 export const CUPOS = TALLERES.map((nombre, i) => ({
@@ -175,6 +176,7 @@ export async function prepararPanel(
     institucionSede = INSTITUCION_SEDE,
     soloLectura = false,
     alTaller = () => ({ status: 200, json: { ok: true } }),
+    alRegistro = () => ({ status: 200, json: { ok: true } }),
   } = {}
 ) {
   await page.addInitScript(() => {
@@ -205,7 +207,16 @@ export async function prepararPanel(
     const { status, json } = alTaller(peticion);
     await ruta.fulfill({ status, json });
   });
-  return { peticiones };
+
+  // Abrir y cerrar el registro de un taller, que va por su propia ruta.
+  const cambiosDeRegistro = [];
+  await page.route('**/api/admin/taller/registro', async (ruta) => {
+    const peticion = { metodo: ruta.request().method(), cuerpo: ruta.request().postDataJSON() };
+    cambiosDeRegistro.push(peticion);
+    const { status, json } = alRegistro(peticion);
+    await ruta.fulfill({ status, json });
+  });
+  return { peticiones, cambiosDeRegistro };
 }
 
 /** El panel usa HashRouter, así que la ruta va después de la almohadilla. */

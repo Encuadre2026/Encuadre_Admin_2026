@@ -25,10 +25,18 @@ export function estadoDeCupo(cupo) {
   // como «Disponible» —y ningún estudiante de la UAA podía inscribirse en él—.
   const generalLleno = inscritosGeneral >= cupo.cupo_maximo;
   const uaaLleno = reservadosUaa > 0 && inscritosUaa >= reservadosUaa;
+  // Lo cerró la coordinación: no admite a nadie más aunque le queden lugares.
+  // Va antes que todo lo demás porque es lo único que importa a quien pregunta
+  // si alguien se puede inscribir. Con la API anterior no llega, y entonces
+  // está abierto, que es lo que era.
+  const registroCerrado = cupo.registro_cerrado === true;
 
   let insignia = 'Disponible';
   let clase = 'disponible';
-  if (generalLleno && uaaLleno) {
+  if (registroCerrado) {
+    insignia = 'Registro cerrado';
+    clase = 'cerrado';
+  } else if (generalLleno && uaaLleno) {
     insignia = 'Lleno';
     clase = 'lleno';
   } else if (uaaLleno) {
@@ -51,6 +59,7 @@ export function estadoDeCupo(cupo) {
     porcentaje,
     generalLleno,
     uaaLleno,
+    registroCerrado,
     insignia,
     clase,
     // Los porcentajes de cada bolsa por separado, que es lo que dibujan las dos
