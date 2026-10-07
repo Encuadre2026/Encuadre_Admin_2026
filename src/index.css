@@ -854,6 +854,13 @@ a:hover {
   background: var(--color-danger-dim);
   color: var(--color-danger);
 }
+/* Cerrado no es una alarma como «Lleno»: lo decidió la coordinación. Va en
+   neutro, con un borde para que no dependa solo del fondo. */
+.cupo-badge.cerrado {
+  background: var(--color-bg-hover);
+  color: var(--color-text-secondary);
+  box-shadow: inset 0 0 0 1px var(--color-border-light);
+}
 
 .cupo-bolsas {
   flex: 0 1 26rem;

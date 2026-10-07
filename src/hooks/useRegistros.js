@@ -140,6 +140,19 @@ export default function useRegistros() {
     await fetchRegistros();
   }, [fetchRegistros]);
 
+  /**
+   * Abre o cierra el registro de un taller. Va por su propia ruta y no con la
+   * edición: es un estado del registro, no un dato del taller, y quien ya está
+   * inscrito no se toca.
+   */
+  const handleRegistroTaller = useCallback(async (id, registroCerrado) => {
+    await pedir('/api/admin/taller/registro', {
+      method: 'PUT',
+      body: JSON.stringify({ id, registro_cerrado: registroCerrado }),
+    });
+    await fetchRegistros();
+  }, [fetchRegistros]);
+
   const handleViewPdf = useCallback(async (url_comprobante) => {
     // Liberar blob URL anterior para evitar memory leaks
     if (blobUrlRef.current) {
@@ -282,5 +295,5 @@ export default function useRegistros() {
     };
   }, []);
 
-  return { data, loading, error, sinConexion, lastUpdated, soloLectura, fetchRegistros, handleAprobarPago, handleEliminarRegistro, handleGuardarTaller, handleEliminarTaller, handleViewPdf, revokePdfUrl, exportToExcel };
+  return { data, loading, error, sinConexion, lastUpdated, soloLectura, fetchRegistros, handleAprobarPago, handleEliminarRegistro, handleGuardarTaller, handleEliminarTaller, handleRegistroTaller, handleViewPdf, revokePdfUrl, exportToExcel };
 }

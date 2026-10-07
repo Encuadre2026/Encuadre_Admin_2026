@@ -8,7 +8,7 @@ Panel de control interno para la gestión de registros, pagos y asistencia del *
 - **Conexión segura** a la API central (Cloudflare Worker) mediante token Bearer (`ADMIN_SECRET`).
 - **Dashboard analítico** con gráficas interactivas (Recharts) de KPIs, pagos, ocupación y tendencias.
 - **Gestión de participantes** con búsqueda, filtros, paginación, visualización de comprobantes PDF y aprobación de pagos.
-- **Talleres y cupos**: disponibilidad en tiempo real por taller, y **edición de los talleres** —nombre, quién lo imparte, color, cursivas y lugares; agregar y eliminar— que llega al formulario de registro, al portal y a la app de QR sin desplegar nada.
+- **Talleres y cupos**: disponibilidad en tiempo real por taller, y **edición de los talleres** —nombre, quién lo imparte, color, cursivas y lugares; agregar y eliminar— que llega al formulario de registro, al portal y a la app de QR sin desplegar nada. También se **cierra el registro** de un taller sin tocar sus lugares.
 
 ## Arquitectura
 
@@ -129,6 +129,7 @@ cambiarlo, y el panel se le adapta:
 | «Validar pago» / «Validar» | Sí | **No** |
 | Desplegar la fila (CURP, teléfono, «Eliminar registro») | Sí | **No** |
 | Agregar, editar y eliminar talleres | Sí | **No** |
+| Abrir y cerrar el registro de un taller | Sí | **No** |
 
 El Excel del perfil de consulta se filtra sobre lo que ya hay en pantalla, así
 que los filtros puestos siguen contando: lo que baja es siempre un subconjunto
@@ -224,8 +225,8 @@ formulario de registro (el id más uno):
 - Barras de progreso separadas para cupos **General** y **UAA**, cada una contra
   la bolsa de ese taller, con la bolsa agotada marcada en rojo.
 - Insignias de estado: `Disponible`, `Solo general` (se agotó la reserva UAA),
-  `Solo UAA` (se agotó la general), `Casi lleno` (≥80 % sin agotar ninguna) y
-  `Lleno`.
+  `Solo UAA` (se agotó la general), `Casi lleno` (≥80 % sin agotar ninguna),
+  `Lleno` y `Registro cerrado`, que gana a todas las demás.
 - Estadísticas de inscritos frente a capacidad total.
 
 Un cupo son **dos bolsas independientes**, y la insignia lo refleja: antes solo
@@ -247,6 +248,17 @@ y el portal, la app de QR, este panel y los correos al leer el nombre de la base
 - Dos talleres no pueden llamarse igual, sin distinguir mayúsculas ni tildes.
 - El PDF de la oferta de talleres del sitio es aparte: si cambia la lista, hay
   que reemplazarlo a mano.
+
+**Cerrar el registro.** «Cerrar registro», en cada fila, deja el taller sin
+admitir inscripciones nuevas aunque le queden lugares; «Abrir registro» lo
+devuelve. Los dos piden confirmación. Quien ya está inscrito no se toca: conserva
+su lugar, su portal y su plazo de pago. En el formulario de registro el taller
+sale con un candado y «Registro cerrado», y no se deja elegir.
+
+Es distinto de bajar el cupo hasta los inscritos, que no lo cierra: el cron
+borra a quien no paga a tiempo, el lugar queda libre y el taller se vuelve a
+abrir solo. Editar un taller cerrado lo deja cerrado. El botón no aparece si la
+API todavía no dice si el taller está cerrado.
 
 ## Reglas de negocio
 
