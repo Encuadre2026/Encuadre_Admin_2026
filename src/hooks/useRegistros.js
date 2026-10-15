@@ -108,6 +108,20 @@ export default function useRegistros() {
     return { success: true };
   }, [fetchRegistros]);
 
+  /**
+   * Pasa a una persona a otro taller. Si ya pagó, el Worker le reenvía la
+   * confirmación con el taller nuevo; la respuesta dice si salió
+   * (`correo_enviado`), y por eso se devuelve entera.
+   */
+  const handleCambiarTaller = useCallback(async (id_participante, taller_id) => {
+    const respuesta = await pedir('/api/admin/registro/taller', {
+      method: 'PUT',
+      body: JSON.stringify({ id_participante, taller_id }),
+    });
+    await fetchRegistros();
+    return respuesta;
+  }, [fetchRegistros]);
+
   const handleEliminarRegistro = useCallback(async (id_participante) => {
     await pedir('/api/admin/registro', {
       method: 'DELETE',
@@ -295,5 +309,5 @@ export default function useRegistros() {
     };
   }, []);
 
-  return { data, loading, error, sinConexion, lastUpdated, soloLectura, fetchRegistros, handleAprobarPago, handleEliminarRegistro, handleGuardarTaller, handleEliminarTaller, handleRegistroTaller, handleViewPdf, revokePdfUrl, exportToExcel };
+  return { data, loading, error, sinConexion, lastUpdated, soloLectura, fetchRegistros, handleAprobarPago, handleCambiarTaller, handleEliminarRegistro, handleGuardarTaller, handleEliminarTaller, handleRegistroTaller, handleViewPdf, revokePdfUrl, exportToExcel };
 }

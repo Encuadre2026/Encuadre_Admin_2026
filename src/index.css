@@ -1179,6 +1179,49 @@ a:hover {
   padding-top: var(--espacio-2);
 }
 
+/* ============================================================
+   CAMBIAR DE TALLER
+   Usa la ventana del formulario de talleres. Los nombres de
+   taller pasan de cien caracteres, así que se escriben enteros
+   fuera del desplegable, donde se pueden leer.
+   ============================================================ */
+.cambio-persona-nombre {
+  font-size: var(--texto-lg);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  overflow-wrap: anywhere;
+}
+
+.cambio-taller-actual,
+.cambio-resumen-taller {
+  color: var(--color-text-primary);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+/* El desplegable recorta el nombre a su ancho; aquí se lee entero. */
+.cambio-resumen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-2);
+  padding: var(--espacio-3) var(--espacio-4);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radio-md);
+}
+
+.cambio-aviso {
+  padding: var(--espacio-2) var(--espacio-3);
+  border-left: 3px solid var(--color-accent-gold);
+  background-color: var(--color-accent-gold-dim);
+  color: var(--color-text-primary);
+  font-size: var(--texto-md);
+}
+
+.cambio-correo {
+  font-size: var(--texto-md);
+  color: var(--color-text-muted);
+}
+
 @media (max-width: 480px) {
   .taller-overlay {
     padding: var(--espacio-2);
@@ -3101,6 +3144,10 @@ select:focus-visible {
 .btn-detalle.eliminar {
   border-color: var(--color-danger);
   color: var(--color-danger);
+}
+.btn-detalle.cambiar {
+  border-color: var(--color-border-light);
+  color: var(--color-text-primary);
 }
 
 .btn-detalle:hover:not(:disabled) {

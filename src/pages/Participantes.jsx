@@ -5,6 +5,7 @@ import { Search, SearchX, Inbox, AlertTriangle, Download, RefreshCw, XCircle, X,
 import { useToast } from '../context/toast-contexto';
 import ExpandableRow from '../components/ExpandableRow';
 import ConfirmDialog from '../components/ConfirmDialog';
+import CambiarTaller from '../components/CambiarTaller';
 import EstadoVacio from '../components/EstadoVacio';
 import { TableRowSkeleton } from '../components/Skeleton';
 import { esDeLaSede } from '../sede';
@@ -91,7 +92,7 @@ function GrupoDeFiltro({ rotulo, opciones, valor, onCambio }) {
 }
 
 export default function Participantes({ registrosHook }) {
-  const { data, loading, error, soloLectura, fetchRegistros, handleAprobarPago, handleEliminarRegistro, handleViewPdf, revokePdfUrl, exportToExcel } = registrosHook;
+  const { data, loading, error, soloLectura, fetchRegistros, handleAprobarPago, handleCambiarTaller, handleEliminarRegistro, handleViewPdf, revokePdfUrl, exportToExcel } = registrosHook;
   const { showToast } = useToast();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -120,6 +121,9 @@ export default function Participantes({ registrosHook }) {
   const [pdfBlobUrl, setPdfBlobUrl] = useState(null);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
+  // A quién se cambia de taller, con el botón que abrió la ventana para
+  // devolverle el foco al cerrarla.
+  const [cambioDeTaller, setCambioDeTaller] = useState(null);
   const modalRef = useRef(null);
   const closeButtonRef = useRef(null);
 
@@ -308,7 +312,7 @@ export default function Participantes({ registrosHook }) {
   // la tecla si ya se está escribiendo en algún campo, ni con una ventana
   // abierta encima.
   useEffect(() => {
-    if (selectedPdf || confirmAction) return;
+    if (selectedPdf || confirmAction || cambioDeTaller) return;
 
     const alPulsar = (e) => {
       if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey) return;
@@ -323,7 +327,7 @@ export default function Participantes({ registrosHook }) {
 
     document.addEventListener('keydown', alPulsar);
     return () => document.removeEventListener('keydown', alPulsar);
-  }, [selectedPdf, confirmAction]);
+  }, [selectedPdf, confirmAction, cambioDeTaller]);
 
   // La asamblea no paga cuota: lo que se aprueba en su caso es el oficio que la
   // acredita como representante de su universidad. Preguntarle a quien valida
@@ -343,6 +347,24 @@ export default function Participantes({ registrosHook }) {
       confirmText: deLaAsamblea ? 'Aprobar acreditación' : 'Aprobar pago',
       variant: 'warning',
     });
+  };
+
+  const onCambiarTaller = (registro, boton) => {
+    setCambioDeTaller({ registro, volverA: boton });
+  };
+
+  // El taller ya cambió aunque el correo no saliera: el aviso lo dice así, para
+  // que nadie repita el cambio creyendo que no se hizo.
+  const cambiarTaller = async (id, tallerId) => {
+    const respuesta = await handleCambiarTaller(id, tallerId);
+    setCambioDeTaller(null);
+    if (respuesta.correo_enviado === false) {
+      showToast(`${id} ya está en el taller nuevo, pero el correo de confirmación no salió.`, 'error');
+    } else if (respuesta.correo_enviado) {
+      showToast(`${id} cambió de taller. Se le envió de nuevo la confirmación.`, 'success');
+    } else {
+      showToast(`${id} cambió de taller. No se envió correo: su pago está pendiente.`, 'success');
+    }
   };
 
   const onEliminarRegistro = (id) => {
@@ -608,7 +630,7 @@ export default function Participantes({ registrosHook }) {
               ) : (
                 <>
                   {paginatedRegistros.map((r, i) => (
-                    <ExpandableRow key={r.id_participante || i} registro={r} soloLectura={soloLectura} onAprobarPago={onAprobarPago} onEliminarRegistro={onEliminarRegistro} onViewPdf={onViewPdf} />
+                    <ExpandableRow key={r.id_participante || i} registro={r} soloLectura={soloLectura} onAprobarPago={onAprobarPago} onCambiarTaller={onCambiarTaller} onEliminarRegistro={onEliminarRegistro} onViewPdf={onViewPdf} />
                   ))}
                   {sortedRegistros.length === 0 && (
                     <tr>
@@ -771,6 +793,17 @@ export default function Participantes({ registrosHook }) {
           </div>
         </div>,
         document.body
+      )}
+
+      {cambioDeTaller && (
+        <CambiarTaller
+          registro={cambioDeTaller.registro}
+          cupos={data.cupos || []}
+          institucionSede={data.institucion_sede}
+          volverA={cambioDeTaller.volverA}
+          onCambiar={cambiarTaller}
+          onCerrar={() => setCambioDeTaller(null)}
+        />
       )}
 
       {/* Confirm Dialog */}
