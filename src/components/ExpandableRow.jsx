@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronRight, FileText, CheckCircle, XCircle } from 'lucide-react';
+import { ArrowLeftRight, ChevronRight, FileText, CheckCircle, XCircle } from 'lucide-react';
 import { esAsamblea, siNo } from '../asamblea';
 import { desdeLaApi } from '../fecha';
 
@@ -27,7 +27,7 @@ function siglaDe(institucion) {
  * esas dos rutas de todos modos —responde 403—, así que esconderlas no es la
  * defensa, es no ofrecer lo que va a ser rechazado.
  */
-export default function ExpandableRow({ registro: r, soloLectura = false, onAprobarPago, onEliminarRegistro, onViewPdf }) {
+export default function ExpandableRow({ registro: r, soloLectura = false, onAprobarPago, onCambiarTaller, onEliminarRegistro, onViewPdf }) {
   const [expanded, setExpanded] = useState(false);
   // Cuando no se puede desplegar, la fila deja de ser un control: sin `onClick`,
   // sin `tabIndex` y sin `aria-expanded`, porque anunciar que algo se despliega
@@ -221,6 +221,13 @@ export default function ExpandableRow({ registro: r, soloLectura = false, onApro
                     {!r.pago_aprobado && (
                       <button onClick={() => onAprobarPago(r.id_participante, deLaAsamblea)} className="btn btn-detalle aprobar">
                         <CheckCircle size={14} /> {deLaAsamblea ? 'Aprobar acreditación' : 'Aprobar pago'}
+                      </button>
+                    )}
+                    {/* La asamblea no está inscrita en ningún taller: el suyo
+                        es el centinela, y el Worker rechaza cambiarlo. */}
+                    {!deLaAsamblea && onCambiarTaller && (
+                      <button onClick={(e) => onCambiarTaller(r, e.currentTarget)} className="btn btn-detalle cambiar">
+                        <ArrowLeftRight size={14} /> Cambiar de taller
                       </button>
                     )}
                     <button onClick={() => onEliminarRegistro(r.id_participante)} className="btn btn-detalle eliminar">

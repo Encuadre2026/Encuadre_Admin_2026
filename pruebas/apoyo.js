@@ -177,6 +177,7 @@ export async function prepararPanel(
     soloLectura = false,
     alTaller = () => ({ status: 200, json: { ok: true } }),
     alRegistro = () => ({ status: 200, json: { ok: true } }),
+    alCambioDeTaller = () => ({ status: 200, json: { ok: true, correo_enviado: true } }),
   } = {}
 ) {
   await page.addInitScript(() => {
@@ -216,7 +217,16 @@ export async function prepararPanel(
     const { status, json } = alRegistro(peticion);
     await ruta.fulfill({ status, json });
   });
-  return { peticiones, cambiosDeRegistro };
+
+  // Pasar a una persona a otro taller.
+  const cambiosDeTaller = [];
+  await page.route('**/api/admin/registro/taller', async (ruta) => {
+    const peticion = { metodo: ruta.request().method(), cuerpo: ruta.request().postDataJSON() };
+    cambiosDeTaller.push(peticion);
+    const { status, json } = alCambioDeTaller(peticion);
+    await ruta.fulfill({ status, json });
+  });
+  return { peticiones, cambiosDeRegistro, cambiosDeTaller };
 }
 
 /** El panel usa HashRouter, así que la ruta va después de la almohadilla. */

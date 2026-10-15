@@ -128,6 +128,7 @@ cambiarlo, y el panel se le adapta:
 | Exportar a Excel | El padrón filtrado | **Solo la asamblea** |
 | «Validar pago» / «Validar» | Sí | **No** |
 | Desplegar la fila (CURP, teléfono, «Eliminar registro») | Sí | **No** |
+| Cambiar a alguien de taller | Sí | **No** |
 | Agregar, editar y eliminar talleres | Sí | **No** |
 | Abrir y cerrar el registro de un taller | Sí | **No** |
 
@@ -150,8 +151,8 @@ pulsarlos.
 
 Y esconderlos **no es la defensa**: un botón oculto sigue siendo una ruta abierta
 para quien sepa llamarla con la contraseña que tiene. Las dos rutas que cambian
-algo —aprobar un pago y borrar un registro— exigen el `ADMIN_SECRET` en el
-Worker, y a la de consulta le responden 403.
+algo —aprobar un pago, cambiar de taller y borrar un registro— exigen el
+`ADMIN_SECRET` en el Worker, y a la de consulta le responden 403.
 
 Mientras no llega la primera respuesta, el panel supone que la sesión es de
 consulta: equivocarse hacia ese lado solo hace que los botones aparezcan un
@@ -211,6 +212,13 @@ Tabla completa de registros con:
   registro, etc. El perfil de consulta no las despliega, y entonces la columna de
   la flecha desaparece entera en vez de quedarse vacía.
 - **Acciones**: ver comprobante PDF (modal con iframe), aprobar pago.
+- **Cambiar de taller**: desde la fila desplegada. La ventana enseña los lugares
+  que quedan en la bolsa que le toca a esa persona (la de la sede o la general)
+  y avisa si el taller está lleno o tiene el registro cerrado, porque desde aquí
+  entra de todos modos. Si la persona ya pagó, el Worker le reenvía la
+  confirmación con el taller nuevo y su QR; si no, no le llega nada y la
+  confirmación saldrá al aprobar el pago. A la asamblea no se le ofrece: no está
+  inscrita en ningún taller.
 - **Exportar a Excel**: descarga un `.xlsx` con los registros filtrados.
 - **Estados vacíos que distinguen**: que no haya nadie inscrito todavía y que
   haya trescientos y los filtros no dejen pasar a ninguno son cosas distintas, y
