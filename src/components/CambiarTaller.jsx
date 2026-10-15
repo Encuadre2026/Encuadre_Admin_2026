@@ -25,10 +25,11 @@ function textoLugares(n) {
 /**
  * Pasar a una persona a otro taller.
  *
- * Lo decide la coordinación, así que se ofrecen todos los talleres, también los
- * llenos y los de registro cerrado: el Worker la deja entrar igual. Lo que hace
- * esta ventana es que eso no pase sin querer —avisa antes de confirmar— y decir
- * qué correo va a recibir la persona, porque eso es lo que se ve desde fuera.
+ * Se ofrecen todos los talleres. Los de registro cerrado admiten el cambio,
+ * porque eso detiene al formulario público y no a la coordinación; los que no
+ * tienen lugar en la bolsa de esta persona se pueden elegir para leer qué hacer,
+ * pero no confirmar. La ventana dice además qué correo va a recibir la persona,
+ * porque eso es lo que se ve desde fuera.
  *
  * Se cierra con «Cancelar», con la X o con Escape, pero no al pulsar fuera,
  * igual que el formulario de talleres. Si el Worker rechaza el cambio, el error
@@ -48,7 +49,10 @@ export default function CambiarTaller({ registro, cupos, institucionSede, volver
   // la base, así que el nombre basta para no ofrecer el taller en que ya está.
   const opciones = cupos.filter((c) => c.nombre !== registro.taller);
   const elegido = opciones.find((c) => String(c.id) === tallerId);
-  const libres = elegido ? lugaresPara(elegido, deLaSede) : null;
+  // El Worker no deja pasar a nadie por encima del cupo de su bolsa: la
+  // auditoría lo leería como una sobreventa. El taller lleno se puede elegir
+  // para leer por qué no, pero no confirmar.
+  const lleno = Boolean(elegido) && lugaresPara(elegido, deLaSede) <= 0;
 
   const [previo] = useState(() => volverA ?? document.activeElement);
   useEffect(() => {
@@ -90,6 +94,7 @@ export default function CambiarTaller({ registro, cupos, institucionSede, volver
       selectorRef.current?.focus();
       return;
     }
+    if (lleno) return;
     setGuardando(true);
     setErrorServidor('');
     try {
@@ -179,10 +184,10 @@ export default function CambiarTaller({ registro, cupos, institucionSede, volver
               <p className="cambio-resumen-taller">
                 <span className="cifra">{numeroDeTaller(elegido.id)}.</span> {elegido.nombre}
               </p>
-              {libres <= 0 && (
+              {lleno && (
                 <p className="cambio-aviso">
-                  Este taller ya no tiene lugares {deLaSede ? `para ${siglasSede}` : 'generales'}: la
-                  persona entrará por encima del cupo.
+                  No le quedan lugares {deLaSede ? `reservados a ${siglasSede}` : 'generales'}. Si
+                  aceptan a una persona más, primero súbele el cupo en Talleres y cupos.
                 </p>
               )}
               {elegido.registro_cerrado && (
@@ -204,7 +209,7 @@ export default function CambiarTaller({ registro, cupos, institucionSede, volver
             <button type="button" className="btn btn-outline" onClick={onCerrar} disabled={guardando}>
               Cancelar
             </button>
-            <button type="submit" className="btn btn-primary" disabled={guardando}>
+            <button type="submit" className="btn btn-primary" disabled={guardando || lleno}>
               {guardando ? 'Cambiando…' : 'Cambiar de taller'}
             </button>
           </div>

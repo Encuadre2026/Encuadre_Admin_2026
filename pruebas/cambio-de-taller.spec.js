@@ -71,8 +71,10 @@ test('con el pago pendiente avisa que no sale ningún correo', async ({ page }) 
   await expect(page.locator('.toast')).toContainText('su pago está pendiente');
 });
 
-test('un taller sin lugares en su bolsa se ofrece, pero con aviso', async ({ page }) => {
-  await prepararPanel(page);
+// El Worker lo rechazaría con CUPO_LLENO: se puede elegir para leer qué hacer,
+// pero no confirmar.
+test('un taller sin lugares en su bolsa explica qué hacer y no deja confirmar', async ({ page }) => {
+  const { cambiosDeTaller } = await prepararPanel(page);
   await irA(page, 'participantes');
 
   // ENC-004 es de la sede, y la reserva de «Didácticas» está llena (10 de 10).
@@ -82,7 +84,25 @@ test('un taller sin lugares en su bolsa se ofrece, pero con aviso', async ({ pag
   expect(didacticas).toMatch(/sin lugares$/);
 
   await selector.selectOption({ label: didacticas });
-  await expect(dialogo.locator('.cambio-aviso')).toContainText('entrará por encima del cupo');
+  await expect(dialogo.locator('.cambio-aviso')).toContainText('No le quedan lugares reservados a UAA');
+  await expect(dialogo.locator('.cambio-aviso')).toContainText('primero súbele el cupo en Talleres y cupos');
+  await expect(dialogo.getByRole('button', { name: 'Cambiar de taller' })).toBeDisabled();
+  expect(cambiosDeTaller).toHaveLength(0);
+});
+
+test('un taller con el registro cerrado sí admite el cambio, con aviso', async ({ page }) => {
+  const { CUPOS } = await import('./apoyo.js');
+  const cupos = CUPOS.map((c) => (c.id === 9 ? { ...c, registro_cerrado: true } : c));
+  const { cambiosDeTaller } = await prepararPanel(page, { cupos });
+  await irA(page, 'participantes');
+
+  const dialogo = await abrirCambio(page, 'ENC-002');
+  await dialogo.getByLabel('Taller nuevo').selectOption({ label: '10. Disruptive Design Method — 11 lugares · registro cerrado' });
+  await expect(dialogo.locator('.cambio-aviso')).toContainText('Tiene el registro cerrado');
+  await dialogo.getByRole('button', { name: 'Cambiar de taller' }).click();
+
+  await expect(dialogo).toBeHidden();
+  expect(cambiosDeTaller).toHaveLength(1);
 });
 
 test('si el Worker lo rechaza, la ventana sigue abierta con el motivo', async ({ page }) => {

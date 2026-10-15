@@ -213,9 +213,11 @@ Tabla completa de registros con:
   la flecha desaparece entera en vez de quedarse vacía.
 - **Acciones**: ver comprobante PDF (modal con iframe), aprobar pago.
 - **Cambiar de taller**: desde la fila desplegada. La ventana enseña los lugares
-  que quedan en la bolsa que le toca a esa persona (la de la sede o la general)
-  y avisa si el taller está lleno o tiene el registro cerrado, porque desde aquí
-  entra de todos modos. Si la persona ya pagó, el Worker le reenvía la
+  que quedan en la bolsa que le toca a esa persona (la de la sede o la general).
+  Un taller con el registro cerrado admite el cambio; uno sin lugares en esa
+  bolsa no, porque el Worker no deja a nadie por encima del cupo: si aceptan a
+  una persona más, se le sube el cupo en Talleres y cupos y se vuelve a
+  intentar. Si la persona ya pagó, el Worker le reenvía la
   confirmación con el taller nuevo y su QR; si no, no le llega nada y la
   confirmación saldrá al aprobar el pago. A la asamblea no se le ofrece: no está
   inscrita en ningún taller.
