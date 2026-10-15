@@ -15,11 +15,25 @@ import { irA, prepararPanel, REGISTROS_CON_ASAMBLEA } from './apoyo.js';
  * - ENC-004: de la sede, en «Taller de poesía objetual», con el pago pendiente.
  */
 
+/**
+ * Despliega la fila y abre la ventana.
+ *
+ * La fila se despliega con una transición de 0,35 s, y el botón vive dentro de
+ * lo que se va descubriendo. Pulsarlo a media animación —que una persona no
+ * hace, porque todavía no lo ve— fallaba una de cada cincuenta veces, y en el
+ * CI del despliegue del 15 de octubre de 2026 tumbó la publicación del panel.
+ * Por eso se espera a que la transición termine, y la ventana tiene que estar
+ * a la vista antes de devolverla: si no se abre, la prueba falla aquí y no
+ * treinta segundos después, buscando un desplegable.
+ */
 async function abrirCambio(page, folio) {
   await page.locator('tbody tr.expandable-row', { hasText: folio }).click();
   const detalle = page.locator('.row-details.abierto');
+  await detalle.evaluate((el) => Promise.all(el.getAnimations().map((a) => a.finished)));
   await detalle.getByRole('button', { name: 'Cambiar de taller' }).click();
-  return page.getByRole('dialog', { name: 'Cambiar de taller' });
+  const dialogo = page.getByRole('dialog', { name: 'Cambiar de taller' });
+  await expect(dialogo).toBeVisible();
+  return dialogo;
 }
 
 test('el taller en que ya está no se ofrece, y los lugares son los de su bolsa', async ({ page }) => {
