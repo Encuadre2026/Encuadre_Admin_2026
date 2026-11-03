@@ -13,6 +13,7 @@ import { olvidarSesion } from './api/cliente';
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Participantes = lazy(() => import('./pages/Participantes'));
 const Cupos = lazy(() => import('./pages/Cupos'));
+const Reconocimientos = lazy(() => import('./pages/Reconocimientos'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
 // Fallback de carga para Suspense
@@ -82,6 +83,7 @@ function AuthenticatedLayout() {
             <Route path="/dashboard" element={<Dashboard registrosHook={registrosHook} />} />
             <Route path="/participantes" element={<Participantes registrosHook={registrosHook} />} />
             <Route path="/cupos" element={<Cupos registrosHook={registrosHook} />} />
+            <Route path="/reconocimientos" element={<Reconocimientos registrosHook={registrosHook} />} />
             {/* La sección se llama «Talleres y cupos»: quien teclee la dirección
                 por el nombre nuevo llega al mismo sitio. */}
             <Route path="/talleres" element={<Navigate to="/cupos" replace />} />

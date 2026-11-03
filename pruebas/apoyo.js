@@ -41,6 +41,15 @@ export const REGISTROS = Array.from({ length: 47 }, (_, i) => ({
   pago_aprobado: i % 5 === 0 ? 1 : 0,
   asistio: i % 7 === 0 ? 1 : 0,
   fecha_asistencia: i % 7 === 0 ? '2026-10-29 09:15:00' : null,
+  // El recuento de asistencias y el estado del reconocimiento (migraciones
+  // 0012 y 0013). Solo llega al mínimo quien pagó, que es como ocurre de
+  // verdad: sin pago no hay código de acceso y la puerta no anota nada.
+  // Salen 10 con derecho de los 47, y 5 de ellos ya enviados.
+  asistencias: i % 5 === 0 ? 3 : i % 3,
+  dias_asistidos: i % 5 === 0 ? 2 : (i % 3 === 0 ? 0 : 1),
+  ultima_asistencia: i % 3 === 0 && i % 5 !== 0 ? null : '2026-10-31 16:00:00',
+  reconocimiento_disponible: i % 5 === 0 ? 1 : 0,
+  fecha_reconocimiento_enviado: i % 10 === 0 ? '2026-11-02 18:00:00' : null,
 }));
 
 /**
@@ -78,6 +87,11 @@ export const ASAMBLEA = [
     viaja_con_alumnos: 1,
     numero_alumnos: 12,
     interes_talleres: 1,
+    asistencias: 0,
+    dias_asistidos: 0,
+    ultima_asistencia: null,
+    reconocimiento_disponible: 1,
+    fecha_reconocimiento_enviado: null,
     taller_preferencia: 'Futurología aplicada al diseño',
   },
   {
@@ -102,6 +116,11 @@ export const ASAMBLEA = [
     viaja_con_alumnos: 1,
     numero_alumnos: 0,
     interes_talleres: 0,
+    asistencias: 0,
+    dias_asistidos: 0,
+    ultima_asistencia: null,
+    reconocimiento_disponible: 0,
+    fecha_reconocimiento_enviado: null,
     taller_preferencia: null,
   },
   {
@@ -126,6 +145,11 @@ export const ASAMBLEA = [
     viaja_con_alumnos: null,
     numero_alumnos: null,
     interes_talleres: null,
+    asistencias: 0,
+    dias_asistidos: 0,
+    ultima_asistencia: null,
+    reconocimiento_disponible: 1,
+    fecha_reconocimiento_enviado: '2026-11-02 18:00:00',
     taller_preferencia: null,
   },
 ];
@@ -168,6 +192,43 @@ export const INSTITUCION_SEDE = 'UAA · Universidad Autónoma de Aguascalientes'
  * en la respuesta, no escribiendo a mano la marca de sessionStorage, que es solo
  * donde el panel apunta lo que le dijeron.
  */
+/**
+ * El recuento que devuelve `GET /api/admin/reconocimientos/estado`.
+ *
+ * Cuadra con las fixtures: 10 de los 47 del padrón llegan al mínimo y 5 ya
+ * recibieron el suyo. Si se cambian las fixtures hay que mover esto con ellas,
+ * porque la pantalla enseña las dos cosas a la vez y un desajuste se lee como
+ * un fallo del panel.
+ */
+export const ESTADO_RECONOCIMIENTOS = {
+  elegibles: 10,
+  enviados: 5,
+  pendientes: 5,
+  sin_correo: 0,
+  minimo_de_asistencias: 3,
+  total_del_padron: 47,
+};
+
+/**
+ * Una API que manda todo lo que le queda en la primera llamada.
+ *
+ * Es el caso normal: el panel llama, se vacía la cola y el bucle termina. Para
+ * probar el envío a trozos, o uno que falla, se le pasa otra a `prepararPanel`.
+ */
+export function enviaTodoDeUnaVez(pendientesIniciales = ESTADO_RECONOCIMIENTOS.pendientes) {
+  let quedan = pendientesIniciales;
+  return (cuerpo = {}) => {
+    // La simulación cuenta y no manda: si descontara, la confirmación diría un
+    // número y el envío mandaría otro, que es el fallo que esto vigila.
+    if (cuerpo.simulacion) {
+      return { simulacion: true, enviados: 0, fallidos: 0, pendientes: quedan, mensaje: '' };
+    }
+    const enviados = quedan;
+    quedan = 0;
+    return { enviados, fallidos: 0, detalle_fallidos: [], pendientes: 0, mensaje: `Se mandaron ${enviados}.` };
+  };
+}
+
 export async function prepararPanel(
   page,
   {
@@ -178,6 +239,8 @@ export async function prepararPanel(
     alTaller = () => ({ status: 200, json: { ok: true } }),
     alRegistro = () => ({ status: 200, json: { ok: true } }),
     alCambioDeTaller = () => ({ status: 200, json: { ok: true, correo_enviado: true } }),
+    estadoDeReconocimientos = ESTADO_RECONOCIMIENTOS,
+    alEnviarReconocimientos = enviaTodoDeUnaVez(),
   } = {}
 ) {
   await page.addInitScript(() => {
@@ -218,6 +281,37 @@ export async function prepararPanel(
     await ruta.fulfill({ status, json });
   });
 
+  // Los reconocimientos. Van después de la general por lo mismo que las de
+  // talleres: Playwright prueba primero la última ruta registrada.
+  //
+  // El PDF se devuelve como unos pocos bytes con la firma %PDF-: a estas
+  // pruebas les importa que el panel pida el archivo y lo entregue al
+  // navegador, no qué hay dibujado dentro, que es asunto del Worker.
+  const descargas = [];
+  await page.route('**/api/admin/reconocimiento?*', async (ruta) => {
+    descargas.push(new URL(ruta.request().url()).searchParams);
+    await ruta.fulfill({
+      status: 200,
+      contentType: 'application/pdf',
+      headers: { 'Content-Disposition': 'attachment; filename="Reconocimiento.pdf"' },
+      body: Buffer.from('%PDF-1.4 reconocimiento de prueba'),
+    });
+  });
+
+  await page.route('**/api/admin/reconocimientos/estado', (ruta) =>
+    ruta.fulfill({ json: { ok: true, ...estadoDeReconocimientos } })
+  );
+
+  // El envío va por lotes y el panel lo llama en bucle, así que la simulación
+  // de la API tiene que descontar: devolver siempre los mismos pendientes
+  // dejaría la prueba dando vueltas para siempre.
+  const enviosDeReconocimientos = [];
+  await page.route('**/api/admin/reconocimientos/enviar', async (ruta) => {
+    const cuerpo = ruta.request().postDataJSON() || {};
+    enviosDeReconocimientos.push(cuerpo);
+    await ruta.fulfill({ json: { ok: true, ...alEnviarReconocimientos(cuerpo) } });
+  });
+
   // Pasar a una persona a otro taller.
   const cambiosDeTaller = [];
   await page.route('**/api/admin/registro/taller', async (ruta) => {
@@ -226,7 +320,7 @@ export async function prepararPanel(
     const { status, json } = alCambioDeTaller(peticion);
     await ruta.fulfill({ status, json });
   });
-  return { peticiones, cambiosDeRegistro, cambiosDeTaller };
+  return { peticiones, cambiosDeRegistro, cambiosDeTaller, descargas, enviosDeReconocimientos };
 }
 
 /** El panel usa HashRouter, así que la ruta va después de la almohadilla. */
