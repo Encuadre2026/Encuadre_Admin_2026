@@ -20,7 +20,7 @@ const ANCHOS = [
   { nombre: 'escritorio', width: 1440, height: 900 },
 ];
 
-const RUTAS = ['dashboard', 'participantes', 'cupos'];
+const RUTAS = ['dashboard', 'participantes', 'cupos', 'reconocimientos'];
 
 for (const ancho of ANCHOS) {
   for (const ruta of RUTAS) {
